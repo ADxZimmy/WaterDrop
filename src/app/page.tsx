@@ -68,6 +68,11 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-3">
+              <Link href="/dashboard/customer/track-order">
+                <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/5">
+                  <Truck className="h-5 w-5" />
+                </Button>
+              </Link>
               <Link href="/cart">
                 <Button variant="ghost" size="icon" className="relative">
                   <ShoppingCart className="h-5 w-5" />
@@ -100,6 +105,21 @@ export default function Home() {
       </nav>
 
       <main className="flex-grow">
+        {/* Active Order Banner */}
+        <div className="bg-primary/10 border-b border-primary/20 py-3 px-4">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white">
+                <Truck className="h-4 w-4" />
+              </div>
+              <p className="text-sm font-bold text-primary">You have an order in transit!</p>
+            </div>
+            <Link href="/dashboard/customer/track-order">
+              <Button size="sm" className="rounded-full h-8 px-4 text-xs">Track Now</Button>
+            </Link>
+          </div>
+        </div>
+
         <section className="relative h-[500px] flex items-center overflow-hidden">
           <div className="absolute inset-0 z-0">
             <Image 
@@ -112,7 +132,7 @@ export default function Home() {
           </div>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="max-w-2xl">
-              <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 px-4 py-1">
+              <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 px-4 py-1">
                 Fast & Fresh Delivery
               </Badge>
               <h1 className="text-5xl md:text-6xl font-bold font-headline leading-tight mb-6">

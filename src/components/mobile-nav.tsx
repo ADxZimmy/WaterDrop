@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -9,8 +8,8 @@ import { cn } from "@/lib/utils";
 
 const mobileItems = [
   { name: 'Home', href: '/', icon: Home },
-  { name: 'Shop', href: '#', icon: Search },
-  { name: 'Cart', href: '#', icon: ShoppingBag },
+  { name: 'Track', href: '/dashboard/customer/track-order', icon: Truck },
+  { name: 'Cart', href: '/cart', icon: ShoppingBag },
   { name: 'Profile', href: '/auth/login', icon: User },
 ];
 

@@ -1,9 +1,8 @@
-
 "use client";
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ShoppingBag, Clock, ChevronRight, Package, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Clock, ChevronRight, Package, CheckCircle2, Truck } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,12 +49,12 @@ export default function MyOrdersPage() {
 
         <div className="space-y-4">
           {orders.map((order) => (
-            <Link key={order.id} href={`/dashboard/customer/track-order`}>
-              <Card className="border-none shadow-sm hover:shadow-md transition-shadow overflow-hidden group mb-4">
+            <Link key={order.id} href={order.status === 'In Transit' ? '/dashboard/customer/track-order' : '#'}>
+              <Card className={`border-none shadow-sm hover:shadow-md transition-shadow overflow-hidden group mb-4 ${order.status === 'In Transit' ? 'bg-primary/5 border border-primary/20' : ''}`}>
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
-                      <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${order.status === 'In Transit' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                      <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${order.status === 'In Transit' ? 'bg-primary text-white shadow-lg shadow-primary/20 animate-pulse' : 'bg-muted text-muted-foreground'}`}>
                         {order.status === 'In Transit' ? <Truck className="h-6 w-6" /> : <Package className="h-6 w-6" />}
                       </div>
                       <div>
@@ -65,7 +64,7 @@ export default function MyOrdersPage() {
                     </div>
                     <Badge 
                       variant="outline" 
-                      className={order.status === 'In Transit' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-green-50 text-green-700 border-green-200'}
+                      className={order.status === 'In Transit' ? 'bg-primary text-white border-none' : 'bg-green-50 text-green-700 border-green-200'}
                     >
                       {order.status}
                     </Badge>
@@ -76,9 +75,15 @@ export default function MyOrdersPage() {
                       <p className="text-xs text-muted-foreground line-clamp-1">{order.items}</p>
                       <p className="font-bold text-primary">${order.total.toFixed(2)}</p>
                     </div>
-                    <Button variant="ghost" size="sm" className="h-8 gap-1 text-primary group-hover:bg-primary/5">
-                      Track <ChevronRight className="h-3 w-3" />
-                    </Button>
+                    {order.status === 'In Transit' ? (
+                      <Button variant="default" size="sm" className="h-8 gap-1 rounded-lg">
+                        Track Live <ChevronRight className="h-3 w-3" />
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground group-hover:bg-muted">
+                        Details <ChevronRight className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -89,5 +94,3 @@ export default function MyOrdersPage() {
     </div>
   );
 }
-
-import { Truck } from 'lucide-react';
