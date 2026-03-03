@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -10,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 const cartItems = [
   { id: 1, name: "Premium Bottled Water (Box of 12)", price: 12.50, qty: 1, vendor: "Aqua Pure" },
@@ -17,7 +17,7 @@ const cartItems = [
 ];
 
 export default function CartPage() {
-  const [step, setStep] = useState<'cart' | 'checkout' | 'success'>('cart');
+  const [step, setStep] = sea<'cart' | 'checkout' | 'success'>('cart');
   
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
   const deliveryFee = 2.50;
