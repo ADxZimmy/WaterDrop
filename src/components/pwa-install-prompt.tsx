@@ -62,11 +62,11 @@ export function PwaInstallPrompt() {
               <Download className="h-6 w-6" />
             </div>
             <div className="flex-1 pr-4">
-              <p className="font-bold text-sm">Install AquaMart App</p>
+              <p className="font-bold text-sm">Install WaterDrop App</p>
               <p className="text-xs text-muted-foreground">
                 {platform === 'ios' 
                   ? "Tap the Share icon below and select 'Add to Home Screen'" 
-                  : "Install AquaMart to your home screen for a better experience"}
+                  : "Install WaterDrop to your home screen for a better experience"}
               </p>
             </div>
           </div>
