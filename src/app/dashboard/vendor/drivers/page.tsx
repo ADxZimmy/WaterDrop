@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Truck, Search, Plus, Star, MapPin, Phone, MessageSquare, MoreVertical, CheckCircle2, Clock, User } from 'lucide-react';
+import { Truck, Search, Plus, Star, MapPin, Phone, MessageSquare, MoreVertical, CheckCircle2, Clock, User, Wallet } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -20,16 +20,23 @@ const drivers = [
 export default function VendorDriversPage() {
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline">Driver Fleet</h1>
           <p className="text-muted-foreground">Manage your delivery personnel and track performance.</p>
         </div>
-        <Link href="/dashboard/vendor/drivers/new">
-          <Button className="rounded-xl h-11 gap-2 shadow-lg shadow-primary/20">
-            <Plus className="h-5 w-5" /> Add New Driver
-          </Button>
-        </Link>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Link href="/dashboard/vendor/drivers/withdrawals" className="flex-1 sm:flex-none">
+            <Button variant="outline" className="w-full rounded-xl h-11 gap-2 border-primary/20 text-primary">
+              <Wallet className="h-5 w-5" /> Withdrawals
+            </Button>
+          </Link>
+          <Link href="/dashboard/vendor/drivers/new" className="flex-1 sm:flex-none">
+            <Button className="w-full rounded-xl h-11 gap-2 shadow-lg shadow-primary/20">
+              <Plus className="h-5 w-5" /> Add New Driver
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
