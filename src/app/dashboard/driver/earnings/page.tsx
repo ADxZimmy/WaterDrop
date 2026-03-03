@@ -1,8 +1,10 @@
+
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 import { Wallet, TrendingUp, Calendar, ArrowUpRight, ChevronRight, DollarSign } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -34,17 +36,17 @@ export default function DriverEarningsPage() {
           <h1 className="text-3xl font-bold font-headline">Earnings</h1>
           <p className="text-muted-foreground">Track your daily and weekly income.</p>
         </div>
-        <Button variant="outline" className="rounded-xl h-11 gap-2">
+        <Button variant="outline" className="rounded-xl h-11 gap-2 border-primary/20 text-primary">
           <Calendar className="h-4 w-4" />
           This Week
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none bg-primary text-white p-6 rounded-3xl shadow-xl shadow-primary/20">
+        <Card className="border-none bg-primary text-white p-6 rounded-[32px] shadow-xl shadow-primary/20">
           <div className="flex flex-col h-full justify-between">
             <div className="flex justify-between items-start">
-              <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center">
+              <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center">
                 <Wallet className="h-5 w-5" />
               </div>
               <Badge className="bg-white/20 text-white border-none">Active Balance</Badge>
@@ -55,11 +57,15 @@ export default function DriverEarningsPage() {
                 Available for withdrawal
               </p>
             </div>
-            <Button className="mt-6 bg-white text-primary hover:bg-white/90 rounded-xl h-12 w-full">Withdraw Now</Button>
+            <Link href="/dashboard/driver/withdraw" className="mt-6">
+              <Button className="bg-white text-primary hover:bg-white/90 rounded-2xl h-12 w-full font-bold shadow-lg">
+                Withdraw Now
+              </Button>
+            </Link>
           </div>
         </Card>
 
-        <Card className="border-none shadow-sm p-6 rounded-3xl md:col-span-2">
+        <Card className="border-none shadow-sm p-6 rounded-[32px] md:col-span-2 bg-white">
           <CardHeader className="p-0 mb-6">
             <CardTitle className="text-lg">Weekly Performance</CardTitle>
           </CardHeader>
@@ -69,7 +75,7 @@ export default function DriverEarningsPage() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                 <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#888'}} />
                 <Tooltip cursor={{fill: '#f5f5f5'}} />
-                <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
                   {data.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={index === 5 ? '#26A3DB' : '#e2e8f0'} />
                   ))}
@@ -88,9 +94,9 @@ export default function DriverEarningsPage() {
             { date: 'Yesterday, Oct 23', trips: 8, earnings: '$88.20' },
             { date: 'Wednesday, Oct 22', trips: 15, earnings: '$185.00' },
           ].map((day, i) => (
-            <div key={i} className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-transparent hover:border-primary/20 transition-all">
+            <div key={i} className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-transparent hover:border-primary/20 transition-all group cursor-pointer">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-muted rounded-xl flex items-center justify-center text-primary">
+                <div className="h-12 w-12 bg-primary/5 rounded-2xl flex items-center justify-center text-primary transition-transform group-hover:scale-110">
                   <TrendingUp className="h-6 w-6" />
                 </div>
                 <div>
@@ -100,7 +106,7 @@ export default function DriverEarningsPage() {
               </div>
               <div className="text-right flex items-center gap-3">
                 <p className="font-bold text-lg text-primary">{day.earnings}</p>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
           ))}
