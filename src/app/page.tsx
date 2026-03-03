@@ -68,7 +68,7 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Link href="/dashboard/customer/track-order">
+              <Link href="/dashboard/customer/orders">
                 <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/5">
                   <Truck className="h-5 w-5" />
                 </Button>
@@ -114,8 +114,8 @@ export default function Home() {
               </div>
               <p className="text-sm font-bold text-primary">You have an order in transit!</p>
             </div>
-            <Link href="/dashboard/customer/track-order">
-              <Button size="sm" className="rounded-full h-8 px-4 text-xs">Track Now</Button>
+            <Link href="/dashboard/customer/orders">
+              <Button size="sm" className="rounded-full h-8 px-4 text-xs">View Orders</Button>
             </Link>
           </div>
         </div>
@@ -218,7 +218,7 @@ export default function Home() {
               <h4 className="font-bold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link href="#vendors" className="hover:text-primary">All Vendors</Link></li>
-                <li><Link href="/dashboard/customer/track-order" className="hover:text-primary">Track Order</Link></li>
+                <li><Link href="/dashboard/customer/orders" className="hover:text-primary">My Orders</Link></li>
               </ul>
             </div>
             <div>

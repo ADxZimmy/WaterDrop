@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 const mobileItems = [
   { name: 'Home', href: '/', icon: Home },
-  { name: 'Track', href: '/dashboard/customer/track-order', icon: Truck },
+  { name: 'Orders', href: '/dashboard/customer/orders', icon: Truck },
   { name: 'Cart', href: '/cart', icon: ShoppingBag },
   { name: 'Profile', href: '/auth/login', icon: User },
 ];
