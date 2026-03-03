@@ -1,9 +1,9 @@
-
 "use client";
 
 import React from 'react';
 import { BarChart3, TrendingUp, PieChart, Users, ArrowUpRight, ArrowDownRight, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   LineChart, Line, AreaChart, Area, PieChart as RePieChart, Pie, Cell 
