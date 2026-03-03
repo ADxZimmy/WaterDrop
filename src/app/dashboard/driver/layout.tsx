@@ -11,96 +11,113 @@ import {
   User, 
   LogOut,
   Droplets,
-  MapPin,
-  LayoutDashboard
+  LayoutDashboard,
+  Bell,
+  Menu
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
 
 const driverNav = [
-  { name: 'Active', href: '/dashboard/driver', icon: Truck },
+  { name: 'Dashboard', href: '/dashboard/driver', icon: LayoutDashboard },
   { name: 'Earnings', href: '/dashboard/driver/earnings', icon: Wallet },
-  { name: 'History', href: '/dashboard/driver/history', icon: History },
+  { name: 'Trip History', href: '/dashboard/driver/history', icon: History },
   { name: 'Profile', href: '/dashboard/driver/profile', icon: User },
 ];
 
 export default function DriverLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = React.useState(false);
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col lg:flex-row">
-      <aside className="hidden lg:flex w-64 border-r bg-white flex-col sticky top-0 h-screen">
-        <div className="p-6 flex items-center gap-2 border-b">
-          <div className="h-10 w-10 bg-primary rounded-full flex items-center justify-center text-white">
-            <Truck className="h-6 w-6" />
-          </div>
-          <span className="text-xl font-bold tracking-tight text-primary font-headline">Driver Portal</span>
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
+      <div className="p-6 flex items-center gap-2 border-b">
+        <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white">
+          <Truck className="h-6 w-6" />
         </div>
-        
-        <nav className="flex-1 p-4 space-y-1">
-          {driverNav.map((item) => (
-            <Link key={item.name} href={item.href}>
+        <span className="text-xl font-bold tracking-tight text-primary font-headline">Driver Portal</span>
+      </div>
+      
+      <nav className="flex-1 p-4 space-y-1">
+        {driverNav.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link key={item.name} href={item.href} onClick={() => setIsOpen(false)}>
               <Button
                 variant="ghost"
                 className={cn(
-                  "w-full justify-start gap-3 h-11 px-4 rounded-xl transition-all",
-                  pathname === item.href 
+                  "w-full justify-start gap-3 h-12 px-4 rounded-xl transition-all",
+                  isActive 
                     ? "bg-primary/10 text-primary font-bold" 
                     : "text-muted-foreground hover:bg-muted"
                 )}
               >
-                <item.icon className={cn("h-5 w-5", pathname === item.href && "text-primary")} />
+                <item.icon className={cn("h-5 w-5", isActive && "text-primary")} />
                 {item.name}
               </Button>
             </Link>
-          ))}
-        </nav>
+          );
+        })}
+      </nav>
 
-        <div className="p-4 border-t">
-          <Link href="/auth/login">
-            <Button variant="ghost" className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-xl">
-              <LogOut className="h-5 w-5" />
-              Sign Out
-            </Button>
-          </Link>
-        </div>
+      <div className="p-4 border-t">
+        <Link href="/auth/login">
+          <Button variant="ghost" className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-xl">
+            <LogOut className="h-5 w-5" />
+            Sign Out
+          </Button>
+        </Link>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+      <aside className="hidden lg:flex w-64 border-r bg-white flex-col sticky top-0 h-screen">
+        <SidebarContent />
       </aside>
 
       <div className="flex-1 flex flex-col min-h-screen">
-        <header className="lg:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b p-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center text-white">
-                <Truck className="h-5 w-5" />
-              </div>
-              <h1 className="text-lg font-bold font-headline">Driver Portal</h1>
+        <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b p-4 px-6 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="lg:hidden">
+              <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-10 w-10">
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-72">
+                  <SheetHeader className="sr-only">
+                    <SheetTitle>Navigation Menu</SheetTitle>
+                    <SheetDescription>Access driver management sections</SheetDescription>
+                  </SheetHeader>
+                  <SidebarContent />
+                </SheetContent>
+              </Sheet>
             </div>
-            <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold font-headline hidden lg:block">Welcome back, John</h1>
+            <div className="lg:hidden flex items-center gap-2">
+              <Truck className="h-5 w-5 text-primary" />
+              <span className="font-bold">Driver Portal</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" className="rounded-full relative">
+              <Bell className="h-5 w-5" />
+              <span className="absolute top-2 right-2 h-2 w-2 bg-destructive rounded-full border-2 border-white"></span>
+            </Button>
+            <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full border border-green-100">
               <span className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></span>
-              <span className="text-xs font-medium">Online</span>
+              <span className="text-[10px] font-bold uppercase tracking-tight text-green-700">Online</span>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 pb-20 lg:pb-0 bg-muted/10">
+        <main className="flex-1 bg-muted/10">
           {children}
         </main>
-
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t h-16 flex justify-around items-center z-50 safe-area-bottom shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-          {driverNav.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link key={item.name} href={item.href} className="flex-1 flex flex-col items-center justify-center gap-1 transition-all">
-                <div className={cn("p-1 rounded-lg transition-colors", isActive && "bg-primary/10")}>
-                  <item.icon className={cn("h-5 w-5", isActive ? "text-primary" : "text-muted-foreground")} />
-                </div>
-                <span className={cn("text-[10px] font-bold uppercase tracking-tight", isActive ? "text-primary" : "text-muted-foreground")}>
-                  {item.name}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
       </div>
     </div>
   );

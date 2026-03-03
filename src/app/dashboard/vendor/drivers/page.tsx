@@ -2,7 +2,8 @@
 "use client";
 
 import React from 'react';
-import { Truck, Search, Plus, Star, MapPin, Phone, MessageSquare, MoreVertical, CheckCircle2, Clock } from 'lucide-react';
+import Link from 'next/link';
+import { Truck, Search, Plus, Star, MapPin, Phone, MessageSquare, MoreVertical, CheckCircle2, Clock, User } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,10 +12,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const drivers = [
-  { id: 1, name: "John Driver", rating: 4.9, status: "Active", trips: 124, phone: "+1 555-001", image: "https://picsum.photos/seed/d1/100" },
-  { id: 2, name: "Sarah Delivery", rating: 4.8, status: "Busy", trips: 89, phone: "+1 555-002", image: "https://picsum.photos/seed/d2/100" },
-  { id: 3, name: "Mike Moto", rating: 4.7, status: "Offline", trips: 256, phone: "+1 555-003", image: "https://picsum.photos/seed/d3/100" },
-  { id: 4, name: "Dave Logistics", rating: 4.5, status: "Active", trips: 42, phone: "+1 555-004", image: "https://picsum.photos/seed/d4/100" },
+  { id: 1, name: "John Driver", rating: 4.9, status: "Active", trips: 124, image: "https://picsum.photos/seed/d1/100" },
+  { id: 2, name: "Sarah Delivery", rating: 4.8, status: "Busy", trips: 89, image: "https://picsum.photos/seed/d2/100" },
+  { id: 3, name: "Mike Moto", rating: 4.7, status: "Offline", trips: 256, image: "https://picsum.photos/seed/d3/100" },
+  { id: 4, name: "Dave Logistics", rating: 4.5, status: "Active", trips: 42, image: "https://picsum.photos/seed/d4/100" },
 ];
 
 export default function VendorDriversPage() {
@@ -25,9 +26,11 @@ export default function VendorDriversPage() {
           <h1 className="text-3xl font-bold font-headline">Driver Fleet</h1>
           <p className="text-muted-foreground">Manage your delivery personnel and track performance.</p>
         </div>
-        <Button className="rounded-xl h-11 gap-2 shadow-lg shadow-primary/20">
-          <Plus className="h-5 w-5" /> Add New Driver
-        </Button>
+        <Link href="/dashboard/vendor/drivers/new">
+          <Button className="rounded-xl h-11 gap-2 shadow-lg shadow-primary/20">
+            <Plus className="h-5 w-5" /> Hire New Driver
+          </Button>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -95,7 +98,9 @@ export default function VendorDriversPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>View Profile</DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={`/dashboard/vendor/drivers/${driver.id}`}>View Profile</Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem>Edit Details</DropdownMenuItem>
                   <DropdownMenuItem className="text-destructive">Deactivate</DropdownMenuItem>
                 </DropdownMenuContent>
@@ -112,14 +117,11 @@ export default function VendorDriversPage() {
                 <span>{driver.rating}</span>
                 <span className="text-muted-foreground ml-1">({driver.trips} trips)</span>
               </div>
-              <div className="flex gap-2 mt-6 w-full">
-                <Button size="sm" variant="outline" className="flex-1 rounded-lg gap-2">
-                  <Phone className="h-3 w-3" /> Call
+              <Link href={`/dashboard/vendor/drivers/${driver.id}`} className="w-full mt-6">
+                <Button size="sm" variant="outline" className="w-full rounded-xl gap-2">
+                  <User className="h-3 w-3" /> View Profile
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1 rounded-lg gap-2">
-                  <MessageSquare className="h-3 w-3" /> Chat
-                </Button>
-              </div>
+              </Link>
             </CardContent>
           </Card>
         ))}

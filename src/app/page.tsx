@@ -2,55 +2,33 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, Search, Store, Droplets, ArrowRight, User, Truck, Star } from 'lucide-react';
+import { ShoppingCart, Search, Store, Droplets, ArrowRight, User, Truck, Star, MapPin } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-const categories = ["All", "Bottled Water", "Bags of Water", "Bulk Supply"];
+const categories = ["All", "Bottled Water", "Bags of Water"];
 
-const featuredProducts = [
+const vendors = [
   {
-    id: 1,
-    name: "PureLife Premium Bottled Water",
-    vendor: "Aqua Pure",
-    vendorId: "1",
-    price: 12.50,
-    category: "Bottled Water",
-    image: "bottle-1",
-    rating: 4.8
+    id: "1",
+    name: "Aqua Pure Factory",
+    rating: 4.8,
+    reviews: 124,
+    distance: "1.2 km",
+    image: "vendor-1",
+    category: "Bottled Water"
   },
   {
-    id: 2,
-    name: "Crystal Sachet Water (Pack of 20)",
-    vendor: "Blue Wave",
-    vendorId: "2",
-    price: 5.00,
-    category: "Bags of Water",
-    image: "bag-water",
-    rating: 4.5
-  },
-  {
-    id: 3,
-    name: "AquaMart Bulk Dispenser Refill",
-    vendor: "Aqua Pure",
-    vendorId: "1",
-    price: 8.00,
-    category: "Bulk Supply",
-    image: "hero-water",
-    rating: 4.9
-  },
-  {
-    id: 4,
-    name: "Spring Fresh Bottled 750ml",
-    vendor: "Blue Wave",
-    vendorId: "2",
-    price: 1.20,
-    category: "Bottled Water",
-    image: "bottle-1",
-    rating: 4.7
+    id: "2",
+    name: "Blue Wave Distro",
+    rating: 4.5,
+    reviews: 89,
+    distance: "2.4 km",
+    image: "vendor-2",
+    category: "Bags of Water"
   }
 ];
 
@@ -128,76 +106,63 @@ export default function Home() {
                 The largest multi-vendor marketplace for high-quality bottled and sachet water. 
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="h-14 px-8 rounded-full text-lg shadow-lg">
-                  Shop Now
-                </Button>
-                <Button size="lg" variant="outline" className="h-14 px-8 rounded-full text-lg">
-                  View Vendors
-                </Button>
+                <Link href="#vendors">
+                  <Button size="lg" className="h-14 px-8 rounded-full text-lg shadow-lg">
+                    Shop Now
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="py-12 bg-white">
+        <section className="py-12 bg-white" id="vendors">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-wrap gap-4 justify-center">
-              {categories.map((cat) => (
-                <Button key={cat} variant={cat === "All" ? "default" : "outline"} className="rounded-full px-6">
-                  {cat}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-end mb-10">
+            <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
               <div>
-                <h2 className="text-3xl font-bold font-headline">Featured Products</h2>
-                <p className="text-muted-foreground">Top-rated water from verified vendors</p>
+                <h2 className="text-3xl font-bold font-headline">Verified Vendors</h2>
+                <p className="text-muted-foreground">Order direct from the best sources near you</p>
               </div>
-              <Button variant="link" className="text-primary flex items-center gap-1">
-                View All <ArrowRight className="h-4 w-4" />
-              </Button>
+              <div className="flex flex-wrap gap-3">
+                {categories.map((cat) => (
+                  <Button key={cat} variant={cat === "All" ? "default" : "outline"} className="rounded-full px-6">
+                    {cat}
+                  </Button>
+                ))}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {featuredProducts.map((product) => (
-                <Card key={product.id} className="group hover:shadow-xl transition-all duration-300 border-none bg-white rounded-2xl overflow-hidden">
-                  <CardHeader className="p-0 relative h-64">
-                    <Image 
-                      src={PlaceHolderImages.find(img => img.id === product.image)?.imageUrl || ''} 
-                      alt={product.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <Badge className="absolute top-4 right-4 bg-white/90 text-primary hover:bg-white">{product.category}</Badge>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start mb-2">
-                      <CardTitle className="text-lg font-bold line-clamp-1">{product.name}</CardTitle>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {vendors.map((vendor) => (
+                <Link key={vendor.id} href={`/vendors/${vendor.id}`}>
+                  <Card className="group hover:shadow-2xl transition-all duration-300 border-none bg-white rounded-3xl overflow-hidden flex flex-col sm:flex-row h-full">
+                    <div className="relative w-full sm:w-48 h-48 sm:h-auto overflow-hidden shrink-0">
+                      <Image 
+                        src={PlaceHolderImages.find(img => img.id === vendor.image)?.imageUrl || ''} 
+                        alt={vendor.name}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
                     </div>
-                    <Link href={`/vendors/${product.vendorId}`} className="flex items-center gap-1 text-sm text-muted-foreground mb-4 hover:text-primary transition-colors">
-                      <Store className="h-3 w-3" />
-                      {product.vendor}
-                    </Link>
-                    <div className="flex justify-between items-center">
-                      <span className="text-2xl font-bold text-primary">${product.price.toFixed(2)}</span>
-                      <div className="flex items-center gap-1 text-yellow-500">
-                        <Star className="h-3 w-3 fill-current" />
-                        <span className="text-sm font-bold text-foreground">{product.rating}</span>
+                    <CardContent className="p-6 flex-1 flex flex-col justify-center">
+                      <div className="flex justify-between items-start mb-2">
+                        <CardTitle className="text-xl font-bold">{vendor.name}</CardTitle>
                       </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="px-6 pb-6 pt-0">
-                    <Button className="w-full rounded-xl gap-2 shadow-sm">
-                      <ShoppingCart className="h-4 w-4" />
-                      Add to Cart
-                    </Button>
-                  </CardFooter>
-                </Card>
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mt-2">
+                        <div className="flex items-center gap-1 text-yellow-500 font-bold">
+                          <Star className="h-4 w-4 fill-current" /> {vendor.rating}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4" /> {vendor.distance}
+                        </div>
+                        <Badge variant="outline" className="text-[10px] uppercase tracking-wider">{vendor.category}</Badge>
+                      </div>
+                      <div className="mt-6 flex items-center gap-1 text-primary font-bold group-hover:gap-2 transition-all">
+                        View Products <ArrowRight className="h-4 w-4" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           </div>
@@ -217,15 +182,15 @@ export default function Home() {
             <div>
               <h4 className="font-bold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="#" className="hover:text-primary">All Products</Link></li>
-                <li><Link href="#" className="hover:text-primary">Featured Vendors</Link></li>
+                <li><Link href="#vendors" className="hover:text-primary">All Vendors</Link></li>
+                <li><Link href="/dashboard/customer/orders" className="hover:text-primary">Track Order</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-4">Support</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link href="#" className="hover:text-primary">Help Center</Link></li>
-                <li><Link href="#" className="hover:text-primary">Track Order</Link></li>
+                <li><Link href="#" className="hover:text-primary">Terms of Service</Link></li>
               </ul>
             </div>
             <div>
