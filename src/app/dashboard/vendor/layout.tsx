@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
 
 const navItems = [
   { name: 'Overview', href: '/dashboard/vendor', icon: LayoutDashboard },
@@ -95,6 +95,10 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-72">
+              <SheetHeader className="sr-only">
+                <SheetTitle>Navigation Menu</SheetTitle>
+                <SheetDescription>Access store management sections</SheetDescription>
+              </SheetHeader>
               <SidebarContent />
             </SheetContent>
           </Sheet>
