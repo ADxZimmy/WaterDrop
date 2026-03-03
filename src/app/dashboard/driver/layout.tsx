@@ -13,7 +13,8 @@ import {
   LayoutDashboard,
   Bell,
   Menu,
-  ChevronRight
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,13 +33,13 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-white">
-      <div className="p-6 flex items-center gap-3 border-b">
-        <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
-          <Truck className="h-6 w-6" />
-        </div>
-        <div>
+      <div className="p-6 flex items-center justify-end gap-3 border-b">
+        <div className="text-right">
           <span className="text-xl font-bold tracking-tight text-primary font-headline block leading-none">WaterDrop</span>
           <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Driver Portal</span>
+        </div>
+        <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
+          <Truck className="h-6 w-6" />
         </div>
       </div>
       
@@ -50,15 +51,15 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
               <Button
                 variant="ghost"
                 className={cn(
-                  "w-full justify-start gap-3 h-12 px-4 rounded-xl transition-all group",
+                  "w-full justify-end gap-2 h-12 px-4 rounded-xl transition-all group",
                   isActive 
                     ? "bg-primary/10 text-primary font-bold shadow-sm" 
                     : "text-muted-foreground hover:bg-muted"
                 )}
               >
+                {isActive && <ChevronLeft className="h-4 w-4 opacity-50 mr-auto" />}
+                <span className="text-sm">{item.name}</span>
                 <item.icon className={cn("h-5 w-5 transition-transform group-hover:scale-110", isActive && "text-primary")} />
-                <span className="flex-1">{item.name}</span>
-                {isActive && <ChevronRight className="h-4 w-4 opacity-50" />}
               </Button>
             </Link>
           );
@@ -67,9 +68,9 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
 
       <div className="p-4 border-t bg-muted/5">
         <Link href="/auth/login">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl h-12">
-            <LogOut className="h-5 w-5" />
+          <Button variant="ghost" className="w-full justify-end gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl h-12">
             <span className="font-bold">Sign Out</span>
+            <LogOut className="h-5 w-5" />
           </Button>
         </Link>
       </div>
