@@ -63,35 +63,38 @@ export default function VendorWithdrawalsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="border-none shadow-sm p-6 rounded-3xl">
-          <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Pending Approval</p>
-          <div className="flex items-center justify-between mt-2">
-            <h3 className="text-3xl font-bold">1</h3>
-            <Badge className="bg-yellow-100 text-yellow-700 border-none">Action Required</Badge>
+        <Card className="border-none shadow-sm p-6 rounded-3xl bg-white">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Pending Approval</p>
+            <Badge className="bg-yellow-100 text-yellow-700 border-none text-[10px] px-2 py-0">Action</Badge>
           </div>
+          <h3 className="text-3xl font-bold mt-2">1</h3>
         </Card>
-        <Card className="border-none shadow-sm p-6 rounded-3xl">
-          <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Total Paid (MTD)</p>
-          <div className="flex items-center justify-between mt-2">
-            <h3 className="text-3xl font-bold">$1,240.00</h3>
-            <div className="flex items-center gap-1 text-green-600 text-xs font-bold">
+
+        <Card className="border-none shadow-sm p-6 rounded-3xl bg-white">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Total Paid (MTD)</p>
+            <div className="flex items-center gap-1 text-green-600 text-[10px] font-bold bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
               <ArrowUpRight className="h-3 w-3" /> +12%
             </div>
           </div>
+          <h3 className="text-3xl font-bold mt-2">$1,240.00</h3>
         </Card>
-        <Card className="border-none shadow-sm p-6 rounded-3xl">
-          <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Avg. Processing Time</p>
-          <div className="flex items-center justify-between mt-2">
-            <h3 className="text-3xl font-bold">4.2h</h3>
-            <Clock className="h-5 w-5 text-primary/40" />
+
+        <Card className="border-none shadow-sm p-6 rounded-3xl bg-white">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Avg. Processing</p>
+            <Clock className="h-4 w-4 text-primary/40" />
           </div>
+          <h3 className="text-3xl font-bold mt-2">4.2h</h3>
         </Card>
+
         <Card className="border-none shadow-sm p-6 rounded-3xl bg-primary text-white">
-          <p className="text-xs uppercase font-bold tracking-widest opacity-80">Next Payout Cycle</p>
-          <div className="flex items-center justify-between mt-2">
-            <h3 className="text-2xl font-bold">Tomorrow</h3>
-            <Wallet className="h-6 w-6 opacity-30" />
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase font-bold tracking-widest opacity-80">Next Payout</p>
+            <Wallet className="h-4 w-4 opacity-40" />
           </div>
+          <h3 className="text-2xl font-bold mt-2">Tomorrow</h3>
         </Card>
       </div>
 
