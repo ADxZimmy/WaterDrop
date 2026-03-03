@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -25,18 +26,18 @@ export default function CartPage() {
 
   if (step === 'success') {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in duration-500">
         <div className="h-24 w-24 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-6 animate-bounce">
           <CheckCircle2 className="h-12 w-12" />
         </div>
         <h1 className="text-3xl font-bold font-headline mb-2">Order Confirmed!</h1>
-        <p className="text-muted-foreground mb-8 max-w-xs">Your water is being prepared and will be delivered in approximately 20 minutes.</p>
+        <p className="text-muted-foreground mb-8 max-w-xs">Your water is being prepared and will be delivered in approximately 12 minutes.</p>
         <div className="space-y-3 w-full max-w-xs">
-          <Link href="/dashboard/customer/orders">
-            <Button className="w-full h-12 rounded-xl">Track Order</Button>
+          <Link href="/dashboard/customer/track-order">
+            <Button className="w-full h-14 rounded-2xl text-lg shadow-lg shadow-primary/20">Track Order Now</Button>
           </Link>
-          <Link href="/">
-            <Button variant="outline" className="w-full h-12 rounded-xl">Back to Home</Button>
+          <Link href="/dashboard/customer/orders">
+            <Button variant="ghost" className="w-full h-12 rounded-xl text-muted-foreground">View Order History</Button>
           </Link>
         </div>
       </div>
@@ -59,7 +60,9 @@ export default function CartPage() {
               {cartItems.map((item) => (
                 <Card key={item.id} className="border-none shadow-sm overflow-hidden">
                   <CardContent className="p-4 flex gap-4">
-                    <div className="h-20 w-20 bg-muted rounded-xl shrink-0" />
+                    <div className="h-20 w-20 bg-muted rounded-xl shrink-0 flex items-center justify-center">
+                      <Truck className="h-8 w-8 text-primary/20" />
+                    </div>
                     <div className="flex-1 flex flex-col justify-between">
                       <div className="flex justify-between items-start">
                         <div>
