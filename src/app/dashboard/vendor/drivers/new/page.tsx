@@ -1,23 +1,42 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, User, Phone, Mail, Award, CheckCircle2, Info } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AddDriverPage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleAddToFleet = () => {
+    setIsSubmitting(true);
+    
+    // Simulate invitation process
+    setTimeout(() => {
+      toast({
+        title: "Invitation Sent Successfully!",
+        description: "The driver's email address has been notified with their login credentials and onboarding steps.",
+      });
+      setIsSubmitting(false);
+      router.push('/dashboard/vendor/drivers');
+    }, 1200);
+  };
+
   return (
     <div className="p-8 max-w-3xl mx-auto space-y-8">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
+        <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-3xl font-bold font-headline">Hire New Driver</h1>
+        <h1 className="text-3xl font-bold font-headline">Add New Driver</h1>
       </div>
 
       <Card className="border-none shadow-lg rounded-3xl overflow-hidden">
@@ -83,9 +102,17 @@ export default function AddDriverPage() {
           </div>
         </CardContent>
         <CardFooter className="bg-muted/10 p-8 border-t flex justify-end gap-3">
-          <Button variant="ghost" onClick={() => window.history.back()}>Cancel</Button>
-          <Button className="rounded-xl px-8 shadow-lg shadow-primary/20 gap-2">
-            <CheckCircle2 className="h-5 w-5" /> Add to Fleet
+          <Button variant="ghost" onClick={() => router.back()} disabled={isSubmitting}>Cancel</Button>
+          <Button 
+            className="rounded-xl px-8 shadow-lg shadow-primary/20 gap-2"
+            onClick={handleAddToFleet}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Inviting..." : (
+              <>
+                <CheckCircle2 className="h-5 w-5" /> Add to Fleet
+              </>
+            )}
           </Button>
         </CardFooter>
       </Card>
