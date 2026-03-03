@@ -1,10 +1,10 @@
-
 "use client";
 
 import React from 'react';
 import { Wallet, TrendingUp, Calendar, ArrowUpRight, ChevronRight, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { 
   BarChart, 
   Bar, 
@@ -15,7 +15,6 @@ import {
   ResponsiveContainer, 
   Cell 
 } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 const data = [
   { day: 'Mon', amount: 45 },
@@ -56,7 +55,7 @@ export default function DriverEarningsPage() {
                 Available for withdrawal
               </p>
             </div>
-            <Button className="mt-6 bg-white text-primary hover:bg-white/90 rounded-xl h-12">Withdraw Now</Button>
+            <Button className="mt-6 bg-white text-primary hover:bg-white/90 rounded-xl h-12 w-full">Withdraw Now</Button>
           </div>
         </Card>
 
