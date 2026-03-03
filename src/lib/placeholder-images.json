@@ -1,3 +1,34 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-water",
+      "description": "Crystal clear water splash",
+      "imageUrl": "https://images.unsplash.com/photo-1533167649158-6d508895b680?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx3YXRlciUyMHNwbGFzaHxlbnwwfHx8fDE3NzI0Mzk5OTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "water splash"
+    },
+    {
+      "id": "bottle-1",
+      "description": "Premium bottled water",
+      "imageUrl": "https://images.unsplash.com/photo-1554171595-4547fca1d379?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxib3R0bGVkJTIwd2F0ZXJ8ZW58MHx8fHwxNzcyNTMwNTExfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "bottled water"
+    },
+    {
+      "id": "bag-water",
+      "description": "Purified sachet water bags",
+      "imageUrl": "https://images.unsplash.com/photo-1662926912257-514bbe9d4ba3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzYWNoZXQlMjB3YXRlcnxlbnwwfHx8fDE3NzI1MzA1MTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "sachet water"
+    },
+    {
+      "id": "vendor-1",
+      "description": "Aqua Pure Vendor Store",
+      "imageUrl": "https://images.unsplash.com/photo-1671718589773-7a1477371748?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHx3YXRlciUyMGZhY3Rvcnl8ZW58MHx8fHwxNzcyNTMwNTEwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "water factory"
+    },
+    {
+      "id": "vendor-2",
+      "description": "Blue Wave Distribution",
+      "imageUrl": "https://images.unsplash.com/photo-1559392681-97e3add0d103?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8d2FyZWhvdXNlJTIwd2F0ZXJ8ZW58MHx8fHwxNzcyNTMwNTEwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "warehouse water"
+    }
+  ]
 }
