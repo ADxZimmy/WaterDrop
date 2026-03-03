@@ -68,22 +68,31 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Link href="/cart">
                 <Button variant="ghost" size="icon" className="relative">
                   <ShoppingCart className="h-5 w-5" />
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 rounded-full">2</Badge>
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 rounded-full text-[10px]">2</Badge>
                 </Button>
               </Link>
+              <div className="hidden sm:flex items-center gap-2">
+                <Link href="/dashboard/vendor">
+                  <Button variant="outline" size="sm" className="gap-2 border-primary/20 hover:bg-primary/5 text-primary">
+                    <Store className="h-4 w-4" />
+                    Vendor
+                  </Button>
+                </Link>
+                <Link href="/dashboard/driver">
+                  <Button variant="outline" size="sm" className="gap-2 border-accent/20 hover:bg-accent/5 text-accent">
+                    <Truck className="h-4 w-4" />
+                    Driver
+                  </Button>
+                </Link>
+              </div>
               <Link href="/auth/login">
-                <Button variant="outline" className="hidden sm:flex items-center gap-2">
+                <Button variant="default" className="hidden sm:flex items-center gap-2 rounded-xl">
                   <User className="h-4 w-4" />
                   Sign In
-                </Button>
-              </Link>
-              <Link href="/dashboard/vendor">
-                <Button variant="default" className="hidden sm:flex bg-accent hover:bg-accent/90">
-                  Vendor Portal
                 </Button>
               </Link>
             </div>
@@ -243,24 +252,24 @@ export default function Home() {
             <div>
               <h4 className="font-bold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/products" className="hover:text-primary">All Products</Link></li>
-                <li><Link href="/vendors" className="hover:text-primary">Featured Vendors</Link></li>
+                <li><Link href="#" className="hover:text-primary">All Products</Link></li>
+                <li><Link href="#" className="hover:text-primary">Featured Vendors</Link></li>
                 <li><Link href="/cart" className="hover:text-primary">Shopping Cart</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-4">Support</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/help" className="hover:text-primary">Help Center</Link></li>
-                <li><Link href="/delivery-tracking" className="hover:text-primary">Track Order</Link></li>
-                <li><Link href="/contact" className="hover:text-primary">Contact Us</Link></li>
+                <li><Link href="#" className="hover:text-primary">Help Center</Link></li>
+                <li><Link href="#" className="hover:text-primary">Track Order</Link></li>
+                <li><Link href="#" className="hover:text-primary">Contact Us</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-4">Join Us</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/auth/register?role=vendor" className="hover:text-primary">Become a Vendor</Link></li>
-                <li><Link href="/auth/register?role=driver" className="hover:text-primary">Drive with AquaMart</Link></li>
+                <li><Link href="/auth/register" className="hover:text-primary">Become a Vendor</Link></li>
+                <li><Link href="/auth/register" className="hover:text-primary">Drive with AquaMart</Link></li>
               </ul>
             </div>
           </div>

@@ -1,5 +1,8 @@
-import React from 'react';
+"use client";
+
+import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Droplets, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +11,21 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function LoginPage() {
+  const [role, setRole] = useState<string>('customer');
+  const router = useRouter();
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Simple mock navigation based on selected role
+    if (role === 'vendor') {
+      router.push('/dashboard/vendor');
+    } else if (role === 'driver') {
+      router.push('/dashboard/driver');
+    } else {
+      router.push('/');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -33,14 +51,14 @@ export default function LoginPage() {
             <CardDescription className="text-primary-foreground/80">Choose your account type</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            <Tabs defaultValue="customer" className="w-full">
+            <Tabs defaultValue="customer" onValueChange={setRole} className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-8">
                 <TabsTrigger value="customer">Customer</TabsTrigger>
                 <TabsTrigger value="vendor">Vendor</TabsTrigger>
                 <TabsTrigger value="driver">Driver</TabsTrigger>
               </TabsList>
               
-              <form className="space-y-6">
+              <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <div className="relative">
@@ -60,8 +78,8 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <Button className="w-full h-11 rounded-xl shadow-lg shadow-primary/20">
-                  Sign In
+                <Button type="submit" className="w-full h-11 rounded-xl shadow-lg shadow-primary/20">
+                  Sign In as {role.charAt(0).toUpperCase() + role.slice(1)}
                 </Button>
               </form>
             </Tabs>

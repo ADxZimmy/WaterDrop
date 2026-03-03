@@ -3,13 +3,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, ShoppingBag, User, LayoutDashboard } from 'lucide-react';
+import { Home, Search, ShoppingBag, User, LayoutDashboard, Truck } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 const mobileItems = [
   { name: 'Home', href: '/', icon: Home },
   { name: 'Search', href: '#', icon: Search },
-  { name: 'Cart', href: '#', icon: ShoppingBag },
+  { name: 'Driver', href: '/dashboard/driver', icon: Truck },
   { name: 'Vendor', href: '/dashboard/vendor', icon: LayoutDashboard },
   { name: 'Profile', href: '/auth/login', icon: User },
 ];
@@ -17,8 +17,7 @@ const mobileItems = [
 export function MobileNav() {
   const pathname = usePathname();
 
-  // Hide mobile nav if we are in the dashboard (it has its own layout usually, but for MVP we might want to keep it simple)
-  // Or if we are in auth screens
+  // Hide mobile nav in auth screens
   const isAuth = pathname?.startsWith('/auth');
 
   if (isAuth) return null;
