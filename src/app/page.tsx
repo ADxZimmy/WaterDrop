@@ -1,11 +1,10 @@
-
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingCart, Search, Store, Droplets, ArrowRight, User, Truck, Star, MapPin } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -29,6 +28,24 @@ const vendors = [
     distance: "2.4 km",
     image: "vendor-2",
     category: "Bags of Water"
+  },
+  {
+    id: "3",
+    name: "Crystal Spring",
+    rating: 4.9,
+    reviews: 210,
+    distance: "0.8 km",
+    image: "vendor-1",
+    category: "Bottled Water"
+  },
+  {
+    id: "4",
+    name: "Oasis Flow",
+    rating: 4.7,
+    reviews: 156,
+    distance: "3.1 km",
+    image: "vendor-2",
+    category: "Bags of Water"
   }
 ];
 
@@ -40,7 +57,7 @@ export default function Home() {
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center gap-2">
               <Droplets className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold tracking-tight text-primary font-headline">AquaMart</span>
+              <span className="text-2xl font-bold tracking-tight text-primary font-headline">WaterDrop</span>
             </div>
             
             <div className="hidden md:flex flex-1 max-w-md mx-8">
@@ -132,11 +149,11 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="flex overflow-x-auto gap-6 pb-8 no-scrollbar snap-x">
               {vendors.map((vendor) => (
-                <Link key={vendor.id} href={`/vendors/${vendor.id}`}>
-                  <Card className="group hover:shadow-2xl transition-all duration-300 border-none bg-white rounded-3xl overflow-hidden flex flex-col sm:flex-row h-full">
-                    <div className="relative w-full sm:w-48 h-48 sm:h-auto overflow-hidden shrink-0">
+                <Link key={vendor.id} href={`/vendors/${vendor.id}`} className="snap-start shrink-0">
+                  <Card className="w-72 group hover:shadow-2xl transition-all duration-300 border-none bg-white rounded-3xl overflow-hidden flex flex-col h-full">
+                    <div className="relative w-full h-44 overflow-hidden shrink-0">
                       <Image 
                         src={PlaceHolderImages.find(img => img.id === vendor.image)?.imageUrl || ''} 
                         alt={vendor.name}
@@ -145,19 +162,17 @@ export default function Home() {
                       />
                     </div>
                     <CardContent className="p-6 flex-1 flex flex-col justify-center">
-                      <div className="flex justify-between items-start mb-2">
-                        <CardTitle className="text-xl font-bold">{vendor.name}</CardTitle>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mt-2">
+                      <h4 className="text-xl font-bold truncate">{vendor.name}</h4>
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-2">
                         <div className="flex items-center gap-1 text-yellow-500 font-bold">
-                          <Star className="h-4 w-4 fill-current" /> {vendor.rating}
+                          <Star className="h-3 w-3 fill-current" /> {vendor.rating}
                         </div>
                         <div className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" /> {vendor.distance}
+                          <MapPin className="h-3 w-3" /> {vendor.distance}
                         </div>
-                        <Badge variant="outline" className="text-[10px] uppercase tracking-wider">{vendor.category}</Badge>
                       </div>
-                      <div className="mt-6 flex items-center gap-1 text-primary font-bold group-hover:gap-2 transition-all">
+                      <Badge variant="outline" className="text-[10px] uppercase tracking-wider mt-3 w-fit">{vendor.category}</Badge>
+                      <div className="mt-4 flex items-center gap-1 text-primary text-sm font-bold group-hover:gap-2 transition-all">
                         View Products <ArrowRight className="h-4 w-4" />
                       </div>
                     </CardContent>
@@ -175,7 +190,7 @@ export default function Home() {
             <div className="col-span-1 md:col-span-1">
               <div className="flex items-center gap-2 mb-6">
                 <Droplets className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold tracking-tight text-primary font-headline">AquaMart</span>
+                <span className="text-xl font-bold tracking-tight text-primary font-headline">WaterDrop</span>
               </div>
               <p className="text-sm text-muted-foreground">The ultimate marketplace for water.</p>
             </div>
@@ -183,7 +198,7 @@ export default function Home() {
               <h4 className="font-bold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link href="#vendors" className="hover:text-primary">All Vendors</Link></li>
-                <li><Link href="/dashboard/customer/orders" className="hover:text-primary">Track Order</Link></li>
+                <li><Link href="/dashboard/customer/track-order" className="hover:text-primary">Track Order</Link></li>
               </ul>
             </div>
             <div>
@@ -197,12 +212,12 @@ export default function Home() {
               <h4 className="font-bold mb-4">Join Us</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link href="/auth/register" className="hover:text-primary">Become a Vendor</Link></li>
-                <li><Link href="/auth/register" className="hover:text-primary">Drive with AquaMart</Link></li>
+                <li><Link href="/auth/register" className="hover:text-primary">Drive with WaterDrop</Link></li>
               </ul>
             </div>
           </div>
           <div className="border-t mt-12 pt-8 text-center text-sm text-muted-foreground">
-            © 2024 AquaMart Marketplace. All rights reserved.
+            © 2024 WaterDrop Marketplace. All rights reserved.
           </div>
         </div>
       </footer>

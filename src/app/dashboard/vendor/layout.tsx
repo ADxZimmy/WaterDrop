@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -15,7 +14,8 @@ import {
   BarChart3,
   Menu,
   Truck,
-  DollarSign
+  DollarSign,
+  Bell
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
     <div className="flex flex-col h-full">
       <div className="p-6 flex items-center gap-2 border-b">
         <Droplets className="h-8 w-8 text-primary" />
-        <span className="text-2xl font-bold tracking-tight text-primary font-headline">Vendor Hub</span>
+        <span className="text-2xl font-bold tracking-tight text-primary font-headline">WaterDrop</span>
       </div>
       
       <nav className="flex-1 p-4 space-y-1">
@@ -83,25 +83,39 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       </aside>
 
       <div className="flex-1 flex flex-col min-h-screen">
-        <header className="lg:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b p-4 flex items-center justify-between">
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b p-4 px-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
+            <div className="lg:hidden">
+              <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-72">
+                  <SheetHeader className="sr-only">
+                    <SheetTitle>WaterDrop Vendor Hub</SheetTitle>
+                    <SheetDescription>Main navigation for the vendor dashboard</SheetDescription>
+                  </SheetHeader>
+                  <SidebarContent />
+                </SheetContent>
+              </Sheet>
+            </div>
             <Droplets className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg font-headline">Vendor Hub</span>
+            <span className="font-bold text-lg font-headline">WaterDrop Vendor</span>
           </div>
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
+          
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard/vendor/notifications">
+              <Button variant="ghost" size="icon" className="relative rounded-full">
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-2 right-2 h-2 w-2 bg-destructive rounded-full border-2 border-white"></span>
               </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-72">
-              <SheetHeader className="sr-only">
-                <SheetTitle>Navigation Menu</SheetTitle>
-                <SheetDescription>Access store management sections</SheetDescription>
-              </SheetHeader>
-              <SidebarContent />
-            </SheetContent>
-          </Sheet>
+            </Link>
+            <div className="hidden sm:flex h-8 w-8 rounded-full bg-primary/10 items-center justify-center text-primary font-bold text-xs">
+              AP
+            </div>
+          </div>
         </header>
 
         <main className="flex-1 bg-muted/20">

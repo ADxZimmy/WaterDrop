@@ -5,18 +5,18 @@ import { MobileNav } from "@/components/mobile-nav";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 
 export const metadata: Metadata = {
-  title: 'AquaMart | Fresh Water Marketplace',
+  title: 'WaterDrop | Fresh Water Marketplace',
   description: 'Your one-stop shop for bottled and bag water delivered to your doorstep.',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'AquaMart',
+    title: 'WaterDrop',
   },
   formatDetection: {
     telephone: true,
   },
-  applicationName: 'AquaMart',
-  authors: [{ name: 'AquaMart Team' }],
+  applicationName: 'WaterDrop',
+  authors: [{ name: 'WaterDrop Team' }],
   keywords: ['water', 'delivery', 'marketplace', 'pwa'],
 };
 

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -36,7 +35,7 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
         <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white">
           <Truck className="h-6 w-6" />
         </div>
-        <span className="text-xl font-bold tracking-tight text-primary font-headline">Driver Portal</span>
+        <span className="text-xl font-bold tracking-tight text-primary font-headline">WaterDrop</span>
       </div>
       
       <nav className="flex-1 p-4 space-y-1">
@@ -90,24 +89,26 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 w-72">
                   <SheetHeader className="sr-only">
-                    <SheetTitle>Navigation Menu</SheetTitle>
+                    <SheetTitle>WaterDrop Navigation</SheetTitle>
                     <SheetDescription>Access driver management sections</SheetDescription>
                   </SheetHeader>
                   <SidebarContent />
                 </SheetContent>
               </Sheet>
             </div>
-            <h1 className="text-lg font-bold font-headline hidden lg:block">Welcome back, John</h1>
+            <h1 className="text-lg font-bold font-headline hidden lg:block">Welcome back, Driver</h1>
             <div className="lg:hidden flex items-center gap-2">
               <Truck className="h-5 w-5 text-primary" />
-              <span className="font-bold">Driver Portal</span>
+              <span className="font-bold">WaterDrop</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="rounded-full relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-2 right-2 h-2 w-2 bg-destructive rounded-full border-2 border-white"></span>
-            </Button>
+            <Link href="/dashboard/driver/notifications">
+              <Button variant="ghost" size="icon" className="rounded-full relative">
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-2 right-2 h-2 w-2 bg-destructive rounded-full border-2 border-white"></span>
+              </Button>
+            </Link>
             <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full border border-green-100">
               <span className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></span>
               <span className="text-[10px] font-bold uppercase tracking-tight text-green-700">Online</span>

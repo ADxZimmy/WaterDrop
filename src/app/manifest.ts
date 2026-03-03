@@ -2,8 +2,8 @@ import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'AquaMart | Fresh Water Marketplace',
-    short_name: 'AquaMart',
+    name: 'WaterDrop | Fresh Water Marketplace',
+    short_name: 'WaterDrop',
     description: 'Fresh Water Marketplace delivered to your doorstep.',
     start_url: '/',
     display: 'standalone',

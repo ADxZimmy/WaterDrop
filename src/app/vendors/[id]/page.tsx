@@ -1,14 +1,13 @@
-
 "use client";
 
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Star, Clock, MapPin, Phone, Info, ShoppingCart, Store } from 'lucide-react';
+import { ArrowLeft, Star, Clock, MapPin, ShoppingCart, Info } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -69,7 +68,7 @@ export default function VendorDetailPage() {
                 </div>
               </div>
               <Button size="icon" variant="outline" className="rounded-full h-12 w-12 border-primary/20 text-primary">
-                <Phone className="h-5 w-5" />
+                <Info className="h-5 w-5" />
               </Button>
             </div>
           </CardHeader>
