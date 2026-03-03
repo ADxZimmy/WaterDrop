@@ -1,7 +1,9 @@
+"use client";
+
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, Search, Store, Droplets, ArrowRight, User, Truck, Star, MapPin } from 'lucide-react';
+import { ShoppingCart, Search, Store, Droplets, ArrowRight, User, Truck, Star, MapPin, Download } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,7 +122,7 @@ export default function Home() {
           </div>
         </div>
 
-        <section className="relative h-[500px] flex items-center overflow-hidden">
+        <section className="relative h-[550px] flex items-center overflow-hidden">
           <div className="absolute inset-0 z-0">
             <Image 
               src={PlaceHolderImages.find(img => img.id === 'hero-water')?.imageUrl || ''} 
@@ -142,12 +144,24 @@ export default function Home() {
               <p className="text-lg text-muted-foreground mb-8">
                 The largest multi-vendor marketplace for high-quality bottled and sachet water. 
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-wrap gap-4">
                 <Link href="#vendors">
                   <Button size="lg" className="h-14 px-8 rounded-full text-lg shadow-lg">
                     Shop Now
                   </Button>
                 </Link>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="h-14 px-8 rounded-full text-lg gap-2 border-primary/20 text-primary hover:bg-primary/5"
+                  onClick={() => {
+                    const event = new Event('beforeinstallprompt');
+                    window.dispatchEvent(event);
+                  }}
+                >
+                  <Download className="h-5 w-5" />
+                  Get the App
+                </Button>
               </div>
             </div>
           </div>
@@ -213,6 +227,17 @@ export default function Home() {
                 <span className="text-xl font-bold tracking-tight text-primary font-headline">WaterDrop</span>
               </div>
               <p className="text-sm text-muted-foreground">The ultimate marketplace for water.</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-6 rounded-xl gap-2 h-10 w-full"
+                onClick={() => {
+                  localStorage.removeItem('pwa-prompt-dismissed');
+                  window.location.reload();
+                }}
+              >
+                <Download className="h-4 w-4" /> Install App
+              </Button>
             </div>
             <div>
               <h4 className="font-bold mb-4">Quick Links</h4>
