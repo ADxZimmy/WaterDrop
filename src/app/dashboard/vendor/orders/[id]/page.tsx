@@ -1,19 +1,33 @@
-
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, User, Phone, MapPin, Package, Truck, CheckCircle, Clock, MessageSquare, ExternalLink } from 'lucide-react';
+import { ArrowLeft, User, Phone, MapPin, Package, Truck, CheckCircle, Clock, MessageSquare, ExternalLink, ChevronDown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+
+const drivers = [
+  { id: 1, name: "John Driver", status: "Active" },
+  { id: 2, name: "Sarah Delivery", status: "Busy" },
+  { id: 4, name: "Dave Logistics", status: "Active" },
+];
 
 export default function OrderDetailPage() {
   const params = useParams();
+  const [assignedDriver, setAssignedDriver] = useState<string | null>(null);
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8">
+    <div className="p-8 max-w-5xl mx-auto space-y-8 text-foreground">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
           <ArrowLeft className="h-5 w-5" />
@@ -116,10 +130,9 @@ export default function OrderDetailPage() {
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="flex items-center gap-4">
-                <Avatar className="h-14 w-14">
-                  <AvatarImage src="https://picsum.photos/seed/alice/100" />
-                  <AvatarFallback>AJ</AvatarFallback>
-                </Avatar>
+                <div className="h-14 w-14 rounded-full bg-muted overflow-hidden">
+                  <img src="https://picsum.photos/seed/alice/100" alt="Customer" className="h-full w-full object-cover" />
+                </div>
                 <div>
                   <h4 className="font-bold">Alice Johnson</h4>
                   <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10 text-[10px]">Premium Member</Badge>
@@ -151,13 +164,46 @@ export default function OrderDetailPage() {
           <Card className="border-none shadow-sm bg-primary/5 border border-primary/10">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Truck className="h-5 w-5 text-primary" /> Logistics
+                <Truck className="h-5 w-5 text-primary" /> Logistics Allocation
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
-              <div className="p-4 bg-white rounded-xl border border-border text-center">
-                <p className="text-sm text-muted-foreground mb-3">No driver assigned yet</p>
-                <Button variant="outline" className="w-full rounded-xl">Assign Driver</Button>
+              <div className="p-4 bg-white rounded-xl border border-border">
+                {assignedDriver ? (
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground uppercase font-bold text-center">Assigned Driver</p>
+                    <div className="flex items-center gap-3 justify-center">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                        {assignedDriver[0]}
+                      </div>
+                      <p className="font-bold text-sm">{assignedDriver}</p>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full text-xs h-8" onClick={() => setAssignedDriver(null)}>Change Driver</Button>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground mb-3">No driver assigned yet</p>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button className="w-full rounded-xl gap-2 h-11">
+                          Assign Driver <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-56">
+                        <DropdownMenuLabel>Available Drivers</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {drivers.map((driver) => (
+                          <DropdownMenuItem key={driver.id} onClick={() => setAssignedDriver(driver.name)} className="flex items-center justify-between">
+                            <span>{driver.name}</span>
+                            <Badge variant="outline" className={driver.status === 'Active' ? 'text-green-600 bg-green-50 border-green-100' : 'text-blue-600 bg-blue-50 border-blue-100'}>
+                              {driver.status}
+                            </Badge>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Distance:</span>

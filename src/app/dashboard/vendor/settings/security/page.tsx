@@ -1,8 +1,7 @@
-
 "use client";
 
 import React from 'react';
-import { Shield, Key, Smartphone, Lock, UserCheck, Trash2 } from 'lucide-react';
+import { Shield, Key, Smartphone, Lock, UserCheck, Trash2, Monitor } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -11,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 
 export default function SecuritySettingsPage() {
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8">
+    <div className="p-8 max-w-4xl mx-auto space-y-8 text-foreground">
       <div>
         <h1 className="text-3xl font-bold font-headline">Security Center</h1>
         <p className="text-muted-foreground">Protect your store and manage account access.</p>
@@ -50,7 +49,7 @@ export default function SecuritySettingsPage() {
             { name: "iPhone 15 Pro", location: "Blue City, US", active: true },
             { name: "MacBook Pro M2", location: "Blue City, US", active: false },
           ].map((device, i) => (
-            <div key={i} className="flex items-center justify-between p-4 bg-muted/20 rounded-2xl">
+            <div key={i} className="flex items-center justify-between p-4 bg-muted/20 rounded-2xl border border-transparent">
               <div className="flex items-center gap-4">
                 <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
                   {device.name.includes('iPhone') ? <Smartphone className="h-5 w-5" /> : <Monitor className="h-5 w-5" />}

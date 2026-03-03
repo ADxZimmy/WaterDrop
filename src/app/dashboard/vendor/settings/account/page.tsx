@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -13,13 +12,13 @@ export default function AccountSettingsPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold font-headline">Account Settings</h1>
+        <h1 className="text-3xl font-bold font-headline text-foreground">Account Settings</h1>
         <p className="text-muted-foreground">Manage your personal account details and security.</p>
       </div>
 
       <div className="grid gap-8">
         <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
-          <CardHeader className="bg-muted/30 border-b p-6">
+          <CardHeader className="bg-muted/30 border-b p-6 text-foreground">
             <CardTitle className="text-lg">Personal Profile</CardTitle>
             <CardDescription>Your account credentials and identification.</CardDescription>
           </CardHeader>
@@ -37,50 +36,50 @@ export default function AccountSettingsPage() {
               <div className="flex-1 space-y-6 w-full">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" defaultValue="Admin" />
+                    <Label htmlFor="firstName" className="text-foreground">First Name</Label>
+                    <Input id="firstName" defaultValue="Admin" className="bg-white" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" defaultValue="Aqua" />
+                    <Label htmlFor="lastName" className="text-foreground">Last Name</Label>
+                    <Input id="lastName" defaultValue="Aqua" className="bg-white" />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email" className="text-foreground">Email Address</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="email" defaultValue="admin@aquapure.com" className="pl-10" />
+                    <Input id="email" defaultValue="admin@aquapure.com" className="pl-10 bg-white" />
                   </div>
                 </div>
               </div>
             </div>
           </CardContent>
-          <CardFooter className="p-6 border-t flex justify-end">
+          <CardFooter className="p-6 border-t flex justify-end bg-muted/10">
             <Button className="rounded-xl px-8 h-11">Save Profile</Button>
           </CardFooter>
         </Card>
 
         <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
-          <CardHeader className="bg-muted/30 border-b p-6">
+          <CardHeader className="bg-muted/30 border-b p-6 text-foreground">
             <CardTitle className="text-lg">Change Password</CardTitle>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="currentPass">Current Password</Label>
+              <Label htmlFor="currentPass" className="text-foreground">Current Password</Label>
               <Input id="currentPass" type="password" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="newPass">New Password</Label>
+                <Label htmlFor="newPass" className="text-foreground">New Password</Label>
                 <Input id="newPass" type="password" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPass">Confirm New Password</Label>
+                <Label htmlFor="confirmPass" className="text-foreground">Confirm New Password</Label>
                 <Input id="confirmPass" type="password" />
               </div>
             </div>
           </CardContent>
-          <CardFooter className="p-6 border-t flex justify-end">
+          <CardFooter className="p-6 border-t flex justify-end bg-muted/10">
             <Button variant="outline" className="rounded-xl px-8 h-11">Update Password</Button>
           </CardFooter>
         </Card>

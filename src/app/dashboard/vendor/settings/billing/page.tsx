@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -12,13 +11,13 @@ export default function BillingSettingsPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold font-headline">Billing & Payouts</h1>
+        <h1 className="text-3xl font-bold font-headline text-foreground">Billing & Payouts</h1>
         <p className="text-muted-foreground">Manage your payment methods and view earning statements.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="border-none shadow-sm rounded-3xl overflow-hidden border-primary/10">
-          <CardHeader className="bg-primary/5 p-6 flex flex-row items-center justify-between">
+          <CardHeader className="bg-primary/5 p-6 flex flex-row items-center justify-between text-foreground">
             <div>
               <CardTitle className="text-lg">Payout Method</CardTitle>
               <CardDescription>Where your funds are sent.</CardDescription>
@@ -32,7 +31,7 @@ export default function BillingSettingsPage() {
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="font-bold text-sm">Chase Business</p>
+                  <p className="font-bold text-sm text-foreground">Chase Business</p>
                   <p className="text-xs text-muted-foreground">Ending in •••• 1245</p>
                 </div>
               </div>
@@ -42,15 +41,15 @@ export default function BillingSettingsPage() {
         </Card>
 
         <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
-          <CardHeader className="bg-muted/30 p-6 flex flex-row items-center justify-between">
+          <CardHeader className="bg-muted/30 p-6 flex flex-row items-center justify-between text-foreground">
             <div>
               <CardTitle className="text-lg">Subscription</CardTitle>
-              <CardDescription>AquaMart Pro Plan</CardDescription>
+              <CardDescription>WaterDrop Pro Plan</CardDescription>
             </div>
             <Badge className="bg-primary/10 text-primary border-none">Active</Badge>
           </CardHeader>
           <CardContent className="p-6">
-            <p className="text-2xl font-bold">$29.00 <span className="text-sm font-normal text-muted-foreground">/ month</span></p>
+            <p className="text-2xl font-bold text-foreground">$29.00 <span className="text-sm font-normal text-muted-foreground">/ month</span></p>
             <p className="text-xs text-muted-foreground mt-1">Next billing date: Nov 12, 2024</p>
           </CardContent>
           <CardFooter className="p-4 px-6 pt-0">
@@ -59,8 +58,8 @@ export default function BillingSettingsPage() {
         </Card>
       </div>
 
-      <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
-        <CardHeader className="p-6 border-b flex flex-row items-center justify-between">
+      <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white">
+        <CardHeader className="p-6 border-b flex flex-row items-center justify-between text-foreground">
           <CardTitle className="text-lg">Billing History</CardTitle>
           <Button variant="ghost" className="text-primary text-sm gap-2">
             Download All <ArrowUpRight className="h-4 w-4" />
@@ -82,9 +81,9 @@ export default function BillingSettingsPage() {
               { id: "INV-2024-003", date: "Aug 12, 2024", amount: "$29.00", status: "Paid" },
             ].map((inv) => (
               <TableRow key={inv.id}>
-                <TableCell className="pl-6 font-bold">{inv.id}</TableCell>
+                <TableCell className="pl-6 font-bold text-foreground">{inv.id}</TableCell>
                 <TableCell className="text-muted-foreground">{inv.date}</TableCell>
-                <TableCell className="font-medium">{inv.amount}</TableCell>
+                <TableCell className="font-medium text-foreground">{inv.amount}</TableCell>
                 <TableCell className="text-right pr-6">
                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                     {inv.status}

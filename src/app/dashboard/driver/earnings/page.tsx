@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -90,25 +89,27 @@ export default function DriverEarningsPage() {
         <h3 className="font-bold text-lg">Daily Activity</h3>
         <div className="space-y-3">
           {[
-            { date: 'Today, Oct 24', trips: 12, earnings: '$142.50' },
-            { date: 'Yesterday, Oct 23', trips: 8, earnings: '$88.20' },
-            { date: 'Wednesday, Oct 22', trips: 15, earnings: '$185.00' },
+            { date: 'Oct-24-2024', label: 'Today, Oct 24', trips: 12, earnings: '$142.50' },
+            { date: 'Oct-23-2024', label: 'Yesterday, Oct 23', trips: 8, earnings: '$88.20' },
+            { date: 'Oct-22-2024', label: 'Wednesday, Oct 22', trips: 15, earnings: '$185.00' },
           ].map((day, i) => (
-            <div key={i} className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-transparent hover:border-primary/20 transition-all group cursor-pointer">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-primary/5 rounded-2xl flex items-center justify-center text-primary transition-transform group-hover:scale-110">
-                  <TrendingUp className="h-6 w-6" />
+            <Link key={i} href={`/dashboard/driver/activity/${day.date}`}>
+              <div className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-transparent hover:border-primary/20 transition-all group cursor-pointer mb-3">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 bg-primary/5 rounded-2xl flex items-center justify-center text-primary transition-transform group-hover:scale-110">
+                    <TrendingUp className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm">{day.label}</p>
+                    <p className="text-xs text-muted-foreground">{day.trips} Trips completed</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-bold text-sm">{day.date}</p>
-                  <p className="text-xs text-muted-foreground">{day.trips} Trips completed</p>
+                <div className="text-right flex items-center gap-3">
+                  <p className="font-bold text-lg text-primary">{day.earnings}</p>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
-              <div className="text-right flex items-center gap-3">
-                <p className="font-bold text-lg text-primary">{day.earnings}</p>
-                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

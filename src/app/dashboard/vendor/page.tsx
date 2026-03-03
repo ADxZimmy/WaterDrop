@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { 
   TrendingUp, 
   Users, 
@@ -73,7 +74,9 @@ export default function VendorDashboardOverview() {
         <Card className="border-none shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">Recent Orders</CardTitle>
-            <Button variant="link" size="sm" className="text-primary">View All</Button>
+            <Link href="/dashboard/vendor/orders">
+              <Button variant="link" size="sm" className="text-primary">View All</Button>
+            </Link>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">

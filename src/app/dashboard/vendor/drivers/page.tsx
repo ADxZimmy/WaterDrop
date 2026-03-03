@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -28,7 +27,7 @@ export default function VendorDriversPage() {
         </div>
         <Link href="/dashboard/vendor/drivers/new">
           <Button className="rounded-xl h-11 gap-2 shadow-lg shadow-primary/20">
-            <Plus className="h-5 w-5" /> Hire New Driver
+            <Plus className="h-5 w-5" /> Add New Driver
           </Button>
         </Link>
       </div>

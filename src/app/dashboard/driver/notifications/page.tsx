@@ -53,15 +53,15 @@ export default function DriverNotificationsPage() {
     <div className="p-4 md:p-8 space-y-6 max-w-3xl mx-auto">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold font-headline">Notifications</h1>
+          <h1 className="text-3xl font-bold font-headline text-foreground">Notifications</h1>
           <p className="text-muted-foreground">Stay updated with your latest activities.</p>
         </div>
-        <Badge variant="outline" className="h-8">Mark all as read</Badge>
+        <Badge variant="outline" className="h-8 cursor-pointer hover:bg-muted">Mark all as read</Badge>
       </div>
 
       <div className="space-y-3">
         {notifications.map((notif) => (
-          <Card key={notif.id} className={`border-none shadow-sm overflow-hidden hover:shadow-md transition-all group ${notif.unread ? 'bg-primary/5' : 'bg-white'}`}>
+          <Card key={notif.id} className={`border-none shadow-sm overflow-hidden hover:shadow-md transition-all group ${notif.unread ? 'bg-primary/5 border-l-4 border-primary' : 'bg-white border-l-4 border-transparent'}`}>
             <CardContent className="p-4 flex gap-4">
               <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ${notif.color}`}>
                 <notif.icon className="h-6 w-6" />
