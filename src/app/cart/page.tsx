@@ -17,7 +17,7 @@ const cartItems = [
 ];
 
 export default function CartPage() {
-  const [step, setStep] = sea<'cart' | 'checkout' | 'success'>('cart');
+  const [step, setStep] = useState<'cart' | 'checkout' | 'success'>('cart');
   
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
   const deliveryFee = 2.50;
