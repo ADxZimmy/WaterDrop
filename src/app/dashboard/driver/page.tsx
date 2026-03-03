@@ -1,10 +1,11 @@
+"use client";
 
 import React from 'react';
+import Link from 'next/link';
 import { MapPin, Phone, Truck, CheckCircle, Navigation, Clock, User, MessageSquare, ChevronRight } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const activeDeliveries = [
   {
@@ -89,10 +90,12 @@ export default function DriverDashboard() {
               </div>
             </CardContent>
             <CardFooter className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="rounded-xl h-11 gap-2">
-                <Navigation className="h-4 w-4" />
-                Navigate
-              </Button>
+              <Link href={`/dashboard/driver/navigate/${delivery.id}`} className="w-full">
+                <Button variant="outline" className="w-full rounded-xl h-11 gap-2">
+                  <Navigation className="h-4 w-4" />
+                  Navigate
+                </Button>
+              </Link>
               <Button className="rounded-xl h-11 gap-2">
                 <CheckCircle className="h-4 w-4" />
                 Complete
