@@ -18,6 +18,8 @@ export default function RegisterPage() {
     e.preventDefault();
     if (role === 'vendor') {
       router.push('/auth/onboarding/vendor');
+    } else if (role === 'driver') {
+      router.push('/auth/onboarding/driver');
     } else {
       router.push('/');
     }
@@ -34,7 +36,7 @@ export default function RegisterPage() {
           <Droplets className="h-12 w-12 text-primary" />
         </div>
         <h2 className="text-center text-3xl font-extrabold text-foreground font-headline">
-          Join AquaMart
+          Join WaterDrop
         </h2>
         <p className="mt-2 text-center text-sm text-muted-foreground">
           Create your account to start ordering or selling water.
@@ -92,7 +94,7 @@ export default function RegisterPage() {
                 </div>
 
                 <Button type="submit" className="w-full h-11 rounded-xl shadow-lg shadow-primary/20 mt-2">
-                  {role === 'vendor' ? 'Continue to Onboarding' : 'Create Account'}
+                  {role === 'customer' ? 'Create Account' : 'Continue to Onboarding'}
                 </Button>
               </form>
             </Tabs>
