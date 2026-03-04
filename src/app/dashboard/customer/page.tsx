@@ -32,11 +32,18 @@ export default function CustomerDashboard() {
   };
 
   const menuItems = [
-    { name: "My Orders", icon: ShoppingBag, href: "/dashboard/customer/orders", desc: "Track, return, or buy items again" },
-    { name: "Saved Addresses", icon: MapPin, href: "/dashboard/customer/settings/addresses", desc: "Manage your delivery locations" },
-    { name: "Payment Methods", icon: CreditCard, href: "/dashboard/customer/settings/payments", desc: "Manage your cards and wallet" },
-    { name: "Notifications", icon: Bell, href: "/dashboard/customer/settings/notifications", desc: "Manage alerts and news", badge: "2" },
-    { name: "Settings", icon: Settings, href: "/dashboard/customer/settings", desc: "Privacy, security, and account preferences" },
+    { 
+      name: "My Orders", 
+      icon: ShoppingBag, 
+      href: "/dashboard/customer/orders", 
+      desc: "Track and manage your water deliveries" 
+    },
+    { 
+      name: "Account Settings", 
+      icon: Settings, 
+      href: "/dashboard/customer/settings", 
+      desc: "Manage profile, addresses, and security" 
+    },
   ];
 
   return (
@@ -104,11 +111,6 @@ export default function CustomerDashboard() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <h4 className="font-bold text-sm">{item.name}</h4>
-                      {item.badge && (
-                        <Badge className="h-5 w-5 p-0 flex items-center justify-center rounded-full bg-destructive border-none text-[10px]">
-                          {item.badge}
-                        </Badge>
-                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">{item.desc}</p>
                   </div>
