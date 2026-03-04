@@ -3,6 +3,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   User, 
   MapPin, 
@@ -13,7 +14,8 @@ import {
   LogOut, 
   Bell, 
   Heart,
-  Droplets
+  Droplets,
+  ArrowLeft
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -22,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
 export default function CustomerDashboard() {
+  const router = useRouter();
   const profile = {
     name: "John Doe",
     email: "john.doe@example.com",
@@ -50,15 +53,18 @@ export default function CustomerDashboard() {
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="bg-primary text-primary-foreground p-8 pb-20 rounded-b-[40px] shadow-lg">
-        <div className="max-w-2xl mx-auto flex justify-between items-center mb-8">
+        <div className="max-w-2xl mx-auto flex items-center mb-8">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full hover:bg-white/10 mr-4"
+            onClick={() => router.push('/?loggedin=true')}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           <Link href="/?loggedin=true" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <Droplets className="h-6 w-6" />
             <span className="font-bold text-xl tracking-tight font-headline">WaterDrop</span>
-          </Link>
-          <Link href="/dashboard/customer/settings/notifications">
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10">
-              <Bell className="h-5 w-5" />
-            </Button>
           </Link>
         </div>
 
