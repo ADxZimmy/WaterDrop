@@ -130,7 +130,7 @@ export default function CartPage() {
 
               <section>
                 <h3 className="font-bold mb-4 flex items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Payment Method</h3>
-                <RadioGroup defaultValue="card" className="space-y-3">
+                <RadioGroup defaultValue="saved_card" className="space-y-3">
                   <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
                       <CreditCard className="h-5 w-5 text-muted-foreground" />
@@ -138,7 +138,19 @@ export default function CartPage() {
                         <p className="font-bold text-sm">Add debit/credit card</p>
                       </div>
                     </div>
-                    <RadioGroupItem value="card" />
+                    <RadioGroupItem value="new_card" />
+                  </Label>
+                  <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="relative h-5 w-5 flex items-center justify-center">
+                        <CreditCard className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="font-bold text-sm">Visa ending in 4452</p>
+                        <p className="text-[10px] text-muted-foreground uppercase">Previously added card</p>
+                      </div>
+                    </div>
+                    <RadioGroupItem value="saved_card" />
                   </Label>
                   <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
