@@ -1,9 +1,8 @@
-
 "use client";
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Trash2, Plus, Minus, CreditCard, Truck, MapPin, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Plus, Minus, CreditCard, Truck, MapPin, CheckCircle2, Zap } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,9 +18,10 @@ const cartItems = [
 
 export default function CartPage() {
   const [step, setStep] = useState<'cart' | 'checkout' | 'success'>('cart');
+  const [deliveryOption, setDeliveryOption] = useState<'standard' | 'priority'>('standard');
   
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
-  const deliveryFee = 2.50;
+  const deliveryFee = deliveryOption === 'standard' ? 0.00 : 5.00;
   const total = subtotal + deliveryFee;
 
   if (step === 'success') {
@@ -31,7 +31,7 @@ export default function CartPage() {
           <CheckCircle2 className="h-12 w-12" />
         </div>
         <h1 className="text-3xl font-bold font-headline mb-2">Order Confirmed!</h1>
-        <p className="text-muted-foreground mb-8 max-w-xs">Your water is being prepared and will be delivered in approximately 12 minutes.</p>
+        <p className="text-muted-foreground mb-8 max-w-xs">Your water is being prepared and will be delivered in approximately {deliveryOption === 'priority' ? '8' : '12'} minutes.</p>
         <div className="space-y-4 w-full max-w-xs">
           <Link href="/dashboard/customer/track-order">
             <Button className="w-full h-14 rounded-2xl text-lg shadow-lg shadow-primary/20">Track Order Now</Button>
@@ -99,7 +99,7 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Delivery Fee</span>
-                  <span className="font-medium">${deliveryFee.toFixed(2)}</span>
+                  <span className="font-medium">{deliveryFee === 0 ? 'Free' : `$${deliveryFee.toFixed(2)}`}</span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between text-lg font-bold">
@@ -152,15 +152,38 @@ export default function CartPage() {
 
               <section>
                 <h3 className="font-bold mb-4 flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> Delivery Options</h3>
-                <Card className="border-none shadow-sm p-4">
-                  <div className="flex justify-between items-center">
-                    <div className="space-y-0.5">
-                      <p className="font-bold text-sm">Standard Delivery</p>
-                      <p className="text-xs text-muted-foreground">Arriving in 15-25 mins</p>
+                <RadioGroup 
+                  value={deliveryOption} 
+                  onValueChange={(v) => setDeliveryOption(v as 'standard' | 'priority')}
+                  className="space-y-3"
+                >
+                  <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Truck className="h-5 w-5 text-muted-foreground" />
+                      <div className="space-y-0.5">
+                        <p className="font-bold text-sm">Standard Delivery</p>
+                        <p className="text-xs text-muted-foreground">Arriving in 15-25 mins</p>
+                      </div>
                     </div>
-                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10">Free</Badge>
-                  </div>
-                </Card>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10">Free</Badge>
+                      <RadioGroupItem value="standard" />
+                    </div>
+                  </Label>
+                  <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Zap className="h-5 w-5 text-accent" />
+                      <div className="space-y-0.5">
+                        <p className="font-bold text-sm text-accent">Priority Delivery</p>
+                        <p className="text-xs text-muted-foreground">Arriving in 5-10 mins</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="font-bold text-sm">$5.00</p>
+                      <RadioGroupItem value="priority" />
+                    </div>
+                  </Label>
+                </RadioGroup>
               </section>
             </div>
 
