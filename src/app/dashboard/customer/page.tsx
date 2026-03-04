@@ -45,10 +45,10 @@ export default function CustomerDashboard() {
       {/* Header */}
       <header className="bg-primary text-primary-foreground p-8 pb-20 rounded-b-[40px] shadow-lg">
         <div className="max-w-2xl mx-auto flex justify-between items-center mb-8">
-          <div className="flex items-center gap-2">
+          <Link href="/?loggedin=true" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <Droplets className="h-6 w-6" />
             <span className="font-bold text-xl tracking-tight font-headline">WaterDrop</span>
-          </div>
+          </Link>
           <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10">
             <Bell className="h-5 w-5" />
           </Button>

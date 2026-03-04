@@ -1,7 +1,9 @@
+
 "use client";
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Trash2, Plus, Minus, CreditCard, Truck, MapPin, CheckCircle2, Zap } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +21,7 @@ const cartItems = [
 export default function CartPage() {
   const [step, setStep] = useState<'cart' | 'checkout' | 'success'>('cart');
   const [deliveryOption, setDeliveryOption] = useState<'standard' | 'priority'>('standard');
+  const router = useRouter();
   
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
   const deliveryFee = deliveryOption === 'standard' ? 0.00 : 5.00;
@@ -48,7 +51,7 @@ export default function CartPage() {
     <div className="min-h-screen bg-background pb-10">
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="icon" onClick={() => step === 'checkout' ? setStep('cart') : window.history.back()}>
+          <Button variant="ghost" size="icon" onClick={() => step === 'checkout' ? setStep('cart') : router.push('/?loggedin=true')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-2xl font-bold font-headline">{step === 'cart' ? 'Shopping Cart' : 'Checkout'}</h1>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -39,7 +40,7 @@ export default function MyOrdersPage() {
     <div className="min-h-screen bg-background pb-10">
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
-          <Link href="/">
+          <Link href="/?loggedin=true">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-5 w-5" />
             </Button>
