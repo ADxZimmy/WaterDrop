@@ -17,13 +17,14 @@ export default function LoginPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple mock navigation based on selected role
+    // Redirect based on selected role
     if (role === 'vendor') {
       router.push('/dashboard/vendor');
     } else if (role === 'driver') {
       router.push('/dashboard/driver');
     } else {
-      router.push('/dashboard/customer');
+      // Customers now go to the home page with the sidebar enabled
+      router.push('/?loggedin=true');
     }
   };
 

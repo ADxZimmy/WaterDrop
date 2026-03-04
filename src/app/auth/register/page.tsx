@@ -22,7 +22,8 @@ export default function RegisterPage() {
     } else if (role === 'driver') {
       router.push('/auth/onboarding/driver');
     } else {
-      router.push('/dashboard/customer');
+      // New customers now go to home page with logged-in status
+      router.push('/?loggedin=true');
     }
   };
 
