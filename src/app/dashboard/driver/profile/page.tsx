@@ -113,7 +113,7 @@ export default function DriverProfilePage() {
       </div>
 
       <div className="space-y-3">
-        <Link href="/dashboard/driver/profile/security">
+        <Link href="/dashboard/driver/profile/security" className="block">
           <Button variant="ghost" className="w-full justify-between h-14 rounded-2xl bg-white shadow-sm border border-transparent hover:border-primary/20">
             <div className="flex items-center gap-3">
               <Shield className="h-5 w-5 text-muted-foreground" />
@@ -122,13 +122,15 @@ export default function DriverProfilePage() {
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </Button>
         </Link>
-        <Button variant="ghost" className="w-full justify-between h-14 rounded-2xl bg-white shadow-sm border border-transparent hover:border-primary/20">
-          <div className="flex items-center gap-3 text-destructive">
-            <LogOut className="h-5 w-5" />
-            <span className="font-bold">Sign Out</span>
-          </div>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+        <Link href="/auth/login" className="block">
+          <Button variant="ghost" className="w-full justify-between h-14 rounded-2xl bg-white shadow-sm border border-transparent hover:border-primary/20">
+            <div className="flex items-center gap-3 text-destructive">
+              <LogOut className="h-5 w-5" />
+              <span className="font-bold">Sign Out</span>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </Link>
       </div>
     </div>
   );
