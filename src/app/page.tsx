@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -100,7 +101,7 @@ const customerNavItems = [
   { name: 'Marketplace', href: '/', icon: Store },
   { name: 'My Orders', href: '/dashboard/customer/orders', icon: ShoppingBag },
   { name: 'Profile', href: '/dashboard/customer', icon: User },
-  { name: 'Settings', href: '#', icon: Settings },
+  { name: 'Settings', href: '/dashboard/customer/settings', icon: Settings },
 ];
 
 export default function Home() {
@@ -169,7 +170,7 @@ export default function Home() {
 
       <nav className="flex-1 p-4 space-y-1">
         {customerNavItems.map((item) => (
-          <Link key={item.name} href={item.href} onClick={() => setIsSidebarOpen(false)}>
+          <Link key={item.name} href={item.href + (item.href === '/' ? (isLoggedIn ? '?loggedin=true' : '') : '')} onClick={() => setIsSidebarOpen(false)}>
             <Button
               variant="ghost"
               className={cn(
@@ -227,8 +228,10 @@ export default function Home() {
                     </Sheet>
                   </div>
                 )}
-                <Droplets className="h-8 w-8 text-primary" />
-                <span className="text-2xl font-bold tracking-tight text-primary font-headline">WaterDrop</span>
+                <Link href={isLoggedIn ? "/?loggedin=true" : "/"} className="flex items-center gap-2">
+                  <Droplets className="h-8 w-8 text-primary" />
+                  <span className="text-2xl font-bold tracking-tight text-primary font-headline">WaterDrop</span>
+                </Link>
               </div>
               
               <div className="hidden md:flex flex-1 max-w-md mx-8">

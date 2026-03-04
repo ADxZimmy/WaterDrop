@@ -33,11 +33,10 @@ export default function CustomerDashboard() {
 
   const menuItems = [
     { name: "My Orders", icon: ShoppingBag, href: "/dashboard/customer/orders", desc: "Track, return, or buy items again" },
-    { name: "Saved Addresses", icon: MapPin, href: "#", desc: "Manage your delivery locations" },
-    { name: "Payment Methods", icon: CreditCard, href: "#", desc: "Manage your cards and wallet" },
-    { name: "Wishlist", icon: Heart, href: "#", desc: "Your favorite vendors and products" },
-    { name: "Notifications", icon: Bell, href: "#", desc: "Manage alerts and news", badge: "2" },
-    { name: "Settings", icon: Settings, href: "#", desc: "Privacy, security, and account preferences" },
+    { name: "Saved Addresses", icon: MapPin, href: "/dashboard/customer/settings/addresses", desc: "Manage your delivery locations" },
+    { name: "Payment Methods", icon: CreditCard, href: "/dashboard/customer/settings/payments", desc: "Manage your cards and wallet" },
+    { name: "Notifications", icon: Bell, href: "/dashboard/customer/settings/notifications", desc: "Manage alerts and news", badge: "2" },
+    { name: "Settings", icon: Settings, href: "/dashboard/customer/settings", desc: "Privacy, security, and account preferences" },
   ];
 
   return (
@@ -49,9 +48,11 @@ export default function CustomerDashboard() {
             <Droplets className="h-6 w-6" />
             <span className="font-bold text-xl tracking-tight font-headline">WaterDrop</span>
           </Link>
-          <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10">
-            <Bell className="h-5 w-5" />
-          </Button>
+          <Link href="/dashboard/customer/settings/notifications">
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10">
+              <Bell className="h-5 w-5" />
+            </Button>
+          </Link>
         </div>
 
         <div className="max-w-2xl mx-auto flex items-center gap-6">
