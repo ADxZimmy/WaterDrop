@@ -117,15 +117,29 @@ export default function CartPage() {
             <div className="space-y-6">
               <section>
                 <h3 className="font-bold mb-4 flex items-center gap-2"><MapPin className="h-5 w-5 text-primary" /> Delivery Address</h3>
-                <Card className="border-none shadow-sm p-4 bg-primary/5 border border-primary/10">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-bold text-sm">Home</p>
-                      <p className="text-sm text-muted-foreground">123 Ocean View Dr, Blue City, 90210</p>
+                <RadioGroup defaultValue="home" className="space-y-3">
+                  <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Plus className="h-5 w-5 text-muted-foreground" />
+                      <div className="space-y-0.5">
+                        <p className="font-bold text-sm">Add new address</p>
+                      </div>
                     </div>
-                    <Button variant="link" size="sm" className="h-auto p-0 text-primary">Change</Button>
-                  </div>
-                </Card>
+                    <RadioGroupItem value="new_address" />
+                  </Label>
+                  <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="relative h-5 w-5 flex items-center justify-center">
+                        <MapPin className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="font-bold text-sm">Home</p>
+                        <p className="text-xs text-muted-foreground line-clamp-1">123 Ocean View Dr, Blue City, 90210</p>
+                      </div>
+                    </div>
+                    <RadioGroupItem value="home" />
+                  </Label>
+                </RadioGroup>
               </section>
 
               <section>
