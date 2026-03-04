@@ -115,7 +115,9 @@ export default function VendorDashboardOverview() {
                   <p className="text-sm font-bold text-red-900">Critical Stock Alert</p>
                   <p className="text-xs text-red-700">750ml Bottled Water is below 50 units.</p>
                 </div>
-                <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white rounded-lg">Restock</Button>
+                <Link href="/dashboard/vendor/products">
+                  <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white rounded-lg">Restock</Button>
+                </Link>
               </div>
               <div className="flex items-center gap-4 bg-yellow-50 p-4 rounded-xl border border-yellow-100">
                 <AlertCircle className="h-5 w-5 text-yellow-600" />
@@ -123,7 +125,9 @@ export default function VendorDashboardOverview() {
                   <p className="text-sm font-bold text-yellow-900">Expiring Soon</p>
                   <p className="text-xs text-yellow-700">Batch #445-B expires in 5 days.</p>
                 </div>
-                <Button size="sm" variant="outline" className="border-yellow-200 text-yellow-800 rounded-lg">Review</Button>
+                <Link href="/dashboard/vendor/products">
+                  <Button size="sm" variant="outline" className="border-yellow-200 text-yellow-800 rounded-lg">Review</Button>
+                </Link>
               </div>
             </div>
           </CardContent>
