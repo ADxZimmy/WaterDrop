@@ -33,13 +33,13 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-white">
-      <div className="p-6 flex items-center justify-end gap-3 border-b">
-        <div className="text-right">
-          <span className="text-xl font-bold tracking-tight text-primary font-headline block leading-none">WaterDrop</span>
-          <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Driver Portal</span>
-        </div>
+      <div className="p-6 flex items-center justify-start gap-3 border-b">
         <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
           <Truck className="h-6 w-6" />
+        </div>
+        <div className="text-left">
+          <span className="text-xl font-bold tracking-tight text-primary font-headline block leading-none">WaterDrop</span>
+          <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Driver Portal</span>
         </div>
       </div>
       
