@@ -135,8 +135,7 @@ export default function CartPage() {
                     <div className="flex items-center gap-3">
                       <CreditCard className="h-5 w-5 text-muted-foreground" />
                       <div className="space-y-0.5">
-                        <p className="font-bold text-sm">Credit / Debit Card</p>
-                        <p className="text-xs text-muted-foreground">Ending in 4452</p>
+                        <p className="font-bold text-sm">Add debit/credit card</p>
                       </div>
                     </div>
                     <RadioGroupItem value="card" />
