@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -101,7 +100,6 @@ const customerNavItems = [
   { name: 'Marketplace', href: '/', icon: Store },
   { name: 'My Orders', href: '/dashboard/customer/orders', icon: ShoppingBag },
   { name: 'Profile', href: '/dashboard/customer', icon: User },
-  { name: 'Favorites', href: '#', icon: Heart },
   { name: 'Settings', href: '#', icon: Settings },
 ];
 
