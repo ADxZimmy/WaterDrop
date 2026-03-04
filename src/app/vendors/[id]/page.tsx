@@ -19,10 +19,10 @@ const vendorData = {
   deliveryTime: "15-25 min",
   distance: "1.2 km",
   description: "Premium purified water direct from the source. We use advanced osmosis and UV filtration to ensure the highest quality for your family.",
-  categories: ["All", "Bottled", "Bags", "Bulk"],
+  categories: ["All", "Bottled", "Bags"],
   products: [
     { id: 101, name: "Premium 750ml (Box of 12)", price: 12.50, image: "bottle-1", category: "Bottled" },
-    { id: 102, name: "Dispenser Refill 19L", price: 8.00, image: "hero-water", category: "Bulk" },
+    { id: 102, name: "Dispenser Refill 19L", price: 8.00, image: "hero-water", category: "Bottled" },
     { id: 103, name: "Sachet Water (Pack 20)", price: 5.00, image: "bag-water", category: "Bags" },
     { id: 104, name: "Distilled 5L Jug", price: 4.50, image: "bottle-1", category: "Bottled" },
   ]
