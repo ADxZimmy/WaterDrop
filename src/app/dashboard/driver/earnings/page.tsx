@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Wallet, TrendingUp, Calendar, ArrowUpRight, ChevronRight, DollarSign } from 'lucide-react';
+import { Wallet, TrendingUp, Calendar, ArrowUpRight, ChevronRight, DollarSign, History, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +48,11 @@ const monthlyData = [
   { label: 'Oct', amount: 2450 },
 ];
 
+const recentWithdrawals = [
+  { id: 'WID-9921', date: 'Oct 24, 2024', amount: '$150.00', status: 'Pending' },
+  { id: 'WID-9882', date: 'Oct 18, 2024', amount: '$240.00', status: 'Completed' },
+];
+
 export default function DriverEarningsPage() {
   const [period, setPeriod] = useState<string>('week');
 
@@ -55,7 +60,7 @@ export default function DriverEarningsPage() {
   const chartTitle = period === 'day' ? 'Daily Performance' : period === 'week' ? 'Weekly Performance' : 'Monthly Performance';
 
   return (
-    <div className="p-4 md:p-8 space-y-6 max-w-5xl mx-auto">
+    <div className="p-4 md:p-8 space-y-8 max-w-5xl mx-auto">
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold font-headline">Earnings</h1>
@@ -119,7 +124,7 @@ export default function DriverEarningsPage() {
       </div>
 
       <div className="space-y-4">
-        <h3 className="font-bold text-lg">Daily Activity</h3>
+        <h3 className="font-bold text-lg px-2">Daily Activity</h3>
         <div className="space-y-3">
           {[
             { date: 'Oct-24-2024', label: 'Today, Oct 24', trips: 12, earnings: '$142.50' },
@@ -127,7 +132,7 @@ export default function DriverEarningsPage() {
             { date: 'Oct-22-2024', label: 'Wednesday, Oct 22', trips: 15, earnings: '$185.00' },
           ].map((day, i) => (
             <Link key={i} href={`/dashboard/driver/activity/${day.date}`}>
-              <div className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-transparent hover:border-primary/20 transition-all group cursor-pointer mb-3">
+              <div className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-transparent hover:border-primary/20 transition-all group cursor-pointer">
                 <div className="flex items-center gap-4">
                   <div className="h-12 w-12 bg-primary/5 rounded-2xl flex items-center justify-center text-primary transition-transform group-hover:scale-110">
                     <TrendingUp className="h-6 w-6" />
@@ -143,6 +148,33 @@ export default function DriverEarningsPage() {
                 </div>
               </div>
             </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex justify-between items-center px-2">
+          <h3 className="font-bold text-lg">Withdrawal History</h3>
+          <Link href="/dashboard/driver/withdrawals">
+            <Button variant="link" className="text-primary p-0 h-auto font-bold text-sm">View All</Button>
+          </Link>
+        </div>
+        <div className="space-y-3">
+          {recentWithdrawals.map((withdrawal) => (
+            <div key={withdrawal.id} className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-transparent">
+              <div className="flex items-center gap-4">
+                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${withdrawal.status === 'Pending' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>
+                  <History className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="font-bold text-sm">{withdrawal.amount}</p>
+                  <p className="text-xs text-muted-foreground">{withdrawal.date} • {withdrawal.id}</p>
+                </div>
+              </div>
+              <Badge variant="outline" className={`border-none ${withdrawal.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
+                {withdrawal.status}
+              </Badge>
+            </div>
           ))}
         </div>
       </div>
