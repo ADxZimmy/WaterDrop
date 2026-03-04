@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, User, Phone, MapPin, Package, Truck, CheckCircle, Clock, MessageSquare, ExternalLink, ChevronDown } from 'lucide-react';
+import { ArrowLeft, User, Phone, MapPin, Package, Truck, CheckCircle, Clock, MessageSquare, ExternalLink, ChevronDown, XCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ const drivers = [
 export default function OrderDetailPage() {
   const params = useParams();
   const [assignedDriver, setAssignedDriver] = useState<string | null>(null);
+  const [status, setStatus] = useState<'Pending' | 'Accepted' | 'Declined' | 'Delivering'>('Accepted');
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8 text-foreground">
@@ -36,8 +37,15 @@ export default function OrderDetailPage() {
           <h1 className="text-3xl font-bold font-headline">Order {params.id || "#AQ-5521"}</h1>
           <p className="text-muted-foreground">Placed on Oct 24, 2024 at 14:20 PM</p>
         </div>
-        <Badge className="ml-auto bg-blue-100 text-blue-700 hover:bg-blue-100 px-4 py-1 text-sm font-bold">
-          Preparing
+        <Badge 
+          className={`ml-auto px-4 py-1 text-sm font-bold border-none ${
+            status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+            status === 'Accepted' ? 'bg-blue-100 text-blue-700' :
+            status === 'Delivering' ? 'bg-purple-100 text-purple-700' :
+            'bg-red-100 text-red-700'
+          }`}
+        >
+          {status}
         </Badge>
       </div>
 
@@ -86,12 +94,29 @@ export default function OrderDetailPage() {
               </div>
             </CardContent>
             <CardFooter className="bg-muted/10 p-4 border-t flex gap-3">
-              <Button className="flex-1 h-12 rounded-xl gap-2">
-                <CheckCircle className="h-4 w-4" /> Ready for Pickup
-              </Button>
-              <Button variant="outline" className="flex-1 h-12 rounded-xl gap-2">
-                <MessageSquare className="h-4 w-4" /> Message Customer
-              </Button>
+              {status === 'Pending' ? (
+                <>
+                  <Button className="flex-1 h-12 rounded-xl gap-2 bg-green-600 hover:bg-green-700 border-none text-white" onClick={() => setStatus('Accepted')}>
+                    <CheckCircle className="h-4 w-4" /> Accept Order
+                  </Button>
+                  <Button variant="outline" className="flex-1 h-12 rounded-xl gap-2 text-red-600 border-red-200 hover:bg-red-50" onClick={() => setStatus('Declined')}>
+                    <XCircle className="h-4 w-4" /> Decline
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button 
+                    className="flex-1 h-12 rounded-xl gap-2" 
+                    disabled={status === 'Delivering' || status === 'Declined'}
+                    onClick={() => setStatus('Delivering')}
+                  >
+                    <Truck className="h-4 w-4" /> Start Delivery
+                  </Button>
+                  <Button variant="outline" className="flex-1 h-12 rounded-xl gap-2">
+                    <MessageSquare className="h-4 w-4" /> Message Customer
+                  </Button>
+                </>
+              )}
             </CardFooter>
           </Card>
 
@@ -103,9 +128,8 @@ export default function OrderDetailPage() {
               <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:h-full before:w-0.5 before:bg-muted-foreground/20">
                 {[
                   { title: "Order Placed", time: "14:20 PM", desc: "Customer Alice Johnson placed the order", active: false },
-                  { title: "Confirmed", time: "14:22 PM", desc: "Order confirmed by Aqua Pure", active: false },
-                  { title: "Preparing", time: "14:25 PM", desc: "Items are being packed and sealed", active: true },
-                  { title: "Dispatched", time: "--:--", desc: "Waiting for driver assignment", active: false },
+                  { title: "Decision", time: status === 'Pending' ? "--:--" : "14:22 PM", desc: status === 'Declined' ? "Order was declined" : "Order accepted by Aqua Pure", active: status === 'Accepted' },
+                  { title: "Delivering", time: status === 'Delivering' ? "14:25 PM" : "--:--", desc: "Driver is on the way to customer", active: status === 'Delivering' },
                 ].map((event, i) => (
                   <div key={i} className="relative flex items-start gap-8 pl-10">
                     <div className={`absolute left-[-2px] h-4 w-4 rounded-full border-4 border-white shadow-sm ${event.active ? 'bg-primary ring-4 ring-primary/20' : 'bg-muted-foreground'}`} />
@@ -185,7 +209,7 @@ export default function OrderDetailPage() {
                     <p className="text-sm text-muted-foreground mb-3">No driver assigned yet</p>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button className="w-full rounded-xl gap-2 h-11">
+                        <Button className="w-full rounded-xl gap-2 h-11" disabled={status === 'Declined' || status === 'Pending'}>
                           Assign Driver <ChevronDown className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>

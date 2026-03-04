@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, Truck, CheckCircle, Clock, Search, Filter, ArrowUpRight, User } from 'lucide-react';
+import { ShoppingBag, Truck, CheckCircle, Clock, Search, Filter, ArrowUpRight, User, Check, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,9 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const orders = [
   { id: "AQ-5521", customer: "Alice Johnson", items: "5x Premium Bottled", total: 62.50, status: "Pending", time: "5m ago" },
-  { id: "AQ-5522", customer: "Bob Wilson", items: "10x Sachet Packs", total: 35.00, status: "Preparing", time: "12m ago" },
-  { id: "AQ-5523", customer: "Clara Davis", items: "2x 19L Dispenser", total: 30.00, status: "Dispatched", time: "45m ago" },
-  { id: "AQ-5524", customer: "Daniel Lee", items: "20x 750ml Individual", total: 24.00, status: "Delivered", time: "1h ago" },
+  { id: "AQ-5522", customer: "Bob Wilson", items: "10x Sachet Packs", total: 35.00, status: "Accepted", time: "12m ago" },
+  { id: "AQ-5523", customer: "Clara Davis", items: "2x 19L Dispenser", total: 30.00, status: "Delivering", time: "45m ago" },
+  { id: "AQ-5524", customer: "Daniel Lee", items: "20x 750ml Individual", total: 24.00, status: "Accepted", time: "1h ago" },
 ];
 
 export default function VendorOrdersPage() {
@@ -42,11 +42,11 @@ export default function VendorOrdersPage() {
         </Card>
         <Card className="border-none shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">In Preparation</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Accepted</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">8</div>
-            <p className="text-xs text-muted-foreground mt-1">Average time: 15m</p>
+            <p className="text-xs text-muted-foreground mt-1">Ready for pickup</p>
           </CardContent>
         </Card>
         <Card className="border-none shadow-sm">
@@ -55,7 +55,7 @@ export default function VendorOrdersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">5</div>
-            <p className="text-xs text-primary mt-1">Real-time tracking active</p>
+            <p className="text-xs text-primary mt-1">In transit to customer</p>
           </CardContent>
         </Card>
         <Card className="border-none shadow-sm">
@@ -83,9 +83,9 @@ export default function VendorOrdersPage() {
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="preparing">Preparing</SelectItem>
-                <SelectItem value="dispatched">Dispatched</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="accepted">Accepted</SelectItem>
+                <SelectItem value="declined">Declined</SelectItem>
+                <SelectItem value="delivering">Delivering</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" size="icon" className="h-10 w-10 rounded-lg">
@@ -128,26 +128,36 @@ export default function VendorOrdersPage() {
                   <Badge 
                     className={`rounded-full px-3 ${
                       order.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100' : 
-                      order.status === 'Preparing' ? 'bg-blue-100 text-blue-700 hover:bg-blue-100' :
-                      order.status === 'Dispatched' ? 'bg-purple-100 text-purple-700 hover:bg-purple-100' :
-                      'bg-green-100 text-green-700 hover:bg-green-100'
+                      order.status === 'Accepted' ? 'bg-blue-100 text-blue-700 hover:bg-blue-100' :
+                      order.status === 'Delivering' ? 'bg-purple-100 text-purple-700 hover:bg-purple-100' :
+                      'bg-red-100 text-red-700 hover:bg-red-100'
                     }`}
                   >
                     {order.status}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Select defaultValue={order.status.toLowerCase()}>
-                    <SelectTrigger className="w-[130px] h-8 text-xs ml-auto">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="preparing">Preparing</SelectItem>
-                      <SelectItem value="dispatched">Dispatched</SelectItem>
-                      <SelectItem value="delivered">Delivered</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {order.status === 'Pending' ? (
+                    <div className="flex justify-end gap-2">
+                      <Button size="sm" className="h-8 rounded-lg gap-1 bg-green-600 hover:bg-green-700 text-white border-none shadow-sm">
+                        <Check className="h-3.5 w-3.5" /> Accept
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-8 rounded-lg gap-1 text-red-600 border-red-200 hover:bg-red-50">
+                        <X className="h-3.5 w-3.5" /> Decline
+                      </Button>
+                    </div>
+                  ) : (
+                    <Select defaultValue={order.status.toLowerCase()}>
+                      <SelectTrigger className="w-[130px] h-8 text-xs ml-auto">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="accepted">Accepted</SelectItem>
+                        <SelectItem value="delivering">Delivering</SelectItem>
+                        <SelectItem value="declined">Declined</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

@@ -14,7 +14,7 @@ const activeDeliveries = [
     address: "123 Ocean View Dr, Blue City",
     distance: "1.2 km",
     items: "5x PureLife Bottled (Pack)",
-    status: "Picking Up",
+    status: "Accepted", // New Order for driver
     vendor: "Aqua Pure Factory",
     price: "$8.50"
   },
@@ -24,7 +24,7 @@ const activeDeliveries = [
     address: "45 River St, Spring Hills",
     distance: "3.5 km",
     items: "10x Sachet Water Bags",
-    status: "In Transit",
+    status: "Delivering", // Currently in transit
     vendor: "Blue Wave Distro",
     price: "$12.00"
   }
@@ -44,13 +44,15 @@ export default function DriverDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {activeDeliveries.map((delivery) => (
           <Card key={delivery.id} className="border-none shadow-lg overflow-hidden relative">
-            <div className={`absolute top-0 left-0 w-1 h-full ${delivery.status === 'Picking Up' ? 'bg-yellow-400' : 'bg-primary'}`}></div>
+            <div className={`absolute top-0 left-0 w-1 h-full ${delivery.status === 'Accepted' ? 'bg-blue-400' : 'bg-primary'}`}></div>
             <CardHeader className="pb-4">
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-lg">{delivery.id}</CardTitle>
-                    <Badge variant="outline" className="text-[10px]">{delivery.status}</Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {delivery.status === 'Accepted' ? 'Ready for Pickup' : 'Delivering'}
+                    </Badge>
                   </div>
                   <CardDescription className="flex items-center gap-1 mt-1">
                     <User className="h-3 w-3" /> {delivery.customer}
