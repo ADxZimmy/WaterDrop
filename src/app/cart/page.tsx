@@ -113,11 +113,11 @@ export default function CartPage() {
             </Card>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6">
             <div className="space-y-6">
               <section>
-                <h3 className="font-bold mb-4 flex items-center gap-2"><MapPin className="h-5 w-5 text-primary" /> Delivery Address</h3>
-                <RadioGroup defaultValue="home" className="space-y-3">
+                <h3 className="font-bold mb-3 flex items-center gap-2"><MapPin className="h-5 w-5 text-primary" /> Delivery Address</h3>
+                <RadioGroup defaultValue="home" className="space-y-2">
                   <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
                       <Plus className="h-5 w-5 text-muted-foreground" />
@@ -143,8 +143,8 @@ export default function CartPage() {
               </section>
 
               <section>
-                <h3 className="font-bold mb-4 flex items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Payment Method</h3>
-                <RadioGroup defaultValue="saved_card" className="space-y-3">
+                <h3 className="font-bold mb-3 flex items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Payment Method</h3>
+                <RadioGroup defaultValue="saved_card" className="space-y-2">
                   <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
                       <CreditCard className="h-5 w-5 text-muted-foreground" />
@@ -177,11 +177,11 @@ export default function CartPage() {
               </section>
 
               <section>
-                <h3 className="font-bold mb-4 flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> Delivery Options</h3>
+                <h3 className="font-bold mb-3 flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> Delivery Options</h3>
                 <RadioGroup 
                   value={deliveryOption} 
                   onValueChange={(v) => setDeliveryOption(v as 'standard' | 'priority')}
-                  className="space-y-3"
+                  className="space-y-2"
                 >
                   <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
