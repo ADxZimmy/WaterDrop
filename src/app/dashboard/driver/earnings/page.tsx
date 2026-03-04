@@ -16,6 +16,13 @@ import {
   ResponsiveContainer, 
   Cell 
 } from 'recharts';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const data = [
   { day: 'Mon', amount: 45 },
@@ -35,10 +42,17 @@ export default function DriverEarningsPage() {
           <h1 className="text-3xl font-bold font-headline">Earnings</h1>
           <p className="text-muted-foreground">Track your daily and weekly income.</p>
         </div>
-        <Button variant="outline" className="rounded-xl h-11 gap-2 border-primary/20 text-primary">
-          <Calendar className="h-4 w-4" />
-          This Week
-        </Button>
+        <Select defaultValue="week">
+          <SelectTrigger className="w-[140px] rounded-xl h-11 border-primary/20 text-primary gap-2">
+            <Calendar className="h-4 w-4" />
+            <SelectValue placeholder="Period" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="day">Days</SelectItem>
+            <SelectItem value="week">Weeks</SelectItem>
+            <SelectItem value="month">Months</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
