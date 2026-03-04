@@ -23,7 +23,8 @@ import {
   LogOut,
   Bell,
   ChevronRight,
-  LayoutDashboard
+  LayoutDashboard,
+  ChevronLeft
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -72,6 +80,15 @@ const vendors = [
     distance: "3.1 km",
     image: "vendor-2",
     category: "Bags of Water"
+  },
+  {
+    id: "5",
+    name: "Pure Life Springs",
+    rating: 4.6,
+    reviews: 95,
+    distance: "1.8 km",
+    image: "vendor-1",
+    category: "Bottled Water"
   }
 ];
 
@@ -91,7 +108,6 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
-    // Check if the user just signed in via URL param
     if (searchParams.get('loggedin') === 'true') {
       setIsLoggedIn(true);
     }
@@ -162,7 +178,6 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen">
-      {/* Desktop Sidebar (Only when logged in) */}
       {isLoggedIn && (
         <aside className="hidden lg:flex w-64 border-r bg-white flex-col sticky top-0 h-screen">
           <SidebarContent />
@@ -252,7 +267,6 @@ export default function Home() {
         </nav>
 
         <main className="flex-grow">
-          {/* Active Order Banner */}
           <div className="bg-primary/10 border-b border-primary/20 py-3 px-4">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -310,7 +324,6 @@ export default function Home() {
             </section>
           )}
 
-          {/* Mobile Search Bar */}
           <div className="md:hidden px-4 pt-6 bg-white">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -345,36 +358,52 @@ export default function Home() {
               </div>
 
               {filteredVendors.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {filteredVendors.map((vendor) => (
-                    <Link key={vendor.id} href={`/vendors/${vendor.id}`}>
-                      <Card className="group hover:shadow-2xl transition-all duration-300 border-none bg-white rounded-3xl overflow-hidden flex flex-col h-full">
-                        <div className="relative w-full h-44 overflow-hidden shrink-0">
-                          <Image 
-                            src={PlaceHolderImages.find(img => img.id === vendor.image)?.imageUrl || ''} 
-                            alt={vendor.name}
-                            fill
-                            className="object-cover group-hover:scale-110 transition-transform duration-500"
-                          />
-                        </div>
-                        <CardContent className="p-6 flex-1 flex flex-col justify-center">
-                          <h4 className="text-xl font-bold truncate">{vendor.name}</h4>
-                          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-2">
-                            <div className="flex items-center gap-1 text-yellow-500 font-bold">
-                              <Star className="h-3 w-3 fill-current" /> {vendor.rating}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" /> {vendor.distance}
-                            </div>
-                          </div>
-                          <Badge variant="outline" className="text-[10px] uppercase tracking-wider mt-3 w-fit">{vendor.category}</Badge>
-                          <div className="mt-4 flex items-center gap-1 text-primary text-sm font-bold group-hover:gap-2 transition-all">
-                            View Products <ArrowRight className="h-4 w-4" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
+                <div className="relative group">
+                  <Carousel
+                    opts={{
+                      align: "start",
+                      loop: false,
+                    }}
+                    className="w-full"
+                  >
+                    <CarouselContent className="-ml-4">
+                      {filteredVendors.map((vendor) => (
+                        <CarouselItem key={vendor.id} className="pl-4 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                          <Link href={`/vendors/${vendor.id}`}>
+                            <Card className="group hover:shadow-2xl transition-all duration-300 border-none bg-white rounded-3xl overflow-hidden flex flex-col h-full">
+                              <div className="relative w-full h-44 overflow-hidden shrink-0">
+                                <Image 
+                                  src={PlaceHolderImages.find(img => img.id === vendor.image)?.imageUrl || ''} 
+                                  alt={vendor.name}
+                                  fill
+                                  className="object-cover group-hover:scale-110 transition-transform duration-500"
+                                />
+                              </div>
+                              <CardContent className="p-6 flex-1 flex flex-col justify-center">
+                                <h4 className="text-xl font-bold truncate">{vendor.name}</h4>
+                                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-2">
+                                  <div className="flex items-center gap-1 text-yellow-500 font-bold">
+                                    <Star className="h-3 w-3 fill-current" /> {vendor.rating}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" /> {vendor.distance}
+                                  </div>
+                                </div>
+                                <Badge variant="outline" className="text-[10px] uppercase tracking-wider mt-3 w-fit">{vendor.category}</Badge>
+                                <div className="mt-4 flex items-center gap-1 text-primary text-sm font-bold group-hover:gap-2 transition-all">
+                                  View Products <ArrowRight className="h-4 w-4" />
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </Link>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <div className="hidden md:flex">
+                      <CarouselPrevious className="h-12 w-12 bg-white/90 border-primary/20 text-primary shadow-xl hover:bg-primary hover:text-white transition-all -left-6 opacity-0 group-hover:opacity-100" />
+                      <CarouselNext className="h-12 w-12 bg-white/90 border-primary/20 text-primary shadow-xl hover:bg-primary hover:text-white transition-all -right-6 opacity-0 group-hover:opacity-100" />
+                    </div>
+                  </Carousel>
                 </div>
               ) : (
                 <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed">
