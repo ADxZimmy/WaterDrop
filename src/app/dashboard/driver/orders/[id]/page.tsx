@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -161,14 +160,6 @@ export default function DriverOrderDetailPage() {
               <div>
                 <h4 className="font-bold">{orderDetails.customer.name}</h4>
                 <p className="text-xs text-muted-foreground">Customer</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" className="rounded-xl h-11 gap-2 border-primary/20 text-primary">
-                  <Phone className="h-4 w-4" /> Call
-                </Button>
-                <Button variant="outline" className="rounded-xl h-11 gap-2 border-primary/20 text-primary">
-                  <MessageSquare className="h-4 w-4" /> Text
-                </Button>
               </div>
             </CardContent>
           </Card>
