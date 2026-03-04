@@ -1,15 +1,16 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { BarChart3, TrendingUp, PieChart, Users, ArrowUpRight, ArrowDownRight, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  LineChart, Line, AreaChart, Area, PieChart as RePieChart, Pie, Cell 
+  PieChart as RePieChart, Pie, Cell 
 } from 'recharts';
+import { cn } from "@/lib/utils";
 
-const salesData = [
+const dailyData = [
   { name: 'Mon', sales: 4000, profit: 2400 },
   { name: 'Tue', sales: 3000, profit: 1398 },
   { name: 'Wed', sales: 2000, profit: 9800 },
@@ -17,6 +18,20 @@ const salesData = [
   { name: 'Fri', sales: 1890, profit: 4800 },
   { name: 'Sat', sales: 2390, profit: 3800 },
   { name: 'Sun', sales: 3490, profit: 4300 },
+];
+
+const weeklyData = [
+  { name: 'Week 1', sales: 15000, profit: 8400 },
+  { name: 'Week 2', sales: 18000, profit: 9200 },
+  { name: 'Week 3', sales: 12000, profit: 6800 },
+  { name: 'Week 4', sales: 22000, profit: 11500 },
+];
+
+const monthlyData = [
+  { name: 'Jul', sales: 65000, profit: 32000 },
+  { name: 'Aug', sales: 72000, profit: 38000 },
+  { name: 'Sep', sales: 68000, profit: 34000 },
+  { name: 'Oct', sales: 85000, profit: 42000 },
 ];
 
 const categoryData = [
@@ -29,6 +44,10 @@ const categoryData = [
 const COLORS = ['#26A3DB', '#139489', '#FFBB28', '#FF8042'];
 
 export default function VendorAnalyticsPage() {
+  const [period, setPeriod] = useState<'days' | 'weeks' | 'months'>('days');
+
+  const chartData = period === 'days' ? dailyData : period === 'weeks' ? weeklyData : monthlyData;
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
       <div>
@@ -38,19 +57,50 @@ export default function VendorAnalyticsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="lg:col-span-2 border-none shadow-sm rounded-3xl p-6">
-          <CardHeader className="px-0 pt-0">
-            <CardTitle>Revenue vs Profit</CardTitle>
-            <CardDescription>Comparison of total sales against net profit</CardDescription>
+          <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <CardTitle>Revenue vs Profit</CardTitle>
+              <CardDescription>Comparison of total sales against net profit</CardDescription>
+            </div>
+            <div className="flex gap-1 bg-muted/50 p-1 rounded-xl">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn("rounded-lg h-8 px-4", period === 'days' && "bg-white shadow-sm text-primary")}
+                onClick={() => setPeriod('days')}
+              >
+                Days
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn("rounded-lg h-8 px-4", period === 'weeks' && "bg-white shadow-sm text-primary")}
+                onClick={() => setPeriod('weeks')}
+              >
+                Weeks
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn("rounded-lg h-8 px-4", period === 'months' && "bg-white shadow-sm text-primary")}
+                onClick={() => setPeriod('months')}
+              >
+                Months
+              </Button>
+            </div>
           </CardHeader>
           <div className="h-[300px] w-full mt-6">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={salesData}>
+              <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip cursor={{fill: '#f5f5f5'}} />
-                <Bar dataKey="sales" fill="#26A3DB" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="profit" fill="#139489" radius={[4, 4, 0, 0]} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12}} />
+                <Tooltip 
+                  cursor={{fill: '#f5f5f5'}} 
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar dataKey="sales" fill="#26A3DB" radius={[4, 4, 0, 0]} name="Total Sales" />
+                <Bar dataKey="profit" fill="#139489" radius={[4, 4, 0, 0]} name="Net Profit" />
               </BarChart>
             </ResponsiveContainer>
           </div>
