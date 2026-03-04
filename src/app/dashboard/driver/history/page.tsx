@@ -2,6 +2,7 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 import { Search, Filter, History, MapPin, Calendar, Clock, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,41 +37,43 @@ export default function DriverHistoryPage() {
 
       <div className="space-y-4">
         {history.map((trip) => (
-          <Card key={trip.id} className="border-none shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`h-10 w-10 rounded-full flex items-center justify-center ${trip.status === 'Completed' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                    <History className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm">{trip.id}</h4>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-medium mt-0.5">
-                      <Calendar className="h-3 w-3" /> {trip.date}
-                      <span className="h-1 w-1 bg-muted-foreground/30 rounded-full"></span>
-                      <Clock className="h-3 w-3" /> {trip.time}
+          <Link key={trip.id} href={`/dashboard/driver/orders/${trip.id}`}>
+            <Card className="border-none shadow-sm overflow-hidden hover:shadow-md transition-shadow group mb-4">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${trip.status === 'Completed' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                      <History className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm">{trip.id}</h4>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-medium mt-0.5">
+                        <Calendar className="h-3 w-3" /> {trip.date}
+                        <span className="h-1 w-1 bg-muted-foreground/30 rounded-full"></span>
+                        <Clock className="h-3 w-3" /> {trip.time}
+                      </div>
                     </div>
                   </div>
+                  <div className="text-right">
+                    <p className={`font-bold text-lg ${trip.status === 'Completed' ? 'text-primary' : 'text-muted-foreground'}`}>{trip.amount}</p>
+                    <Badge variant="outline" className={`text-[10px] mt-1 ${trip.status === 'Completed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                      {trip.status}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className={`font-bold text-lg ${trip.status === 'Completed' ? 'text-primary' : 'text-muted-foreground'}`}>{trip.amount}</p>
-                  <Badge variant="outline" className={`text-[10px] mt-1 ${trip.status === 'Completed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                    {trip.status}
-                  </Badge>
+                
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-muted/50">
+                  <div className="flex items-start gap-2 max-w-sm">
+                    <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <p className="text-sm text-muted-foreground line-clamp-1">{trip.address}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-8 gap-1 text-primary group-hover:bg-primary/5">
+                    Details <ChevronRight className="h-3 w-3" />
+                  </Button>
                 </div>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-muted/50">
-                <div className="flex items-start gap-2 max-w-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                  <p className="text-sm text-muted-foreground line-clamp-1">{trip.address}</p>
-                </div>
-                <Button variant="ghost" size="sm" className="h-8 gap-1 text-primary group-hover:bg-primary/5">
-                  Details <ChevronRight className="h-3 w-3" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
     </div>
