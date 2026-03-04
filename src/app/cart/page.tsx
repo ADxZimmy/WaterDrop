@@ -36,8 +36,8 @@ export default function CartPage() {
           <Link href="/dashboard/customer/track-order">
             <Button className="w-full h-14 rounded-2xl text-lg shadow-lg shadow-primary/20">Track Order Now</Button>
           </Link>
-          <Link href="/dashboard/customer/orders">
-            <Button variant="ghost" className="w-full h-12 rounded-xl text-muted-foreground">View Order History</Button>
+          <Link href="/?loggedin=true">
+            <Button variant="ghost" className="w-full h-12 rounded-xl text-muted-foreground">Go back to Home</Button>
           </Link>
         </div>
       </div>
