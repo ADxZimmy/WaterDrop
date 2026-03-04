@@ -172,28 +172,6 @@ export default function VendorAnalyticsPage() {
             </div>
           </div>
         </Card>
-
-        <Card className="border-none shadow-sm rounded-3xl p-6 bg-primary text-white">
-          <CardHeader className="px-0 pt-0">
-            <CardTitle className="text-lg text-white">Projected Growth</CardTitle>
-          </CardHeader>
-          <div className="space-y-6 mt-4">
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="opacity-80">Next Month Target</span>
-                <span className="font-bold">$52,000</span>
-              </div>
-              <div className="h-2 w-full bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-white w-3/4 rounded-full" />
-              </div>
-            </div>
-            <p className="text-xs opacity-70 leading-relaxed">
-              Based on your current trajectory, you are 75% likely to hit your Q4 targets. 
-              Adding 2 more drivers could increase efficiency by 12%.
-            </p>
-            <Button variant="secondary" className="w-full rounded-xl bg-white text-primary">View Strategy</Button>
-          </div>
-        </Card>
       </div>
     </div>
   );
