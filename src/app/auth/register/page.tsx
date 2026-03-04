@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -21,7 +22,7 @@ export default function RegisterPage() {
     } else if (role === 'driver') {
       router.push('/auth/onboarding/driver');
     } else {
-      router.push('/');
+      router.push('/dashboard/customer');
     }
   };
 

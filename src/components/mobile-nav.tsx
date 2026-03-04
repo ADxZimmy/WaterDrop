@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -10,17 +11,19 @@ const mobileItems = [
   { name: 'Home', href: '/', icon: Home },
   { name: 'Orders', href: '/dashboard/customer/orders', icon: Truck },
   { name: 'Cart', href: '/cart', icon: ShoppingBag },
-  { name: 'Profile', href: '/auth/login', icon: User },
+  { name: 'Profile', href: '/dashboard/customer', icon: User },
 ];
 
 export function MobileNav() {
   const pathname = usePathname();
 
   // Hide mobile nav in auth and dashboard screens to use role-specific navigation
+  // Note: We keep it for /dashboard/customer to provide easy back-to-home access
   const isAuth = pathname?.startsWith('/auth');
-  const isDashboard = pathname?.startsWith('/dashboard');
+  const isVendorDashboard = pathname?.startsWith('/dashboard/vendor');
+  const isDriverDashboard = pathname?.startsWith('/dashboard/driver');
 
-  if (isAuth || isDashboard) return null;
+  if (isAuth || isVendorDashboard || isDriverDashboard) return null;
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t safe-area-bottom">
