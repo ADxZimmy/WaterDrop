@@ -13,18 +13,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function RegisterPage() {
   const [role, setRole] = useState<string>('customer');
+  const [email, setEmail] = useState('');
   const router = useRouter();
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    if (role === 'vendor') {
-      router.push('/auth/onboarding/vendor');
-    } else if (role === 'driver') {
-      router.push('/auth/onboarding/driver');
-    } else {
-      // New customers now go to home page with logged-in status
-      router.push('/?loggedin=true');
-    }
+    // Redirect to verification page with context
+    router.push(`/auth/verify?role=${role}&email=${encodeURIComponent(email)}`);
   };
 
   return (
@@ -75,7 +70,15 @@ export default function RegisterPage() {
                   <Label htmlFor="email">Email Address</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="email" type="email" placeholder="name@example.com" className="pl-10" required />
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="name@example.com" 
+                      className="pl-10" 
+                      required 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
                   </div>
                 </div>
 
@@ -96,7 +99,7 @@ export default function RegisterPage() {
                 </div>
 
                 <Button type="submit" className="w-full h-11 rounded-xl shadow-lg shadow-primary/20 mt-2">
-                  {role === 'customer' ? 'Create Account' : 'Continue to Onboarding'}
+                  Create Account
                 </Button>
               </form>
             </Tabs>

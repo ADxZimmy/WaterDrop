@@ -4,7 +4,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   ShoppingCart, 
   Search, 
@@ -24,7 +24,9 @@ import {
   Bell,
   ChevronRight,
   LayoutDashboard,
-  ChevronLeft
+  ChevronLeft,
+  Home as HomeIcon,
+  CheckCircle2
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +34,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   Carousel,
   CarouselContent,
@@ -41,6 +45,7 @@ import {
 } from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useToast } from "@/hooks/use-toast";
 
 const categories = ["All", "Bottled Water", "Bags of Water"];
 
@@ -102,14 +107,20 @@ const customerNavItems = [
 
 export default function Home() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { toast } = useToast();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     if (searchParams.get('loggedin') === 'true') {
       setIsLoggedIn(true);
+    }
+    if (searchParams.get('firstlogin') === 'true') {
+      setShowOnboarding(true);
     }
   }, [searchParams]);
 
@@ -121,6 +132,17 @@ export default function Home() {
       return matchesCategory && matchesSearch;
     });
   }, [searchQuery, activeCategory]);
+
+  const handleSaveOnboarding = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowOnboarding(false);
+    toast({
+      title: "Profile Completed!",
+      description: "Your delivery address has been saved successfully."
+    });
+    // Remove params from URL
+    router.replace('/?loggedin=true');
+  };
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-white">
@@ -427,6 +449,47 @@ export default function Home() {
             </div>
           </section>
         </main>
+
+        {/* Onboarding Dialog */}
+        <Dialog open={showOnboarding} onOpenChange={setShowOnboarding}>
+          <DialogContent className="sm:max-w-md rounded-3xl border-none shadow-2xl">
+            <DialogHeader className="flex flex-col items-center text-center pt-4">
+              <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4 animate-bounce">
+                <CheckCircle2 className="h-10 w-10" />
+              </div>
+              <DialogTitle className="text-2xl font-bold font-headline">Complete sign-up</DialogTitle>
+              <DialogDescription className="text-muted-foreground mt-2">
+                We're glad you're here! Please provide your primary delivery address to start ordering.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSaveOnboarding} className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="street">Street Address</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input id="street" placeholder="123 Blue Spring Rd" className="pl-10 h-12 rounded-xl" required />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="city">City</Label>
+                  <Input id="city" placeholder="Ocean View" className="h-12 rounded-xl" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="zip">ZIP Code</Label>
+                  <Input id="zip" placeholder="90210" className="h-12 rounded-xl" required />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state">State / Province</Label>
+                <Input id="state" placeholder="California" className="h-12 rounded-xl" required />
+              </div>
+              <Button type="submit" className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg shadow-primary/20 mt-4">
+                Save & Continue
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         <footer className="bg-white border-t py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -1,30 +1,52 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Droplets, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
   const [role, setRole] = useState<string>('customer');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const verified = searchParams.get('verified');
+    const initialRole = searchParams.get('role');
+    if (verified === 'true') {
+      toast({
+        title: "Verification Successful",
+        description: "Your account is ready. Please log in to continue."
+      });
+    }
+    if (initialRole) {
+      setRole(initialRole);
+    }
+  }, [searchParams]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if it's a first-time login (simulated logic)
+    const isFirstTime = searchParams.get('verified') === 'true';
+
     // Redirect based on selected role
     if (role === 'vendor') {
       router.push('/dashboard/vendor');
     } else if (role === 'driver') {
       router.push('/dashboard/driver');
     } else {
-      // Customers now go to the home page with the sidebar enabled
-      router.push('/?loggedin=true');
+      // Customers go to the home page with sidebar and onboarding flag if applicable
+      const onboardingParam = isFirstTime ? '&firstlogin=true' : '';
+      router.push(`/?loggedin=true${onboardingParam}`);
     }
   };
 
@@ -53,7 +75,7 @@ export default function LoginPage() {
             <CardDescription className="text-primary-foreground/80">Choose your account type</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            <Tabs defaultValue="customer" onValueChange={setRole} className="w-full">
+            <Tabs value={role} onValueChange={setRole} className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-8">
                 <TabsTrigger value="customer">Customer</TabsTrigger>
                 <TabsTrigger value="vendor">Vendor</TabsTrigger>
