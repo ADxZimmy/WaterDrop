@@ -32,7 +32,7 @@ export default function CartPage() {
         </div>
         <h1 className="text-3xl font-bold font-headline mb-2">Order Confirmed!</h1>
         <p className="text-muted-foreground mb-8 max-w-xs">Your water is being prepared and will be delivered in approximately 12 minutes.</p>
-        <div className="space-y-3 w-full max-w-xs">
+        <div className="space-y-4 w-full max-w-xs">
           <Link href="/dashboard/customer/track-order">
             <Button className="w-full h-14 rounded-2xl text-lg shadow-lg shadow-primary/20">Track Order Now</Button>
           </Link>
