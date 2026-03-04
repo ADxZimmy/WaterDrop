@@ -2,6 +2,7 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 import { User, Mail, Phone, MapPin, Shield, Star, Award, Settings, LogOut, ChevronRight, Camera } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -112,13 +113,15 @@ export default function DriverProfilePage() {
       </div>
 
       <div className="space-y-3">
-        <Button variant="ghost" className="w-full justify-between h-14 rounded-2xl bg-white shadow-sm border border-transparent hover:border-primary/20">
-          <div className="flex items-center gap-3">
-            <Shield className="h-5 w-5 text-muted-foreground" />
-            <span className="font-bold">Security & Password</span>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </Button>
+        <Link href="/dashboard/driver/profile/security">
+          <Button variant="ghost" className="w-full justify-between h-14 rounded-2xl bg-white shadow-sm border border-transparent hover:border-primary/20">
+            <div className="flex items-center gap-3">
+              <Shield className="h-5 w-5 text-muted-foreground" />
+              <span className="font-bold">Security & Password</span>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </Link>
         <Button variant="ghost" className="w-full justify-between h-14 rounded-2xl bg-white shadow-sm border border-transparent hover:border-primary/20">
           <div className="flex items-center gap-3 text-destructive">
             <LogOut className="h-5 w-5" />
