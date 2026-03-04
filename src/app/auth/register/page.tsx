@@ -14,12 +14,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default function RegisterPage() {
   const [role, setRole] = useState<string>('customer');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const router = useRouter();
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     // Redirect to verification page with context
-    router.push(`/auth/verify?role=${role}&email=${encodeURIComponent(email)}`);
+    router.push(`/auth/verify?role=${role}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`);
   };
 
   return (
@@ -86,7 +87,15 @@ export default function RegisterPage() {
                   <Label htmlFor="phone">Phone Number</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="phone" type="tel" placeholder="+1 (555) 000-0000" className="pl-10" required />
+                    <Input 
+                      id="phone" 
+                      type="tel" 
+                      placeholder="+1 (555) 000-0000" 
+                      className="pl-10" 
+                      required 
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
                   </div>
                 </div>
                 

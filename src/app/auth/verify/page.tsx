@@ -18,8 +18,11 @@ export default function VerifyPage() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
-  const email = searchParams.get('email') || 'your email/phone';
+  const email = searchParams.get('email');
+  const phone = searchParams.get('phone');
   const role = searchParams.get('role') || 'customer';
+
+  const contactInfo = [email, phone].filter(Boolean).join(' or ') || 'your email/phone';
 
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +63,7 @@ export default function VerifyPage() {
           Verify Your Account
         </h2>
         <p className="mt-2 text-center text-sm text-muted-foreground px-4">
-          We've sent a 6-digit verification code to <br /><span className="font-bold text-foreground">{email}</span>
+          We've sent a 6-digit verification code to <br /><span className="font-bold text-foreground">{contactInfo}</span>
         </p>
       </div>
 
