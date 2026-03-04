@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Wallet, TrendingUp, Calendar, ArrowUpRight, ChevronRight, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,17 +24,36 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const data = [
-  { day: 'Mon', amount: 45 },
-  { day: 'Tue', amount: 52 },
-  { day: 'Wed', amount: 38 },
-  { day: 'Thu', amount: 65 },
-  { day: 'Fri', amount: 80 },
-  { day: 'Sat', amount: 120 },
-  { day: 'Sun', amount: 95 },
+const dailyData = [
+  { label: 'Mon', amount: 45 },
+  { label: 'Tue', amount: 52 },
+  { label: 'Wed', amount: 38 },
+  { label: 'Thu', amount: 65 },
+  { label: 'Fri', amount: 80 },
+  { label: 'Sat', amount: 120 },
+  { label: 'Sun', amount: 95 },
+];
+
+const weeklyData = [
+  { label: 'Week 1', amount: 450 },
+  { label: 'Week 2', amount: 520 },
+  { label: 'Week 3', amount: 380 },
+  { label: 'Week 4', amount: 650 },
+];
+
+const monthlyData = [
+  { label: 'Jul', amount: 1800 },
+  { label: 'Aug', amount: 2100 },
+  { label: 'Sep', amount: 1950 },
+  { label: 'Oct', amount: 2450 },
 ];
 
 export default function DriverEarningsPage() {
+  const [period, setPeriod] = useState<string>('week');
+
+  const chartData = period === 'day' ? dailyData : period === 'week' ? weeklyData : monthlyData;
+  const chartTitle = period === 'day' ? 'Daily Performance' : period === 'week' ? 'Weekly Performance' : 'Monthly Performance';
+
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-5xl mx-auto">
       <div className="flex justify-between items-end">
@@ -42,7 +61,7 @@ export default function DriverEarningsPage() {
           <h1 className="text-3xl font-bold font-headline">Earnings</h1>
           <p className="text-muted-foreground">Track your daily and weekly income.</p>
         </div>
-        <Select defaultValue="week">
+        <Select defaultValue="week" onValueChange={setPeriod}>
           <SelectTrigger className="w-[140px] rounded-xl h-11 border-primary/20 text-primary gap-2">
             <Calendar className="h-4 w-4" />
             <SelectValue placeholder="Period" />
@@ -80,17 +99,17 @@ export default function DriverEarningsPage() {
 
         <Card className="border-none shadow-sm p-6 rounded-[32px] md:col-span-2 bg-white">
           <CardHeader className="p-0 mb-6">
-            <CardTitle className="text-lg">Weekly Performance</CardTitle>
+            <CardTitle className="text-lg">{chartTitle}</CardTitle>
           </CardHeader>
           <div className="h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data}>
+              <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#888'}} />
+                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#888'}} />
                 <Tooltip cursor={{fill: '#f5f5f5'}} />
                 <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
-                  {data.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={index === 5 ? '#26A3DB' : '#e2e8f0'} />
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={index === chartData.length - 1 ? '#26A3DB' : '#e2e8f0'} />
                   ))}
                 </Bar>
               </BarChart>
