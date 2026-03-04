@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingCart, Search, Store, Droplets, ArrowRight, User, Truck, Star, MapPin, Download } from 'lucide-react';
@@ -52,6 +52,18 @@ const vendors = [
 ];
 
 export default function Home() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
+
+  const filteredVendors = useMemo(() => {
+    return vendors.filter(vendor => {
+      const matchesCategory = activeCategory === "All" || vendor.category === activeCategory;
+      const matchesSearch = vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            vendor.category.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [searchQuery, activeCategory]);
+
   return (
     <div className="flex flex-col min-h-screen">
       <nav className="sticky top-0 z-50 glass-effect border-b">
@@ -65,7 +77,12 @@ export default function Home() {
             <div className="hidden md:flex flex-1 max-w-md mx-8">
               <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search for water products..." className="pl-10 w-full rounded-full" />
+                <Input 
+                  placeholder="Search for water products..." 
+                  className="pl-10 w-full rounded-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
             </div>
 
@@ -167,6 +184,19 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Mobile Search Bar */}
+        <div className="md:hidden px-4 pt-6 bg-white">
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search for water products..." 
+              className="pl-10 w-full rounded-full bg-muted/20"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+
         <section className="py-12 bg-white" id="vendors">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
@@ -176,44 +206,69 @@ export default function Home() {
               </div>
               <div className="flex flex-wrap gap-3">
                 {categories.map((cat) => (
-                  <Button key={cat} variant={cat === "All" ? "default" : "outline"} className="rounded-full px-6">
+                  <Button 
+                    key={cat} 
+                    variant={activeCategory === cat ? "default" : "outline"} 
+                    className="rounded-full px-6 transition-all"
+                    onClick={() => setActiveCategory(cat)}
+                  >
                     {cat}
                   </Button>
                 ))}
               </div>
             </div>
 
-            <div className="flex overflow-x-auto gap-6 pb-8 no-scrollbar snap-x">
-              {vendors.map((vendor) => (
-                <Link key={vendor.id} href={`/vendors/${vendor.id}`} className="snap-start shrink-0">
-                  <Card className="w-72 group hover:shadow-2xl transition-all duration-300 border-none bg-white rounded-3xl overflow-hidden flex flex-col h-full">
-                    <div className="relative w-full h-44 overflow-hidden shrink-0">
-                      <Image 
-                        src={PlaceHolderImages.find(img => img.id === vendor.image)?.imageUrl || ''} 
-                        alt={vendor.name}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                    </div>
-                    <CardContent className="p-6 flex-1 flex flex-col justify-center">
-                      <h4 className="text-xl font-bold truncate">{vendor.name}</h4>
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-2">
-                        <div className="flex items-center gap-1 text-yellow-500 font-bold">
-                          <Star className="h-3 w-3 fill-current" /> {vendor.rating}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" /> {vendor.distance}
-                        </div>
+            {filteredVendors.length > 0 ? (
+              <div className="flex overflow-x-auto gap-6 pb-8 no-scrollbar snap-x">
+                {filteredVendors.map((vendor) => (
+                  <Link key={vendor.id} href={`/vendors/${vendor.id}`} className="snap-start shrink-0">
+                    <Card className="w-72 group hover:shadow-2xl transition-all duration-300 border-none bg-white rounded-3xl overflow-hidden flex flex-col h-full">
+                      <div className="relative w-full h-44 overflow-hidden shrink-0">
+                        <Image 
+                          src={PlaceHolderImages.find(img => img.id === vendor.image)?.imageUrl || ''} 
+                          alt={vendor.name}
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
                       </div>
-                      <Badge variant="outline" className="text-[10px] uppercase tracking-wider mt-3 w-fit">{vendor.category}</Badge>
-                      <div className="mt-4 flex items-center gap-1 text-primary text-sm font-bold group-hover:gap-2 transition-all">
-                        View Products <ArrowRight className="h-4 w-4" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
+                      <CardContent className="p-6 flex-1 flex flex-col justify-center">
+                        <h4 className="text-xl font-bold truncate">{vendor.name}</h4>
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-2">
+                          <div className="flex items-center gap-1 text-yellow-500 font-bold">
+                            <Star className="h-3 w-3 fill-current" /> {vendor.rating}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" /> {vendor.distance}
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-[10px] uppercase tracking-wider mt-3 w-fit">{vendor.category}</Badge>
+                        <div className="mt-4 flex items-center gap-1 text-primary text-sm font-bold group-hover:gap-2 transition-all">
+                          View Products <ArrowRight className="h-4 w-4" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-muted/10 rounded-3xl border-2 border-dashed">
+                <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 text-muted-foreground">
+                  <Search className="h-8 w-8" />
+                </div>
+                <h3 className="text-xl font-bold">No vendors found</h3>
+                <p className="text-muted-foreground">Try adjusting your search or category filters.</p>
+                <Button 
+                  variant="link" 
+                  className="mt-2 text-primary"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setActiveCategory("All");
+                  }}
+                >
+                  Clear all filters
+                </Button>
+              </div>
+            )}
           </div>
         </section>
       </main>
