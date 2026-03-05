@@ -1,9 +1,10 @@
+
 "use client";
 
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Star, Clock, MapPin, ShoppingCart, Info } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,8 @@ const vendorData = {
 
 export default function VendorDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
+  const isLoggedIn = searchParams.get('loggedin') === 'true';
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -41,7 +44,7 @@ export default function VendorDetailPage() {
           className="object-cover"
         />
         <div className="absolute inset-0 bg-black/40" />
-        <Link href="/" className="absolute top-6 left-6 z-10">
+        <Link href={isLoggedIn ? "/?loggedin=true" : "/"} className="absolute top-6 left-6 z-10">
           <Button variant="secondary" size="icon" className="rounded-full shadow-lg">
             <ArrowLeft className="h-5 w-5" />
           </Button>

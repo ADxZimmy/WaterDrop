@@ -392,7 +392,7 @@ export default function Home() {
                     <CarouselContent className="-ml-4">
                       {filteredVendors.map((vendor) => (
                         <CarouselItem key={vendor.id} className="pl-4 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
-                          <Link href={`/vendors/${vendor.id}`}>
+                          <Link href={`/vendors/${vendor.id}${isLoggedIn ? '?loggedin=true' : ''}`}>
                             <Card className="group hover:shadow-2xl transition-all duration-300 border-none bg-white rounded-3xl overflow-hidden flex flex-col h-full">
                               <div className="relative w-full h-44 overflow-hidden shrink-0">
                                 <Image 
@@ -516,7 +516,7 @@ export default function Home() {
               <div>
                 <h4 className="font-bold mb-4">Quick Links</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><Link href="#vendors" className="hover:text-primary">All Vendors</Link></li>
+                  <li><Link href={isLoggedIn ? "/?loggedin=true#vendors" : "/#vendors"} className="hover:text-primary">All Vendors</Link></li>
                   <li><Link href="/dashboard/customer/orders" className="hover:text-primary">My Orders</Link></li>
                 </ul>
               </div>
