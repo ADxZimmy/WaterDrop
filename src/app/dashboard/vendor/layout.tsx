@@ -1,6 +1,7 @@
+
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -15,61 +16,89 @@ import {
   Menu,
   Truck,
   DollarSign,
-  Bell
+  Bell,
+  Lock
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navItems = [
-  { name: 'Overview', href: '/dashboard/vendor', icon: LayoutDashboard },
-  { name: 'Revenue', href: '/dashboard/vendor/revenue', icon: DollarSign },
-  { name: 'Products', href: '/dashboard/vendor/products', icon: Package },
-  { name: 'Orders', href: '/dashboard/vendor/orders', icon: ShoppingBag },
-  { name: 'Drivers', href: '/dashboard/vendor/drivers', icon: Truck },
-  { name: 'Customers', href: '/dashboard/vendor/customers', icon: Users },
-  { name: 'Analytics', href: '/dashboard/vendor/analytics', icon: BarChart3 },
-  { name: 'Settings', href: '/dashboard/vendor/settings', icon: Settings },
+  { name: 'Overview', href: '/dashboard/vendor', icon: LayoutDashboard, requiresActive: false },
+  { name: 'Revenue', href: '/dashboard/vendor/revenue', icon: DollarSign, requiresActive: true },
+  { name: 'Products', href: '/dashboard/vendor/products', icon: Package, requiresActive: true },
+  { name: 'Orders', href: '/dashboard/vendor/orders', icon: ShoppingBag, requiresActive: true },
+  { name: 'Drivers', href: '/dashboard/vendor/drivers', icon: Truck, requiresActive: true },
+  { name: 'Customers', href: '/dashboard/vendor/customers', icon: Users, requiresActive: true },
+  { name: 'Analytics', href: '/dashboard/vendor/analytics', icon: BarChart3, requiresActive: true },
+  { name: 'Settings', href: '/dashboard/vendor/settings', icon: Settings, requiresActive: false },
 ];
 
 export default function VendorLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = React.useState(false);
+  
+  // Simulated status - in a real app this would come from a user context
+  const [isActive, setIsActive] = useState(false);
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white">
       <div className="p-6 flex items-center gap-2 border-b">
         <Droplets className="h-8 w-8 text-primary" />
-        <span className="text-2xl font-bold tracking-tight text-primary font-headline">WaterDrop</span>
+        <div className="flex flex-col">
+          <span className="text-2xl font-bold tracking-tight text-primary font-headline leading-none">WaterDrop</span>
+          <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Vendor Hub</span>
+        </div>
       </div>
       
       <nav className="flex-1 p-4 space-y-1">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link key={item.name} href={item.href} onClick={() => setIsOpen(false)}>
+        <TooltipProvider>
+          {navItems.map((item) => {
+            const activeLink = pathname === item.href;
+            const disabled = item.requiresActive && !isActive;
+            
+            const LinkContent = (
               <Button
                 variant="ghost"
+                disabled={disabled}
                 className={cn(
                   "w-full justify-start gap-3 h-11 px-4 rounded-xl transition-all",
-                  isActive 
-                    ? "bg-primary/10 text-primary font-bold" 
-                    : "text-muted-foreground hover:bg-muted"
+                  activeLink 
+                    ? "bg-primary/10 text-primary font-bold shadow-sm" 
+                    : "text-muted-foreground hover:bg-muted",
+                  disabled && "opacity-50 cursor-not-allowed grayscale"
                 )}
               >
-                <item.icon className={cn("h-5 w-5", isActive && "text-primary")} />
-                {item.name}
+                <item.icon className={cn("h-5 w-5", activeLink && "text-primary")} />
+                <span className="flex-1 text-left">{item.name}</span>
+                {disabled && <Lock className="h-3 w-3 text-muted-foreground/50" />}
               </Button>
-            </Link>
-          );
-        })}
+            );
+
+            return disabled ? (
+              <Tooltip key={item.name}>
+                <TooltipTrigger asChild>
+                  <div className="w-full">{LinkContent}</div>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  Account review required
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Link key={item.name} href={item.href} onClick={() => setIsOpen(false)}>
+                {LinkContent}
+              </Link>
+            );
+          })}
+        </TooltipProvider>
       </nav>
 
-      <div className="p-4 border-t">
+      <div className="p-4 border-t bg-muted/5">
         <Link href="/auth/login">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-xl">
+          <Button variant="ghost" className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl h-11">
             <LogOut className="h-5 w-5" />
-            Sign Out
+            <span className="font-bold">Sign Out</span>
           </Button>
         </Link>
       </div>
@@ -77,22 +106,22 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   );
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-background">
       <aside className="w-64 border-r bg-white hidden lg:flex flex-col sticky top-0 h-screen">
         <SidebarContent />
       </aside>
 
       <div className="flex-1 flex flex-col min-h-screen">
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b p-4 px-6 flex items-center justify-between">
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b p-4 px-6 flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
             <div className="lg:hidden">
               <Sheet open={isOpen} onOpenChange={setIsOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-muted">
                     <Menu className="h-6 w-6" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-72">
+                <SheetContent side="left" className="p-0 w-72 border-none shadow-2xl">
                   <SheetHeader className="sr-only">
                     <SheetTitle>WaterDrop Vendor Hub</SheetTitle>
                     <SheetDescription>Main navigation for the vendor dashboard</SheetDescription>
@@ -101,24 +130,32 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
                 </SheetContent>
               </Sheet>
             </div>
-            <Droplets className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg font-headline">WaterDrop Vendor</span>
+            <div className="lg:hidden flex items-center gap-2">
+              <Droplets className="h-6 w-6 text-primary" />
+              <span className="font-bold text-lg font-headline">WaterDrop</span>
+            </div>
+            {!isActive && (
+              <div className="hidden sm:flex items-center gap-2 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-100 ml-4">
+                <span className="h-2 w-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                <span className="text-[10px] font-bold uppercase tracking-tight text-yellow-700">Account Review Pending</span>
+              </div>
+            )}
           </div>
           
           <div className="flex items-center gap-3">
             <Link href="/dashboard/vendor/notifications">
-              <Button variant="ghost" size="icon" className="relative rounded-full">
+              <Button variant="ghost" size="icon" className="relative rounded-full h-10 w-10 hover:bg-muted/50 transition-colors">
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-2 right-2 h-2 w-2 bg-destructive rounded-full border-2 border-white"></span>
               </Button>
             </Link>
-            <div className="hidden sm:flex h-8 w-8 rounded-full bg-primary/10 items-center justify-center text-primary font-bold text-xs">
+            <div className="h-9 w-9 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-xs shadow-lg shadow-primary/20">
               AP
             </div>
           </div>
         </header>
 
-        <main className="flex-1 bg-muted/20">
+        <main className="flex-1">
           {children}
         </main>
       </div>
