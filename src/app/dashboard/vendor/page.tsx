@@ -42,10 +42,16 @@ export default function VendorDashboardOverview() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Simulate checking account status on mount
-    if (status === 'new') {
-      const timer = setTimeout(() => setShowSetup(true), 1000);
-      return () => clearTimeout(timer);
+    // Check for dev bypass
+    const isApproved = localStorage.getItem('vendor_bypass_approved') === 'true';
+    if (isApproved) {
+      setStatus('active');
+    } else {
+      // Simulate checking account status on mount if not bypassed
+      if (status === 'new') {
+        const timer = setTimeout(() => setShowSetup(true), 1000);
+        return () => clearTimeout(timer);
+      }
     }
   }, [status]);
 
@@ -64,6 +70,12 @@ export default function VendorDashboardOverview() {
       title: "Application Submitted",
       description: "Your business details are now under review. We'll notify you once approved."
     });
+  };
+
+  const handleDevApprove = () => {
+    localStorage.setItem('vendor_bypass_approved', 'true');
+    setStatus('active');
+    window.location.reload();
   };
 
   // 1. "Empty" State for New/Review accounts
@@ -91,17 +103,25 @@ export default function VendorDashboardOverview() {
               <>
                 <h2 className="text-2xl font-bold mb-2">Finish Your Store Setup</h2>
                 <p className="text-muted-foreground mb-8 max-w-md">Complete your verification to start adding products, managing drivers, and receiving orders.</p>
-                <Button onClick={() => setShowSetup(true)} size="lg" className="rounded-xl px-8 shadow-lg shadow-primary/20">
-                  Complete Setup Now
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button onClick={() => setShowSetup(true)} size="lg" className="rounded-xl px-8 shadow-lg shadow-primary/20">
+                    Complete Setup Now
+                  </Button>
+                  <Button variant="outline" size="lg" className="rounded-xl px-8 border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100" onClick={handleDevApprove}>
+                    [TEMP] Bypass Review
+                  </Button>
+                </div>
               </>
             ) : (
               <>
                 <h2 className="text-2xl font-bold mb-2">Verification in Progress</h2>
                 <p className="text-muted-foreground mb-8 max-w-md">Our compliance team is currently reviewing your documents. This usually takes 24-48 business hours.</p>
-                <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-100 text-yellow-800 text-sm max-w-sm">
+                <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-100 text-yellow-800 text-sm max-w-sm mb-6">
                   We'll email you at <strong>admin@aquapure.com</strong> once your account is activated.
                 </div>
+                <Button variant="outline" className="rounded-xl px-8 border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100" onClick={handleDevApprove}>
+                  [TEMP] Bypass Review
+                </Button>
               </>
             )}
           </Card>

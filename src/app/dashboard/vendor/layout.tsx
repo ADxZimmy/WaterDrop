@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -17,7 +17,8 @@ import {
   Truck,
   DollarSign,
   Bell,
-  Lock
+  Lock,
+  ShieldCheck
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,19 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   
   // Simulated status - in a real app this would come from a user context
   const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    // Check for dev bypass
+    const isApproved = localStorage.getItem('vendor_bypass_approved') === 'true';
+    setIsActive(isApproved);
+  }, []);
+
+  const handleToggleBypass = () => {
+    const newState = !isActive;
+    setIsActive(newState);
+    localStorage.setItem('vendor_bypass_approved', newState ? 'true' : 'false');
+    window.location.reload();
+  };
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-white">
@@ -134,12 +148,27 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
               <Droplets className="h-6 w-6 text-primary" />
               <span className="font-bold text-lg font-headline">WaterDrop</span>
             </div>
-            {!isActive && (
+            {!isActive ? (
               <div className="hidden sm:flex items-center gap-2 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-100 ml-4">
                 <span className="h-2 w-2 bg-yellow-500 rounded-full animate-pulse"></span>
                 <span className="text-[10px] font-bold uppercase tracking-tight text-yellow-700">Account Review Pending</span>
               </div>
+            ) : (
+              <div className="hidden sm:flex items-center gap-2 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 ml-4">
+                <ShieldCheck className="h-3 w-3 text-emerald-600" />
+                <span className="text-[10px] font-bold uppercase tracking-tight text-emerald-700">Verified Partner</span>
+              </div>
             )}
+            
+            {/* DEV BYPASS BUTTON */}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="ml-4 h-8 rounded-lg border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100 text-[10px] font-bold"
+              onClick={handleToggleBypass}
+            >
+              [DEV] {isActive ? "REVOKE ACCESS" : "BYPASS APPROVAL"}
+            </Button>
           </div>
           
           <div className="flex items-center gap-3">
