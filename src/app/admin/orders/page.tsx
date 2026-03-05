@@ -87,8 +87,7 @@ export default function AdminOrdersPage() {
               <TableHead>Customer</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Time</TableHead>
-              <TableHead className="text-right pr-8">Action</TableHead>
+              <TableHead className="pr-8">Time</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -120,13 +119,8 @@ export default function AdminOrdersPage() {
                     {order.status}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-xs text-slate-500 italic">
+                <TableCell className="text-xs text-slate-500 italic pr-8">
                   {order.time}
-                </TableCell>
-                <TableCell className="text-right pr-8">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
                 </TableCell>
               </TableRow>
             ))}
