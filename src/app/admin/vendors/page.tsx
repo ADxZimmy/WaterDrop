@@ -16,7 +16,8 @@ import {
   ShieldAlert,
   XCircle,
   History,
-  ExternalLink
+  ExternalLink,
+  Plus
 } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,7 +55,11 @@ export default function AdminVendorsPage() {
           <h1 className="text-3xl font-bold font-headline text-slate-900">Partner Vendors</h1>
           <p className="text-slate-500">Managing all verified water suppliers on the platform.</p>
         </div>
-        <Button className="rounded-xl h-11 px-6 shadow-lg shadow-primary/20">Add New Partner</Button>
+        <Link href="/admin/vendors/new">
+          <Button className="rounded-xl h-11 px-6 shadow-lg shadow-primary/20 gap-2">
+            <Plus className="h-4 w-4" /> Add New Vendor
+          </Button>
+        </Link>
       </div>
 
       <div className="flex gap-4 items-center">
