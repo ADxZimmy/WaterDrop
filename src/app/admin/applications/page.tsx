@@ -152,8 +152,9 @@ export default function AdminApplicationsPage() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="rounded-lg h-8 gap-2 border-slate-200 hover:bg-primary hover:text-white hover:border-primary transition-all"
+                    className="rounded-lg h-8 gap-2 border-slate-200 hover:bg-primary hover:text-white hover:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-slate-500"
                     onClick={() => setSelectedApp(app)}
+                    disabled={app.status === 'Approved'}
                   >
                     <Eye className="h-3.5 w-3.5" /> Inspect
                   </Button>
