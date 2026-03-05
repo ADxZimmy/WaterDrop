@@ -1,7 +1,8 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
+import Link from 'next/link';
 import { 
   Store, 
   Search, 
@@ -12,7 +13,10 @@ import {
   ShoppingBag, 
   ArrowUpRight,
   User,
-  ShieldAlert
+  ShieldAlert,
+  XCircle,
+  History,
+  ExternalLink
 } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,8 +25,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 
-const vendors = [
+const initialVendors = [
   { id: 1, name: "Aqua Pure Factory", owner: "John Doe", status: "Active", orders: 1204, rating: 4.8, revenue: "$42,500", joined: "May 2024" },
   { id: 2, name: "Blue Wave Distro", owner: "Sarah Smith", status: "Active", orders: 890, rating: 4.5, revenue: "$28,200", joined: "Jun 2024" },
   { id: 3, name: "Crystal Spring", owner: "Michael Scott", status: "Warning", orders: 450, rating: 3.9, revenue: "$12,400", joined: "Jul 2024" },
@@ -30,6 +35,18 @@ const vendors = [
 ];
 
 export default function AdminVendorsPage() {
+  const [vendors, setVendors] = useState(initialVendors);
+  const { toast } = useToast();
+
+  const handleUpdateStatus = (id: number, newStatus: string) => {
+    setVendors(prev => prev.map(v => v.id === id ? { ...v, status: newStatus } : v));
+    toast({
+      title: "Vendor Status Updated",
+      description: `Vendor has been set to ${newStatus}.`,
+      variant: newStatus === 'Suspended' ? 'destructive' : 'default',
+    });
+  };
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
@@ -105,16 +122,26 @@ export default function AdminVendorsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl border-slate-100">
-                      <DropdownMenuItem className="gap-2 cursor-pointer">
-                        <User className="h-4 w-4" /> View Profile
+                      <DropdownMenuItem className="gap-2 cursor-pointer" asChild>
+                        <Link href={`/admin/vendors/${vendor.id}`}>
+                          <User className="h-4 w-4" /> View Profile
+                        </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2 cursor-pointer">
-                        <ShoppingBag className="h-4 w-4" /> Order History
+                      <DropdownMenuItem className="gap-2 cursor-pointer" asChild>
+                        <Link href={`/admin/vendors/${vendor.id}/orders`}>
+                          <History className="h-4 w-4" /> Order History
+                        </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2 text-amber-600 cursor-pointer">
+                      <DropdownMenuItem 
+                        className="gap-2 text-amber-600 cursor-pointer"
+                        onClick={() => handleUpdateStatus(vendor.id, 'Warning')}
+                      >
                         <ShieldAlert className="h-4 w-4" /> Issue Warning
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2 text-rose-600 cursor-pointer">
+                      <DropdownMenuItem 
+                        className="gap-2 text-rose-600 cursor-pointer"
+                        onClick={() => handleUpdateStatus(vendor.id, 'Suspended')}
+                      >
                         <XCircle className="h-4 w-4" /> Suspend Vendor
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -128,7 +155,3 @@ export default function AdminVendorsPage() {
     </div>
   );
 }
-
-const XCircle = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
-);
