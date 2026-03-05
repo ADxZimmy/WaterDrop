@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -88,8 +87,7 @@ export default function AdminVendorOrdersPage() {
               <TableHead>Items</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right pr-8">Action</TableHead>
+              <TableHead className="pr-8">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -109,7 +107,7 @@ export default function AdminVendorOrdersPage() {
                     <Calendar className="h-3 w-3" /> {order.date}
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="pr-8">
                   <Badge 
                     className={`rounded-full px-3 border-none ${
                       order.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : 
@@ -120,11 +118,6 @@ export default function AdminVendorOrdersPage() {
                   >
                     {order.status}
                   </Badge>
-                </TableCell>
-                <TableCell className="text-right pr-8">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
                 </TableCell>
               </TableRow>
             ))}
