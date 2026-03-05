@@ -19,7 +19,8 @@ import {
   ChevronLeft,
   Upload,
   MapPin,
-  Lock
+  Lock,
+  Droplets
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -398,7 +399,7 @@ export default function VendorDashboardOverview() {
                 <AlertCircle className="h-5 w-5 text-yellow-600" />
                 <div className="flex-1">
                   <p className="text-sm font-bold text-yellow-900">Expiring Soon</p>
-                  <p className="text-xs text-yellow-700">Batch #445-B expires in 5 days.</p>
+                  <p className="text-xs text-red-700">Batch #445-B expires in 5 days.</p>
                 </div>
                 <Link href="/dashboard/vendor/products">
                   <Button size="sm" variant="outline" className="border-yellow-200 text-yellow-800 rounded-lg">Review</Button>
