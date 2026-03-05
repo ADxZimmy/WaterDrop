@@ -24,6 +24,7 @@ export const viewport: Viewport = {
   themeColor: '#0ea5e9',
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
   viewportFit: 'cover',
 };
 
@@ -33,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full scroll-smooth">
+    <html lang="en">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -42,13 +43,15 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="font-body antialiased min-h-screen flex flex-col bg-background text-foreground">
-        <div className="flex-1 pb-16 md:pb-0 w-full max-w-full overflow-x-hidden relative">
-          {children}
+      <body className="font-body">
+        <div className="flex flex-col min-h-screen">
+          <main className="flex-1 w-full max-w-full pb-16 md:pb-0 relative overflow-x-hidden">
+            {children}
+          </main>
+          <MobileNav />
+          <PwaInstallPrompt />
+          <Toaster />
         </div>
-        <MobileNav />
-        <PwaInstallPrompt />
-        <Toaster />
       </body>
     </html>
   );
