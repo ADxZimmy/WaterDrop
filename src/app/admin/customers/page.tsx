@@ -7,7 +7,6 @@ import {
   Search, 
   Filter, 
   ShoppingBag, 
-  MoreHorizontal, 
   Star, 
   Mail, 
   Calendar,
@@ -80,8 +79,7 @@ export default function AdminCustomersPage() {
               <TableHead>Loyalty Tier</TableHead>
               <TableHead>Orders</TableHead>
               <TableHead>Total Spent</TableHead>
-              <TableHead>Joined</TableHead>
-              <TableHead className="text-right pr-8">Action</TableHead>
+              <TableHead className="pr-8">Joined</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -112,12 +110,7 @@ export default function AdminCustomersPage() {
                 </TableCell>
                 <TableCell className="text-sm font-medium text-slate-700">{customer.orders}</TableCell>
                 <TableCell className="font-bold text-primary">{customer.spent}</TableCell>
-                <TableCell className="text-sm text-slate-500">{customer.joined}</TableCell>
-                <TableCell className="text-right pr-8">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </TableCell>
+                <TableCell className="text-sm text-slate-500 pr-8">{customer.joined}</TableCell>
               </TableRow>
             ))}
           </TableBody>
