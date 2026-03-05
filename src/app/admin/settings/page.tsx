@@ -137,17 +137,27 @@ export default function AdminSettingsPage() {
               <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
                 <CardHeader className="bg-emerald-50 border-b border-emerald-100 p-6">
                   <CardTitle className="text-lg text-emerald-900">Revenue & Commissions</CardTitle>
-                  <CardDescription className="text-emerald-700/70">Define the platform's cut from each transaction.</CardDescription>
+                  <CardDescription className="text-emerald-700/70">Define fixed platform cuts per item type sold.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-8 space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="commission">Standard Commission (%)</Label>
+                      <Label htmlFor="bagCommission">Commission per Sachet Bag ($)</Label>
                       <div className="relative">
                         <DollarSign className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                        <Input id="commission" type="number" defaultValue="10" className="pl-10 rounded-xl h-11" />
+                        <Input id="bagCommission" type="number" defaultValue="0.50" className="pl-10 rounded-xl h-11" />
                       </div>
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="refillCommission">Commission per Dispenser Refill ($)</Label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                        <Input id="refillCommission" type="number" defaultValue="2.00" className="pl-10 rounded-xl h-11" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="minOrder">Min. Order Value ($)</Label>
                       <div className="relative">
