@@ -1,11 +1,35 @@
+
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { MapPin, Phone, Truck, CheckCircle, Navigation, Clock, User, MessageSquare, ChevronRight } from 'lucide-react';
+import { 
+  MapPin, 
+  Phone, 
+  Truck, 
+  CheckCircle, 
+  Navigation, 
+  Clock, 
+  User, 
+  MessageSquare, 
+  ChevronRight, 
+  Building2, 
+  Award, 
+  Link as LinkIcon, 
+  ShieldAlert, 
+  CheckCircle2, 
+  ChevronLeft,
+  Droplets
+} from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const activeDeliveries = [
   {
@@ -14,7 +38,7 @@ const activeDeliveries = [
     address: "123 Ocean View Dr, Blue City",
     distance: "1.2 km",
     items: "5x PureLife Bottled (Pack)",
-    status: "Accepted", // New Order for driver
+    status: "Accepted",
     vendor: "Aqua Pure Factory",
     price: "$8.50"
   },
@@ -24,13 +48,168 @@ const activeDeliveries = [
     address: "45 River St, Spring Hills",
     distance: "3.5 km",
     items: "10x Sachet Water Bags",
-    status: "Delivering", // Currently in transit
+    status: "Delivering",
     vendor: "Blue Wave Distro",
     price: "$12.00"
   }
 ];
 
 export default function DriverDashboard() {
+  const [isSetupComplete, setIsSetupComplete] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Check for dev bypass
+    const isDriverSetup = localStorage.getItem('driver_setup_complete') === 'true';
+    if (isDriverSetup) {
+      setIsSetupComplete(true);
+    } else {
+      const timer = setTimeout(() => setShowSetup(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleNext = () => {
+    if (currentStep < 2) setCurrentStep(currentStep + 1);
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
+
+  const handleSubmitSetup = () => {
+    localStorage.setItem('driver_setup_complete', 'true');
+    setIsSetupComplete(true);
+    setShowSetup(false);
+    toast({
+      title: "Account Ready!",
+      description: "You are now linked to your vendor and ready to receive orders."
+    });
+  };
+
+  const handleDevBypass = () => {
+    localStorage.setItem('driver_setup_complete', 'true');
+    setIsSetupComplete(true);
+    setShowSetup(false);
+    window.location.reload();
+  };
+
+  if (!isSetupComplete) {
+    return (
+      <div className="p-4 md:p-8 space-y-6 max-w-4xl mx-auto">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold font-headline">Driver Dashboard</h2>
+            <p className="text-sm text-muted-foreground">Setup required to start delivering</p>
+          </div>
+          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Pending Setup</Badge>
+        </div>
+
+        <Card className="border-dashed border-2 bg-muted/5 flex flex-col items-center justify-center p-12 text-center min-h-[400px] rounded-[32px]">
+          <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-6">
+            <Truck className="h-10 w-10" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Complete Your Driver Profile</h2>
+          <p className="text-muted-foreground mb-8 max-w-md">Link your account to a registered WaterDrop vendor and provide your vehicle details to start accepting orders.</p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button onClick={() => setShowSetup(true)} size="lg" className="rounded-xl px-8 shadow-lg shadow-primary/20">
+              Start Setup Now
+            </Button>
+            <Button variant="outline" size="lg" className="rounded-xl px-8 border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100" onClick={handleDevBypass}>
+              [DEV] Bypass Setup
+            </Button>
+          </div>
+        </Card>
+
+        <Dialog open={showSetup} onOpenChange={setShowSetup}>
+          <DialogContent className="sm:max-w-md p-0 border-none overflow-hidden rounded-[32px] shadow-2xl">
+            <div className="bg-primary p-8 text-white">
+              <div className="flex items-center gap-3 mb-4">
+                <Truck className="h-8 w-8" />
+                <span className="font-bold text-2xl tracking-tight font-headline">Driver Setup</span>
+              </div>
+              <DialogTitle className="text-2xl font-bold">Link Your Account</DialogTitle>
+              <DialogDescription className="text-primary-foreground/80 mt-2">
+                Connect with your water supplier and verify your vehicle.
+              </DialogDescription>
+              <div className="flex gap-2 mt-6">
+                {[1, 2].map((s) => (
+                  <div key={s} className={cn("h-1.5 rounded-full flex-1 transition-all", s <= currentStep ? "bg-white" : "bg-white/20")} />
+                ))}
+              </div>
+            </div>
+
+            <div className="p-8 bg-white">
+              {currentStep === 1 && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
+                  <div className="flex items-center gap-2 text-primary font-bold text-lg mb-2">
+                    <Building2 className="h-5 w-5" /> 1. Vendor Connection
+                  </div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="vendorId">Vendor ID</Label>
+                      <div className="relative">
+                        <LinkIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input id="vendorId" placeholder="e.g. VND-8821-X" className="pl-10 h-12 rounded-xl border-2" />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <ShieldAlert className="h-3 w-3" /> Get this ID from your water factory manager.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {currentStep === 2 && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
+                  <div className="flex items-center gap-2 text-primary font-bold text-lg mb-2">
+                    <Award className="h-5 w-5" /> 2. Vehicle Details
+                  </div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="vehicleType">Vehicle Type</Label>
+                      <Select>
+                        <SelectTrigger className="h-12 rounded-xl">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="bike">Motorcycle / Scooter</SelectItem>
+                          <SelectItem value="van">Delivery Van</SelectItem>
+                          <SelectItem value="truck">Light Truck</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="license">License Plate Number</Label>
+                      <Input id="license" placeholder="e.g. AQUA-2024" className="h-12 rounded-xl border-2 uppercase font-mono" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-8 border-t flex justify-between bg-muted/10">
+              <Button variant="ghost" onClick={handleBack} disabled={currentStep === 1} className="rounded-xl h-12">
+                <ChevronLeft className="h-4 w-4 mr-2" /> Back
+              </Button>
+              {currentStep === 2 ? (
+                <Button onClick={handleSubmitSetup} className="rounded-xl h-12 px-10 shadow-lg shadow-primary/20">
+                  Complete & Start <CheckCircle2 className="h-4 w-4 ml-2" />
+                </Button>
+              ) : (
+                <Button onClick={handleNext} className="rounded-xl h-12 px-10">
+                  Continue <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex items-center justify-between">
