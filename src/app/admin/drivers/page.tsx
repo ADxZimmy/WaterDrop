@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -147,10 +146,6 @@ export default function AdminDriversPage() {
                       </DropdownMenuItem>
                       <DropdownMenuItem className="gap-2 cursor-pointer">
                         <Clock className="h-4 w-4" /> Shift History
-                      </DropdownMenuItem>
-                      <DropdownMenuContent className="bg-slate-50 p-0" />
-                      <DropdownMenuItem className="gap-2 text-rose-600 cursor-pointer">
-                        <ShieldAlert className="h-4 w-4" /> Flag for Review
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
