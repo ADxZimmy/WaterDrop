@@ -18,7 +18,8 @@ import {
   Package,
   ArrowUpRight,
   ExternalLink,
-  FileText
+  FileText,
+  History
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -61,7 +62,7 @@ export default function AdminVendorProfilePage() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold font-headline text-slate-900">Vendor Profile</h1>
-          <p className="text-slate-500">ID: VND-{params.id || vendorDetails.id}</p>
+          <p className="text-slate-500">ID: VND-{params?.id || vendorDetails.id}</p>
         </div>
         <Badge className="ml-auto bg-emerald-100 text-emerald-700 border-none px-4 py-1">
           {vendorDetails.status}
@@ -72,7 +73,7 @@ export default function AdminVendorProfilePage() {
         <Card className="lg:col-span-1 border-none shadow-sm h-fit rounded-[32px] overflow-hidden">
           <CardContent className="p-8 flex flex-col items-center text-center">
             <Avatar className="h-32 w-32 border-4 border-white shadow-xl mb-6">
-              <AvatarImage src={`https://picsum.photos/seed/${params.id}/200`} />
+              <AvatarImage src={`https://picsum.photos/seed/${params?.id}/200`} />
               <AvatarFallback>{vendorDetails.name[0]}</AvatarFallback>
             </Avatar>
             <h2 className="text-2xl font-bold text-slate-900">{vendorDetails.name}</h2>
@@ -186,7 +187,7 @@ export default function AdminVendorProfilePage() {
               {vendorDetails.bio}
             </p>
             <div className="mt-8 flex gap-4">
-              <Link href={`/admin/vendors/${params.id}/orders`} className="flex-1">
+              <Link href={`/admin/vendors/${params?.id}/orders`} className="flex-1">
                 <Button className="w-full rounded-xl h-12 gap-2">
                   <History className="h-4 w-4" /> View Full Order History
                 </Button>
