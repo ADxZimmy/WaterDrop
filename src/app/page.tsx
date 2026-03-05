@@ -518,6 +518,7 @@ export default function Home() {
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li><Link href={isLoggedIn ? "/?loggedin=true#vendors" : "/#vendors"} className="hover:text-primary">All Vendors</Link></li>
                   <li><Link href="/dashboard/customer/orders" className="hover:text-primary">My Orders</Link></li>
+                  <li><Link href="/admin" className="hover:text-primary">Super Admin Portal</Link></li>
                 </ul>
               </div>
               <div>
