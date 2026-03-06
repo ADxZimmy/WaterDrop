@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { 
@@ -9,19 +9,53 @@ import {
   Navigation, 
   Phone, 
   MessageSquare, 
-  ArrowUp, 
   ArrowUpRight,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Lock
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useToast } from "@/hooks/use-toast";
 
 export default function DriverNavigatePage() {
   const params = useParams();
   const router = useRouter();
+  const { toast } = useToast();
+  
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [code, setCode] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleConfirmDelivery = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (code.length < 4) {
+      toast({
+        title: "Invalid Code",
+        description: "Please enter the full 4-digit confirmation code.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    // Simulate API verification
+    setTimeout(() => {
+      toast({
+        title: "Delivery Confirmed!",
+        description: "Order #AQ-5521 has been marked as completed."
+      });
+      setIsSubmitting(false);
+      setShowConfirmModal(false);
+      router.push('/dashboard/driver');
+    }, 1500);
+  };
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-muted">
@@ -117,13 +151,64 @@ export default function DriverNavigatePage() {
 
             <Button 
               className="w-full h-16 rounded-[24px] text-xl font-bold mt-6 shadow-xl shadow-primary/20 gap-3"
-              onClick={() => router.push('/dashboard/driver')}
+              onClick={() => setShowConfirmModal(true)}
             >
               I Have Arrived
             </Button>
           </CardContent>
         </Card>
       </div>
+
+      {/* Confirmation Modal */}
+      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+        <DialogContent className="sm:max-w-md rounded-[32px] border-none shadow-2xl overflow-hidden p-0">
+          <div className="bg-primary p-8 text-white text-center">
+            <div className="h-16 w-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Lock className="h-8 w-8" />
+            </div>
+            <DialogTitle className="text-2xl font-bold font-headline">Verify Delivery</DialogTitle>
+            <DialogDescription className="text-primary-foreground/80 mt-2">
+              Please enter the 4-digit code provided by the customer to complete this order.
+            </DialogDescription>
+          </div>
+          
+          <form onSubmit={handleConfirmDelivery} className="p-8 space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="code" className="sr-only">Verification Code</Label>
+              <Input 
+                id="code" 
+                type="text" 
+                inputMode="numeric"
+                maxLength={4}
+                placeholder="0 0 0 0" 
+                className="h-16 text-center text-4xl font-bold tracking-[0.5em] rounded-2xl border-2 focus:border-primary transition-all bg-muted/30"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                required
+                autoFocus
+              />
+            </div>
+            <DialogFooter className="flex flex-col gap-3">
+              <Button 
+                type="submit" 
+                className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg shadow-primary/20 gap-2"
+                disabled={isSubmitting || code.length < 4}
+              >
+                {isSubmitting ? "Verifying..." : "Complete Delivery"}
+                {!isSubmitting && <CheckCircle2 className="h-5 w-5" />}
+              </Button>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                className="w-full rounded-xl"
+                onClick={() => setShowConfirmModal(false)}
+              >
+                Cancel
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
