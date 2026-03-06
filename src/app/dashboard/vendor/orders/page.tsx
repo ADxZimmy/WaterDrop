@@ -1,4 +1,6 @@
-import React from 'react';
+"use client";
+
+import React, { useState } from 'react';
 import { ShoppingBag, Truck, CheckCircle, Clock, Search, Filter, ArrowUpRight, User, Check, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,15 +8,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
-const orders = [
-  { id: "AQ-5521", customer: "Alice Johnson", items: "5x Premium Bottled", total: 62.50, status: "Pending", time: "5m ago" },
-  { id: "AQ-5522", customer: "Bob Wilson", items: "10x Sachet Packs", total: 35.00, status: "Accepted", time: "12m ago" },
-  { id: "AQ-5523", customer: "Clara Davis", items: "2x 19L Dispenser", total: 30.00, status: "Delivering", time: "45m ago" },
-  { id: "AQ-5524", customer: "Daniel Lee", items: "20x 750ml Individual", total: 24.00, status: "Accepted", time: "1h ago" },
+const initialOrders = [
+  { id: "AQ-5521", customer: "Alice Johnson", items: "5x Premium Bottled", total: 6250.00, status: "Pending", time: "5m ago" },
+  { id: "AQ-5522", customer: "Bob Wilson", items: "10x Sachet Packs", total: 3500.00, status: "Accepted", time: "12m ago" },
+  { id: "AQ-5523", customer: "Clara Davis", items: "2x 19L Dispenser", total: 3000.00, status: "Delivering", time: "45m ago" },
+  { id: "AQ-5524", customer: "Daniel Lee", items: "20x 750ml Individual", total: 2400.00, status: "Accepted", time: "1h ago" },
 ];
 
 export default function VendorOrdersPage() {
+  const [orders, setOrders] = useState(initialOrders);
+  const { toast } = useToast();
+
+  const updateOrderStatus = (id: string, newStatus: string) => {
+    setOrders(prev => prev.map(order => 
+      order.id === id ? { ...order, status: newStatus } : order
+    ));
+    
+    toast({
+      title: `Order ${newStatus}`,
+      description: `Order ${id} has been marked as ${newStatus.toLowerCase()}.`,
+    });
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -34,7 +51,7 @@ export default function VendorOrdersPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">New Orders</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">12</div>
+            <div className="text-3xl font-bold">{orders.filter(o => o.status === 'Pending').length}</div>
             <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
               <ArrowUpRight className="h-3 w-3" /> 20% from yesterday
             </p>
@@ -45,7 +62,7 @@ export default function VendorOrdersPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Accepted</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">8</div>
+            <div className="text-3xl font-bold">{orders.filter(o => o.status === 'Accepted').length}</div>
             <p className="text-xs text-muted-foreground mt-1">Ready for pickup</p>
           </CardContent>
         </Card>
@@ -54,7 +71,7 @@ export default function VendorOrdersPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Out for Delivery</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">5</div>
+            <div className="text-3xl font-bold">{orders.filter(o => o.status === 'Delivering').length}</div>
             <p className="text-xs text-primary mt-1">In transit to customer</p>
           </CardContent>
         </Card>
@@ -63,8 +80,8 @@ export default function VendorOrdersPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Today's Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-accent">$842.00</div>
-            <p className="text-xs text-muted-foreground mt-1">Across 42 deliveries</p>
+            <div className="text-3xl font-bold text-accent">₦{orders.reduce((acc, curr) => acc + (curr.status !== 'Declined' ? curr.total : 0), 0).toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">Across {orders.length} deliveries</p>
           </CardContent>
         </Card>
       </div>
@@ -117,7 +134,7 @@ export default function VendorOrdersPage() {
                   </div>
                 </TableCell>
                 <TableCell>{order.items}</TableCell>
-                <TableCell className="font-medium">${order.total.toFixed(2)}</TableCell>
+                <TableCell className="font-medium">₦{order.total.toLocaleString()}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">
                   <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
@@ -126,11 +143,11 @@ export default function VendorOrdersPage() {
                 </TableCell>
                 <TableCell>
                   <Badge 
-                    className={`rounded-full px-3 ${
-                      order.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100' : 
-                      order.status === 'Accepted' ? 'bg-blue-100 text-blue-700 hover:bg-blue-100' :
-                      order.status === 'Delivering' ? 'bg-purple-100 text-purple-700 hover:bg-purple-100' :
-                      'bg-red-100 text-red-700 hover:bg-red-100'
+                    className={`rounded-full px-3 border-none ${
+                      order.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' : 
+                      order.status === 'Accepted' ? 'bg-blue-100 text-blue-700' :
+                      order.status === 'Delivering' ? 'bg-purple-100 text-purple-700' :
+                      'bg-red-100 text-red-700'
                     }`}
                   >
                     {order.status}
@@ -139,15 +156,28 @@ export default function VendorOrdersPage() {
                 <TableCell className="text-right">
                   {order.status === 'Pending' ? (
                     <div className="flex justify-end gap-2">
-                      <Button size="sm" className="h-8 rounded-lg gap-1 bg-green-600 hover:bg-green-700 text-white border-none shadow-sm">
+                      <Button 
+                        size="sm" 
+                        className="h-8 rounded-lg gap-1 bg-green-600 hover:bg-green-700 text-white border-none shadow-sm"
+                        onClick={() => updateOrderStatus(order.id, 'Accepted')}
+                      >
                         <Check className="h-3.5 w-3.5" /> Accept
                       </Button>
-                      <Button size="sm" variant="outline" className="h-8 rounded-lg gap-1 text-red-600 border-red-200 hover:bg-red-50">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-8 rounded-lg gap-1 text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={() => updateOrderStatus(order.id, 'Declined')}
+                      >
                         <X className="h-3.5 w-3.5" /> Decline
                       </Button>
                     </div>
                   ) : (
-                    <Select defaultValue={order.status.toLowerCase()}>
+                    <Select 
+                      value={order.status.toLowerCase()} 
+                      onValueChange={(val) => updateOrderStatus(order.id, val.charAt(0).toUpperCase() + val.slice(1))}
+                      disabled={order.status === 'Declined'}
+                    >
                       <SelectTrigger className="w-[130px] h-8 text-xs ml-auto">
                         <SelectValue />
                       </SelectTrigger>
