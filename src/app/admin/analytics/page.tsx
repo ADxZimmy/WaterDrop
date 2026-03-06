@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -20,18 +20,43 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  BarChart, Bar, PieChart as RePieChart, Pie, Cell 
+  PieChart as RePieChart, Pie, Cell 
 } from 'recharts';
 import { cn } from "@/lib/utils";
 
-const revenueData = [
-  { name: 'Jul', rev: 450000, orders: 1200 },
-  { name: 'Aug', rev: 520000, orders: 1450 },
-  { name: 'Sep', rev: 480000, orders: 1300 },
-  { name: 'Oct', rev: 610000, orders: 1800 },
-  { name: 'Nov', rev: 590000, orders: 1750 },
-  { name: 'Dec', rev: 820000, orders: 2400 },
-];
+const dataSets: Record<string, any[]> = {
+  'Day': [
+    { name: '08:00', rev: 45000, orders: 120 },
+    { name: '10:00', rev: 52000, orders: 145 },
+    { name: '12:00', rev: 88000, orders: 230 },
+    { name: '14:00', rev: 61000, orders: 180 },
+    { name: '16:00', rev: 59000, orders: 175 },
+    { name: '18:00', rev: 82000, orders: 240 },
+  ],
+  '1m': [
+    { name: 'Wk 1', rev: 350000, orders: 900 },
+    { name: 'Wk 2', rev: 420000, orders: 1150 },
+    { name: 'Wk 3', rev: 380000, orders: 1050 },
+    { name: 'Wk 4', rev: 550000, orders: 1400 },
+  ],
+  '3m': [
+    { name: 'Oct', rev: 1450000, orders: 4200 },
+    { name: 'Nov', rev: 1520000, orders: 4450 },
+    { name: 'Dec', rev: 1880000, orders: 5300 },
+  ],
+  '6m': [
+    { name: 'Jul', rev: 450000, orders: 1200 },
+    { name: 'Aug', rev: 520000, orders: 1450 },
+    { name: 'Sep', rev: 480000, orders: 1300 },
+    { name: 'Oct', rev: 610000, orders: 1800 },
+    { name: 'Nov', rev: 590000, orders: 1750 },
+    { name: 'Dec', rev: 820000, orders: 2400 },
+  ],
+  '1y': [
+    { name: 'H1', rev: 6450000, orders: 18200 },
+    { name: 'H2', rev: 7800000, orders: 22450 },
+  ],
+};
 
 const categoryData = [
   { name: 'Bottled Water', value: 45 },
@@ -52,6 +77,13 @@ const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444'];
 export default function AdminAnalyticsPage() {
   const [timeRange, setTimeRange] = useState('6m');
 
+  const revenueData = useMemo(() => dataSets[timeRange] || dataSets['6m'], [timeRange]);
+
+  const totalRev = useMemo(() => {
+    const sum = revenueData.reduce((acc, curr) => acc + curr.rev, 0);
+    return sum.toLocaleString();
+  }, [revenueData]);
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
@@ -60,7 +92,7 @@ export default function AdminAnalyticsPage() {
           <p className="text-slate-500">Visualizing global marketplace growth and metrics.</p>
         </div>
         <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-slate-200">
-          {['1m', '3m', '6m', '1y'].map((range) => (
+          {['Day', '1m', '3m', '6m', '1y'].map((range) => (
             <Button 
               key={range}
               variant="ghost" 
@@ -79,10 +111,10 @@ export default function AdminAnalyticsPage() {
           <CardHeader className="px-0 pt-0 flex flex-row items-center justify-between mb-6">
             <div>
               <CardTitle>Global Revenue</CardTitle>
-              <CardDescription>Consolidated earnings across all vendors</CardDescription>
+              <CardDescription>Consolidated earnings across all vendors ({timeRange.toUpperCase()})</CardDescription>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-slate-900">₦14,250,000.00</p>
+              <p className="text-2xl font-bold text-slate-900">₦{totalRev}</p>
               <p className="text-xs text-emerald-600 flex items-center justify-end gap-1">
                 <ArrowUpRight className="h-3 w-3" /> +12.5%
               </p>
@@ -99,9 +131,10 @@ export default function AdminAnalyticsPage() {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} tickFormatter={(v) => `₦${v/1000}k`} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} tickFormatter={(v) => `₦${v >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
+                  formatter={(value: any) => [`₦${value.toLocaleString()}`, 'Revenue']}
                 />
                 <Area type="monotone" dataKey="rev" stroke="#0ea5e9" strokeWidth={4} fillOpacity={1} fill="url(#colorGlobalRev)" />
               </AreaChart>
