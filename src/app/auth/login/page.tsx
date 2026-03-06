@@ -61,7 +61,7 @@ export default function LoginPage() {
           <Droplets className="h-12 w-12 text-primary" />
         </div>
         <h2 className="text-center text-3xl font-extrabold text-foreground font-headline">
-          Welcome back to AquaMart
+          Welcome back to WaterDrop
         </h2>
         <p className="mt-2 text-center text-sm text-muted-foreground">
           Sign in to manage your water orders or storefront.

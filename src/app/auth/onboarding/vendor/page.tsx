@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -54,7 +55,7 @@ export default function VendorOnboarding() {
         <div className="flex flex-col items-center mb-8 text-center">
           <Droplets className="h-10 w-10 text-primary mb-2" />
           <h1 className="text-2xl font-bold font-headline">Vendor Verification</h1>
-          <p className="text-muted-foreground text-sm">Complete your profile to start selling on AquaMart</p>
+          <p className="text-muted-foreground text-sm">Complete your profile to start selling on WaterDrop</p>
         </div>
 
         <div className="mb-8">
@@ -169,7 +170,7 @@ export default function VendorOnboarding() {
                 <div className="p-4 bg-primary/5 border border-primary/10 rounded-2xl">
                   <p className="text-xs font-bold text-primary uppercase tracking-wider mb-2">Terms of Service</p>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    By submitting this application, you agree to AquaMart's Quality Assurance protocols and commission structure. Your store will be public once our team verifies your documents.
+                    By submitting this application, you agree to WaterDrop's Quality Assurance protocols and commission structure. Your store will be public once our team verifies your documents.
                   </p>
                 </div>
               </div>

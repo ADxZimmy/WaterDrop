@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -84,7 +85,7 @@ export default function VendorProductsPage() {
           <DialogContent className="sm:max-w-[600px] overflow-y-auto max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>Add New Water Product</DialogTitle>
-              <DialogDescription>Fill in the details to list your product on AquaMart.</DialogDescription>
+              <DialogDescription>Fill in the details to list your product on WaterDrop.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-6 py-4">
               <div className="grid grid-cols-2 gap-4">

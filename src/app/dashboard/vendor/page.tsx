@@ -276,7 +276,7 @@ export default function VendorDashboardOverview() {
                     <div className="p-4 bg-primary/5 border border-primary/10 rounded-2xl">
                       <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">Confirmation</p>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        By submitting, you agree to AquaMart's quality assurance protocols and commission structure.
+                        By submitting, you agree to WaterDrop's quality assurance protocols and commission structure.
                       </p>
                     </div>
                   </div>
