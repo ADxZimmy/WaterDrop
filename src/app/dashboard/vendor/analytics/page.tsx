@@ -111,12 +111,11 @@ export default function VendorAnalyticsPage() {
         <Card className="lg:col-span-2 border-none shadow-sm rounded-3xl p-6 bg-white">
           <CardHeader className="px-0 pt-0 mb-6 flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Sales & Profit Overview</CardTitle>
+              <CardTitle>Revenue Overview</CardTitle>
               <CardDescription>Daily financial performance in Naira (₦)</CardDescription>
             </div>
             <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-tighter">
               <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-[#26A3DB]" /> Revenue</div>
-              <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-[#139489]" /> Profit</div>
             </div>
           </CardHeader>
           <div className="h-[350px] w-full">
@@ -127,20 +126,15 @@ export default function VendorAnalyticsPage() {
                     <stop offset="5%" stopColor="#26A3DB" stopOpacity={0.1}/>
                     <stop offset="95%" stopColor="#26A3DB" stopOpacity={0}/>
                   </linearGradient>
-                  <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#139489" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#139489" stopOpacity={0}/>
-                  </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
                 <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} tickFormatter={(v) => `₦${v/1000}k`} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
-                  formatter={(value: any) => [`₦${value.toLocaleString()}`, '']}
+                  formatter={(value: any) => [`₦${value.toLocaleString()}`, 'Revenue']}
                 />
                 <Area type="monotone" dataKey="sales" stroke="#26A3DB" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" />
-                <Area type="monotone" dataKey="profit" stroke="#139489" strokeWidth={4} fillOpacity={1} fill="url(#colorProfit)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
