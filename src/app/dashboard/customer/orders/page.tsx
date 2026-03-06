@@ -75,13 +75,9 @@ export default function MyOrdersPage() {
                       <p className="text-xs text-muted-foreground line-clamp-1">{order.items}</p>
                       <p className="font-bold text-primary">₦{order.total.toLocaleString()}</p>
                     </div>
-                    {order.status === 'In Transit' ? (
+                    {order.status === 'In Transit' && (
                       <Button variant="default" size="sm" className="h-8 gap-1 rounded-lg">
                         Track Live <ChevronRight className="h-3 w-3" />
-                      </Button>
-                    ) : (
-                      <Button variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground group-hover:bg-muted">
-                        Details <ChevronRight className="h-3 w-3" />
                       </Button>
                     )}
                   </div>
