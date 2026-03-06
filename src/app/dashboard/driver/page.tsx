@@ -31,7 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-const activeDeliveries = [
+const initialDeliveries = [
   {
     id: "ORD-1245",
     customer: "John Doe",
@@ -48,7 +48,7 @@ const activeDeliveries = [
     address: "45 River St, Spring Hills",
     distance: "3.5 km",
     items: "10x Sachet Water Bags",
-    status: "Delivering",
+    status: "Accepted",
     vendor: "Blue Wave Distro",
     price: "₦1,200.00"
   }
@@ -58,6 +58,7 @@ export default function DriverDashboard() {
   const [isSetupComplete, setIsSetupComplete] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [deliveries, setDeliveries] = useState(initialDeliveries);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -94,6 +95,16 @@ export default function DriverDashboard() {
     setIsSetupComplete(true);
     setShowSetup(false);
     window.location.reload();
+  };
+
+  const handleStartDelivery = (id: string) => {
+    setDeliveries(prev => prev.map(delivery => 
+      delivery.id === id ? { ...delivery, status: 'Delivering' } : delivery
+    ));
+    toast({
+      title: "Delivery Started",
+      description: `Order ${id} is now in transit.`
+    });
   };
 
   if (!isSetupComplete) {
@@ -215,22 +226,28 @@ export default function DriverDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold font-headline">Active Deliveries</h2>
-          <p className="text-sm text-muted-foreground">You have {activeDeliveries.length} tasks assigned</p>
+          <p className="text-sm text-muted-foreground">You have {deliveries.length} tasks assigned</p>
         </div>
-        <Badge className="bg-primary px-3 py-1">2 Active</Badge>
+        <Badge className="bg-primary px-3 py-1">{deliveries.filter(d => d.status !== 'Completed').length} Active</Badge>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {activeDeliveries.map((delivery) => (
-          <Card key={delivery.id} className="border-none shadow-lg overflow-hidden relative">
-            <div className={`absolute top-0 left-0 w-1 h-full ${delivery.status === 'Accepted' ? 'bg-blue-400' : 'bg-primary'}`}></div>
+        {deliveries.map((delivery) => (
+          <Card 
+            key={delivery.id} 
+            className={cn(
+              "border-none shadow-lg overflow-hidden relative transition-all duration-300", 
+              delivery.status === 'Delivering' ? "bg-primary/5 ring-2 ring-primary/20 scale-[1.02]" : "bg-white"
+            )}
+          >
+            <div className={`absolute top-0 left-0 w-1.5 h-full ${delivery.status === 'Accepted' ? 'bg-blue-400' : 'bg-primary'}`}></div>
             <CardHeader className="pb-4">
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-lg">{delivery.id}</CardTitle>
-                    <Badge variant="outline" className="text-[10px]">
-                      {delivery.status === 'Accepted' ? 'Ready for Pickup' : 'Delivering'}
+                    <Badge variant="outline" className={cn("text-[10px] font-bold", delivery.status === 'Delivering' ? "bg-primary text-white border-none" : "")}>
+                      {delivery.status === 'Accepted' ? 'Ready for Pickup' : 'In Transit'}
                     </Badge>
                   </div>
                   <CardDescription className="flex items-center gap-1 mt-1">
@@ -277,9 +294,25 @@ export default function DriverDashboard() {
                   Navigate
                 </Button>
               </Link>
-              <Button className="rounded-xl h-11 gap-2">
-                <CheckCircle className="h-4 w-4" />
-                Start Delivery
+              <Button 
+                className={cn(
+                  "rounded-xl h-11 gap-2 transition-all", 
+                  delivery.status === 'Delivering' ? "bg-accent hover:bg-accent/90 cursor-default" : "shadow-lg shadow-primary/20"
+                )}
+                onClick={() => delivery.status !== 'Delivering' && handleStartDelivery(delivery.id)}
+                disabled={delivery.status === 'Delivering'}
+              >
+                {delivery.status === 'Delivering' ? (
+                  <>
+                    <Truck className="h-4 w-4 animate-bounce" />
+                    In Transit
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    Start Delivery
+                  </>
+                )}
               </Button>
             </CardFooter>
           </Card>
