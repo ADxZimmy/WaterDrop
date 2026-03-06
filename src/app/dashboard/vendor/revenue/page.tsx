@@ -1,7 +1,7 @@
 "use client";
 
-import React from 'react';
-import { TrendingUp, DollarSign, Calendar, ArrowUpRight, ArrowDownRight, Download, Filter } from 'lucide-react';
+import React, { useState } from 'react';
+import { TrendingUp, DollarSign, Calendar, ArrowUpRight, ArrowDownRight, Download, Filter, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,18 +15,45 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
-const data = [
-  { name: 'Mon', revenue: 1200 },
-  { name: 'Tue', revenue: 1900 },
-  { name: 'Wed', revenue: 1500 },
-  { name: 'Thu', revenue: 2500 },
-  { name: 'Fri', revenue: 3200 },
-  { name: 'Sat', revenue: 4500 },
-  { name: 'Sun', revenue: 3800 },
+const weekData = [
+  { name: 'Mon', revenue: 12000 },
+  { name: 'Tue', revenue: 19000 },
+  { name: 'Wed', revenue: 15000 },
+  { name: 'Thu', revenue: 25000 },
+  { name: 'Fri', revenue: 32000 },
+  { name: 'Sat', revenue: 45000 },
+  { name: 'Sun', revenue: 38000 },
+];
+
+const monthData = [
+  { name: 'Week 1', revenue: 120000 },
+  { name: 'Week 2', revenue: 145000 },
+  { name: 'Week 3', revenue: 110000 },
+  { name: 'Week 4', revenue: 165000 },
+];
+
+const yearData = [
+  { name: 'Jan', revenue: 450000 },
+  { name: 'Feb', revenue: 520000 },
+  { name: 'Mar', revenue: 480000 },
+  { name: 'Apr', revenue: 610000 },
+  { name: 'May', revenue: 590000 },
+  { name: 'Jun', revenue: 820000 },
+  { name: 'Jul', revenue: 750000 },
+  { name: 'Aug', revenue: 880000 },
+  { name: 'Sep', revenue: 920000 },
+  { name: 'Oct', revenue: 950000 },
+  { name: 'Nov', revenue: 1100000 },
+  { name: 'Dec', revenue: 1250000 },
 ];
 
 export default function VendorRevenuePage() {
+  const [timeRange, setTimeRange] = useState<'Week' | 'Month' | 'Year'>('Week');
+
+  const chartData = timeRange === 'Week' ? weekData : timeRange === 'Month' ? monthData : yearData;
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -46,10 +73,10 @@ export default function VendorRevenuePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
-          { title: "Total Revenue", value: "$45,210.00", icon: DollarSign, trend: "up", percent: "12.5%" },
-          { title: "Avg. Order Value", value: "$32.40", icon: TrendingUp, trend: "up", percent: "4.2%" },
-          { title: "Gross Profit", value: "$18,450.00", icon: DollarSign, trend: "down", percent: "1.8%" },
-          { title: "Net Revenue", value: "$14,880.00", icon: DollarSign, trend: "up", percent: "8.7%" },
+          { title: "Total Revenue", value: "₦452,100.00", icon: DollarSign, trend: "up", percent: "12.5%" },
+          { title: "Avg. Order Value", value: "₦3,240.00", icon: TrendingUp, trend: "up", percent: "4.2%" },
+          { title: "Gross Profit", value: "₦184,500.00", icon: DollarSign, trend: "down", percent: "1.8%" },
+          { title: "Net Revenue", value: "₦148,800.00", icon: DollarSign, trend: "up", percent: "8.7%" },
         ].map((stat, i) => (
           <Card key={i} className="border-none shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -71,17 +98,25 @@ export default function VendorRevenuePage() {
         <CardHeader className="px-0 pt-0 flex flex-row items-center justify-between">
           <div>
             <CardTitle>Revenue Trend</CardTitle>
-            <CardDescription>Daily sales revenue for the current week</CardDescription>
+            <CardDescription>{timeRange}ly sales revenue breakdown</CardDescription>
           </div>
           <div className="flex gap-2">
-            <Button variant="ghost" size="sm" className="bg-primary/10 text-primary">Week</Button>
-            <Button variant="ghost" size="sm">Month</Button>
-            <Button variant="ghost" size="sm">Year</Button>
+            {(['Week', 'Month', 'Year'] as const).map((range) => (
+              <Button 
+                key={range}
+                variant="ghost" 
+                size="sm" 
+                className={cn("rounded-lg h-8 px-4", timeRange === range ? "bg-primary/10 text-primary font-bold" : "text-slate-500")}
+                onClick={() => setTimeRange(range)}
+              >
+                {range}
+              </Button>
+            ))}
           </div>
         </CardHeader>
         <div className="h-[350px] w-full mt-4">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data}>
+            <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#26A3DB" stopOpacity={0.1}/>
@@ -90,8 +125,10 @@ export default function VendorRevenuePage() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#888'}} />
-              <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#888'}} tickFormatter={(v) => `$${v}`} />
-              <Tooltip />
+              <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#888'}} tickFormatter={(v) => `₦${v/1000}k`} />
+              <Tooltip 
+                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
+              />
               <Area type="monotone" dataKey="revenue" stroke="#26A3DB" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
             </AreaChart>
           </ResponsiveContainer>
@@ -117,9 +154,9 @@ export default function VendorRevenuePage() {
           </TableHeader>
           <TableBody>
             {[
-              { date: "Oct 24, 2024", id: "#5521", customer: "Alice Johnson", status: "Success", amount: "$45.00" },
-              { date: "Oct 24, 2024", id: "#5522", customer: "Bob Wilson", status: "Success", amount: "$12.50" },
-              { date: "Oct 23, 2024", id: "#5523", customer: "Clara Davis", status: "Processing", amount: "$30.00" },
+              { date: "Oct 24, 2024", id: "#5521", customer: "Alice Johnson", status: "Success", amount: "₦4,500.00" },
+              { date: "Oct 24, 2024", id: "#5522", customer: "Bob Wilson", status: "Success", amount: "₦1,250.00" },
+              { date: "Oct 23, 2024", id: "#5523", customer: "Clara Davis", status: "Processing", amount: "₦3,000.00" },
             ].map((row, i) => (
               <TableRow key={i}>
                 <TableCell className="text-muted-foreground text-sm">{row.date}</TableCell>
