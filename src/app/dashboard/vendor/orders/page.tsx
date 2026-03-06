@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -9,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const initialOrders = [
   { id: "AQ-5521", customer: "Alice Johnson", items: "5x Premium Bottled", total: 6250.00, status: "Pending", time: "5m ago" },
@@ -30,13 +32,22 @@ export default function VendorOrdersPage() {
       title: `Order ${newStatus}`,
       description: `Order ${id} has been marked as ${newStatus.toLowerCase()}.`,
     });
+
+    // Simulate driver picking up the order after a delay if accepted
+    if (newStatus === 'Accepted') {
+      setTimeout(() => {
+        setOrders(current => current.map(o => 
+          o.id === id ? { ...o, status: 'Delivering' } : o
+        ));
+      }, 3000);
+    }
   };
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline">Order Fulfillment</h1>
+          <h1 className="text-3xl font-bold font-headline text-foreground">Order Fulfillment</h1>
           <p className="text-muted-foreground">Manage and track your incoming water orders.</p>
         </div>
         <div className="flex gap-2">
@@ -154,40 +165,33 @@ export default function VendorOrdersPage() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  {order.status === 'Pending' ? (
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        size="sm" 
-                        className="h-8 rounded-lg gap-1 bg-green-600 hover:bg-green-700 text-white border-none shadow-sm"
-                        onClick={() => updateOrderStatus(order.id, 'Accepted')}
-                      >
-                        <Check className="h-3.5 w-3.5" /> Accept
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="h-8 rounded-lg gap-1 text-red-600 border-red-200 hover:bg-red-50"
-                        onClick={() => updateOrderStatus(order.id, 'Declined')}
-                      >
-                        <X className="h-3.5 w-3.5" /> Decline
-                      </Button>
-                    </div>
-                  ) : (
-                    <Select 
-                      value={order.status.toLowerCase()} 
-                      onValueChange={(val) => updateOrderStatus(order.id, val.charAt(0).toUpperCase() + val.slice(1))}
-                      disabled={order.status === 'Declined'}
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      size="sm" 
+                      className={cn(
+                        "h-8 rounded-lg gap-1 border-none shadow-sm",
+                        order.status === 'Accepted' ? "bg-green-600" : "bg-green-600 hover:bg-green-700 text-white",
+                        order.status !== 'Pending' && "opacity-50 cursor-not-allowed"
+                      )}
+                      disabled={order.status !== 'Pending'}
+                      onClick={() => updateOrderStatus(order.id, 'Accepted')}
                     >
-                      <SelectTrigger className="w-[130px] h-8 text-xs ml-auto">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="accepted">Accepted</SelectItem>
-                        <SelectItem value="delivering">Delivering</SelectItem>
-                        <SelectItem value="declined">Declined</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
+                      <Check className="h-3.5 w-3.5" /> Accept
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className={cn(
+                        "h-8 rounded-lg gap-1",
+                        order.status === 'Declined' ? "text-red-600 border-red-200" : "text-red-600 border-red-200 hover:bg-red-50",
+                        order.status !== 'Pending' && "opacity-50 cursor-not-allowed"
+                      )}
+                      disabled={order.status !== 'Pending'}
+                      onClick={() => updateOrderStatus(order.id, 'Declined')}
+                    >
+                      <X className="h-3.5 w-3.5" /> Decline
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

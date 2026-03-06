@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, User, Phone, MapPin, Package, Truck, CheckCircle, Clock, MessageSquare, ExternalLink, ChevronDown, XCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 const drivers = [
   { id: 1, name: "John Driver", status: "Active" },
@@ -25,7 +27,17 @@ const drivers = [
 export default function OrderDetailPage() {
   const params = useParams();
   const [assignedDriver, setAssignedDriver] = useState<string | null>(null);
-  const [status, setStatus] = useState<'Pending' | 'Accepted' | 'Declined' | 'Delivering'>('Accepted');
+  const [status, setStatus] = useState<'Pending' | 'Accepted' | 'Declined' | 'Delivering' | 'Completed'>('Accepted');
+
+  // Simulation of driver picking up the order
+  useEffect(() => {
+    if (status === 'Accepted') {
+      const timer = setTimeout(() => {
+        setStatus('Delivering');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [status]);
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8 text-foreground">
@@ -42,6 +54,7 @@ export default function OrderDetailPage() {
             status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
             status === 'Accepted' ? 'bg-blue-100 text-blue-700' :
             status === 'Delivering' ? 'bg-purple-100 text-purple-700' :
+            status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
             'bg-red-100 text-red-700'
           }`}
         >
@@ -70,10 +83,10 @@ export default function OrderDetailPage() {
                       </div>
                       <div>
                         <p className="font-bold text-sm">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">${item.price.toFixed(2)} per unit</p>
+                        <p className="text-xs text-muted-foreground">₦{item.price.toLocaleString()} per unit</p>
                       </div>
                     </div>
-                    <p className="font-bold text-sm">${item.subtotal.toFixed(2)}</p>
+                    <p className="font-bold text-sm">₦{item.subtotal.toLocaleString()}</p>
                   </div>
                 ))}
               </div>
@@ -81,42 +94,44 @@ export default function OrderDetailPage() {
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">$45.00</span>
+                  <span className="font-medium">₦45.00</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Delivery Fee</span>
-                  <span className="font-medium">$0.00</span>
+                  <span className="font-medium">₦0.00</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span className="text-primary">$45.00</span>
+                  <span className="text-primary">₦45.00</span>
                 </div>
               </div>
             </CardContent>
             <CardFooter className="bg-muted/10 p-4 border-t flex gap-3">
-              {status === 'Pending' ? (
-                <>
-                  <Button className="flex-1 h-12 rounded-xl gap-2 bg-green-600 hover:bg-green-700 border-none text-white" onClick={() => setStatus('Accepted')}>
-                    <CheckCircle className="h-4 w-4" /> Accept Order
-                  </Button>
-                  <Button variant="outline" className="flex-1 h-12 rounded-xl gap-2 text-red-600 border-red-200 hover:bg-red-50" onClick={() => setStatus('Declined')}>
-                    <XCircle className="h-4 w-4" /> Decline
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button 
-                    className="flex-1 h-12 rounded-xl gap-2" 
-                    disabled={status === 'Delivering' || status === 'Declined'}
-                    onClick={() => setStatus('Delivering')}
-                  >
-                    <Truck className="h-4 w-4" /> Start Delivery
-                  </Button>
-                  <Button variant="outline" className="flex-1 h-12 rounded-xl gap-2">
-                    <MessageSquare className="h-4 w-4" /> Message Customer
-                  </Button>
-                </>
-              )}
+              <div className="flex w-full gap-3">
+                <Button 
+                  className={cn(
+                    "flex-1 h-12 rounded-xl gap-2",
+                    status === 'Accepted' ? "bg-green-600" : "bg-green-600 hover:bg-green-700",
+                    status !== 'Pending' && "opacity-50 cursor-not-allowed"
+                  )}
+                  disabled={status !== 'Pending'}
+                  onClick={() => setStatus('Accepted')}
+                >
+                  <CheckCircle className="h-4 w-4" /> Accept Order
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className={cn(
+                    "flex-1 h-12 rounded-xl gap-2",
+                    status === 'Declined' ? "text-red-600 border-red-200" : "text-red-600 border-red-200 hover:bg-red-50",
+                    status !== 'Pending' && "opacity-50 cursor-not-allowed"
+                  )}
+                  disabled={status !== 'Pending'}
+                  onClick={() => setStatus('Declined')}
+                >
+                  <XCircle className="h-4 w-4" /> Decline
+                </Button>
+              </div>
             </CardFooter>
           </Card>
 
@@ -202,14 +217,14 @@ export default function OrderDetailPage() {
                       </div>
                       <p className="font-bold text-sm">{assignedDriver}</p>
                     </div>
-                    <Button variant="outline" size="sm" className="w-full text-xs h-8" onClick={() => setAssignedDriver(null)}>Change Driver</Button>
+                    <Button variant="outline" size="sm" className="w-full text-xs h-8" disabled={status !== 'Accepted'} onClick={() => setAssignedDriver(null)}>Change Driver</Button>
                   </div>
                 ) : (
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground mb-3">No driver assigned yet</p>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button className="w-full rounded-xl gap-2 h-11" disabled={status === 'Declined' || status === 'Pending'}>
+                        <Button className="w-full rounded-xl gap-2 h-11" disabled={status !== 'Accepted'}>
                           Assign Driver <ChevronDown className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
