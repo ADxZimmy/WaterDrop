@@ -16,6 +16,12 @@ import {
 } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const weekData = [
   { name: 'Mon', revenue: 12000 },
@@ -49,10 +55,21 @@ const yearData = [
   { name: 'Dec', revenue: 1250000 },
 ];
 
+const transactions = [
+  { date: "Oct 24, 2024", id: "#5521", customer: "Alice Johnson", status: "Success", amount: "₦4,500.00" },
+  { date: "Oct 24, 2024", id: "#5522", customer: "Bob Wilson", status: "Success", amount: "₦1,250.00" },
+  { date: "Oct 23, 2024", id: "#5523", customer: "Clara Davis", status: "Processing", amount: "₦3,000.00" },
+];
+
 export default function VendorRevenuePage() {
   const [timeRange, setTimeRange] = useState<'Week' | 'Month' | 'Year'>('Week');
+  const [statusFilter, setStatusFilter] = useState<string>('All');
 
   const chartData = timeRange === 'Week' ? weekData : timeRange === 'Month' ? monthData : yearData;
+
+  const filteredTransactions = transactions.filter(t => 
+    statusFilter === 'All' || t.status === statusFilter
+  );
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
@@ -137,10 +154,24 @@ export default function VendorRevenuePage() {
 
       <div className="bg-white rounded-2xl shadow-sm border border-border overflow-hidden">
         <div className="p-4 border-b flex justify-between items-center">
-          <h3 className="font-bold">Recent Transactions</h3>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Filter className="h-3 w-3" /> Filter
-          </Button>
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold">Recent Transactions</h3>
+            {statusFilter !== 'All' && (
+              <Badge variant="secondary" className="text-[10px] h-5">{statusFilter}</Badge>
+            )}
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Filter className="h-3 w-3" /> {statusFilter === 'All' ? 'Filter' : statusFilter}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setStatusFilter('All')}>All Transactions</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter('Success')}>Success Only</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter('Processing')}>Processing Only</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <Table>
           <TableHeader className="bg-muted/30">
@@ -153,11 +184,7 @@ export default function VendorRevenuePage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {[
-              { date: "Oct 24, 2024", id: "#5521", customer: "Alice Johnson", status: "Success", amount: "₦4,500.00" },
-              { date: "Oct 24, 2024", id: "#5522", customer: "Bob Wilson", status: "Success", amount: "₦1,250.00" },
-              { date: "Oct 23, 2024", id: "#5523", customer: "Clara Davis", status: "Processing", amount: "₦3,000.00" },
-            ].map((row, i) => (
+            {filteredTransactions.map((row, i) => (
               <TableRow key={i}>
                 <TableCell className="text-muted-foreground text-sm">{row.date}</TableCell>
                 <TableCell className="font-bold text-primary">{row.id}</TableCell>
@@ -170,6 +197,13 @@ export default function VendorRevenuePage() {
                 <TableCell className="text-right font-bold">{row.amount}</TableCell>
               </TableRow>
             ))}
+            {filteredTransactions.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  No transactions found for the selected filter.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
