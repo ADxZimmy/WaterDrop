@@ -137,12 +137,23 @@ export default function AdminVendorsPage() {
                           <History className="h-4 w-4" /> Order History
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        className="gap-2 text-amber-600 cursor-pointer"
-                        onClick={() => handleUpdateStatus(vendor.id, 'Warning')}
-                      >
-                        <ShieldAlert className="h-4 w-4" /> Issue Warning
-                      </DropdownMenuItem>
+                      
+                      {vendor.status === 'Warning' ? (
+                        <DropdownMenuItem 
+                          className="gap-2 text-emerald-600 cursor-pointer"
+                          onClick={() => handleUpdateStatus(vendor.id, 'Active')}
+                        >
+                          <CheckCircle2 className="h-4 w-4" /> Remove Warning
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem 
+                          className="gap-2 text-amber-600 cursor-pointer"
+                          onClick={() => handleUpdateStatus(vendor.id, 'Warning')}
+                        >
+                          <ShieldAlert className="h-4 w-4" /> Issue Warning
+                        </DropdownMenuItem>
+                      )}
+
                       {vendor.status === 'Suspended' ? (
                         <DropdownMenuItem 
                           className="gap-2 text-emerald-600 cursor-pointer"
