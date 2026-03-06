@@ -48,16 +48,17 @@
   }
   
   html {
-    @apply h-full scroll-smooth;
+    @apply scroll-smooth;
+    min-height: 100%;
   }
 
   body {
-    @apply bg-background text-foreground min-h-screen w-full relative antialiased;
-    touch-action: manipulation;
+    @apply bg-background text-foreground w-full relative antialiased;
+    min-height: 100vh;
+    touch-action: auto;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    overflow-x: hidden;
   }
   
   /* Prevent text selection for a more app-like feel except in inputs */
@@ -93,7 +94,7 @@
 
 /* App-like behavior */
 html, body {
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: auto;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

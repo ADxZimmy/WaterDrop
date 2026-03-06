@@ -24,8 +24,7 @@ export const viewport: Viewport = {
   themeColor: '#0ea5e9',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  viewportFit: 'cover',
+  viewportFit: 'auto',
 };
 
 export default function RootLayout({
@@ -45,7 +44,7 @@ export default function RootLayout({
       </head>
       <body className="font-body">
         <div className="flex flex-col min-h-screen">
-          <main className="flex-1 w-full max-w-full pb-16 md:pb-0 relative overflow-x-hidden">
+          <main className="flex-1 w-full max-w-full pb-16 md:pb-0 relative">
             {children}
           </main>
           <MobileNav />
