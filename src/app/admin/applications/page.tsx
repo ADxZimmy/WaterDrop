@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -93,10 +92,6 @@ export default function AdminApplicationsPage() {
         <div>
           <h1 className="text-3xl font-bold font-headline text-slate-900">Vendor Applications</h1>
           <p className="text-slate-500">Review and verify new business registrations.</p>
-        </div>
-        <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-slate-200">
-          <Button variant="ghost" size="sm" className="rounded-lg h-8 px-4 bg-primary/10 text-primary">Pending (2)</Button>
-          <Button variant="ghost" size="sm" className="rounded-lg h-8 px-4 text-slate-500">All History</Button>
         </div>
       </div>
 
