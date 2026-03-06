@@ -13,7 +13,8 @@ import {
   ArrowUpRight,
   Trophy,
   Medal,
-  Award
+  Award,
+  ChevronRight
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -127,16 +128,18 @@ export default function AdminVendorRankingsPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9 border border-slate-100">
-                      <AvatarImage src={`https://picsum.photos/seed/${vendor.id}/100`} />
-                      <AvatarFallback>{vendor.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <span className="font-bold text-sm text-slate-900">{vendor.name}</span>
-                      <span className="text-[10px] text-slate-400 uppercase tracking-tighter">VND-{vendor.id}</span>
+                  <Link href={`/admin/vendors/${vendor.id}`} className="group/vendor">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9 border border-slate-100 group-hover/vendor:border-primary/30 transition-colors">
+                        <AvatarImage src={`https://picsum.photos/seed/${vendor.id}/100`} />
+                        <AvatarFallback>{vendor.name[0]}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-sm text-slate-900 group-hover/vendor:text-primary transition-colors">{vendor.name}</span>
+                        <span className="text-[10px] text-slate-400 uppercase tracking-tighter">VND-{vendor.id}</span>
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1 font-bold text-slate-900">
@@ -153,15 +156,17 @@ export default function AdminVendorRankingsPage() {
                   </div>
                 </TableCell>
                 <TableCell className="pr-8">
-                  <Badge 
-                    className={`rounded-full px-3 border-none text-[10px] font-bold ${
-                      vendor.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 
-                      vendor.status === 'Warning' ? 'bg-amber-100 text-amber-700' : 
-                      'bg-rose-100 text-rose-700'
-                    }`}
-                  >
-                    {vendor.status}
-                  </Badge>
+                  <Link href={`/admin/vendors/${vendor.id}`}>
+                    <Badge 
+                      className={`rounded-full px-3 border-none text-[10px] font-bold cursor-pointer hover:opacity-80 transition-opacity ${
+                        vendor.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 
+                        vendor.status === 'Warning' ? 'bg-amber-100 text-amber-700' : 
+                        'bg-rose-100 text-rose-700'
+                      }`}
+                    >
+                      {vendor.status}
+                    </Badge>
+                  </Link>
                 </TableCell>
               </TableRow>
             ))}
