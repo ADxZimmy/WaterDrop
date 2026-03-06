@@ -1,16 +1,17 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Truck, Search, Plus, Star, MapPin, Phone, MessageSquare, MoreVertical, CheckCircle2, Clock, User, Wallet } from 'lucide-react';
+import { Truck, Search, Plus, Star, MapPin, Phone, MessageSquare, MoreVertical, CheckCircle2, Clock, User, Wallet, Power, PowerOff } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 
-const drivers = [
+const initialDrivers = [
   { id: 1, name: "John Driver", rating: 4.9, status: "Active", trips: 124, image: "https://picsum.photos/seed/d1/100" },
   { id: 2, name: "Sarah Delivery", rating: 4.8, status: "Busy", trips: 89, image: "https://picsum.photos/seed/d2/100" },
   { id: 3, name: "Mike Moto", rating: 4.7, status: "Offline", trips: 256, image: "https://picsum.photos/seed/d3/100" },
@@ -18,6 +19,27 @@ const drivers = [
 ];
 
 export default function VendorDriversPage() {
+  const [drivers, setDrivers] = useState(initialDrivers);
+  const { toast } = useToast();
+
+  const toggleDriverStatus = (id: number) => {
+    setDrivers(prev => prev.map(driver => {
+      if (driver.id === id) {
+        const isDeactivated = driver.status === 'Deactivated';
+        const newStatus = isDeactivated ? 'Offline' : 'Deactivated';
+        
+        toast({
+          title: isDeactivated ? "Driver Activated" : "Driver Deactivated",
+          description: `${driver.name} has been set to ${newStatus.toLowerCase()}.`,
+          variant: isDeactivated ? "default" : "destructive"
+        });
+
+        return { ...driver, status: newStatus };
+      }
+      return driver;
+    }));
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
@@ -46,7 +68,7 @@ export default function VendorDriversPage() {
               <Truck className="h-8 w-8" />
             </div>
             <div>
-              <p className="text-2xl font-bold">12</p>
+              <p className="text-2xl font-bold">{drivers.length}</p>
               <p className="text-sm text-muted-foreground">Total Drivers</p>
             </div>
           </div>
@@ -57,7 +79,7 @@ export default function VendorDriversPage() {
               <CheckCircle2 className="h-8 w-8" />
             </div>
             <div>
-              <p className="text-2xl font-bold">8</p>
+              <p className="text-2xl font-bold">{drivers.filter(d => d.status !== 'Deactivated' && d.status !== 'Offline').length}</p>
               <p className="text-sm text-muted-foreground">Currently Online</p>
             </div>
           </div>
@@ -85,13 +107,17 @@ export default function VendorDriversPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {drivers.map((driver) => (
-          <Card key={driver.id} className="border-none shadow-sm overflow-hidden group hover:shadow-md transition-all">
+          <Card key={driver.id} className={cn(
+            "border-none shadow-sm overflow-hidden group hover:shadow-md transition-all",
+            driver.status === 'Deactivated' && "opacity-75 grayscale-[0.5]"
+          )}>
             <CardHeader className="pb-4 flex flex-row items-center justify-between">
               <Badge 
                 variant="outline" 
                 className={`text-[10px] font-bold ${
                   driver.status === 'Active' ? 'bg-green-50 text-green-700 border-green-200' : 
                   driver.status === 'Busy' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
+                  driver.status === 'Deactivated' ? 'bg-red-50 text-red-700 border-red-200' :
                   'bg-gray-50 text-gray-700 border-gray-200'
                 }`}
               >
@@ -103,12 +129,29 @@ export default function VendorDriversPage() {
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link href={`/dashboard/vendor/drivers/${driver.id}`}>View Profile</Link>
+                <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href={`/dashboard/vendor/drivers/${driver.id}`} className="flex items-center gap-2">
+                      <User className="h-4 w-4" /> View Profile
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>Edit Details</DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive">Deactivate</DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className={cn(
+                      "cursor-pointer font-medium",
+                      driver.status === 'Deactivated' ? "text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50" : "text-destructive focus:text-destructive focus:bg-destructive/5"
+                    )}
+                    onClick={() => toggleDriverStatus(driver.id)}
+                  >
+                    {driver.status === 'Deactivated' ? (
+                      <>
+                        <Power className="h-4 w-4 mr-2" /> Activate Driver
+                      </>
+                    ) : (
+                      <>
+                        <PowerOff className="h-4 w-4 mr-2" /> Deactivate Driver
+                      </>
+                    )}
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </CardHeader>
