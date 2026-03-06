@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -13,7 +12,7 @@ const orders = [
     id: "AQ-5521", 
     vendor: "Aqua Pure Factory", 
     date: "Oct 24, 2024", 
-    total: 45.00, 
+    total: 4500.00, 
     status: "In Transit", 
     items: "5x Premium Bottled, 1x Bulk Dispenser" 
   },
@@ -21,7 +20,7 @@ const orders = [
     id: "AQ-5510", 
     vendor: "Blue Wave Distro", 
     date: "Oct 22, 2024", 
-    total: 12.50, 
+    total: 1250.00, 
     status: "Delivered", 
     items: "2x Sachet Water Bags" 
   },
@@ -29,7 +28,7 @@ const orders = [
     id: "AQ-5488", 
     vendor: "Crystal Spring", 
     date: "Oct 18, 2024", 
-    total: 20.00, 
+    total: 2000.00, 
     status: "Delivered", 
     items: "1x 19L Dispenser" 
   },
@@ -74,7 +73,7 @@ export default function MyOrdersPage() {
                   <div className="flex items-center justify-between pt-4 border-t border-muted/50">
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground line-clamp-1">{order.items}</p>
-                      <p className="font-bold text-primary">${order.total.toFixed(2)}</p>
+                      <p className="font-bold text-primary">₦{order.total.toLocaleString()}</p>
                     </div>
                     {order.status === 'In Transit' ? (
                       <Button variant="default" size="sm" className="h-8 gap-1 rounded-lg">

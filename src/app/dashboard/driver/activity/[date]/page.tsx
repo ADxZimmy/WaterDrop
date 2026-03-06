@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -10,10 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 const mockTrips = [
-  { id: "ORD-9921", time: "14:20", amount: "$8.50", address: "123 Ocean View Dr", customer: "Alice Johnson", status: "Completed" },
-  { id: "ORD-9918", time: "11:05", amount: "$12.00", address: "45 River St", customer: "Bob Wilson", status: "Completed" },
-  { id: "ORD-9892", time: "09:45", amount: "$15.50", address: "88 Sky Lane", customer: "Clara Davis", status: "Completed" },
-  { id: "ORD-9880", time: "08:15", amount: "$6.00", address: "10 Hill Top", customer: "Daniel Lee", status: "Completed" },
+  { id: "ORD-9921", time: "14:20", amount: "₦850", address: "123 Ocean View Dr", customer: "Alice Johnson", status: "Completed" },
+  { id: "ORD-9918", time: "11:05", amount: "₦1,200", address: "45 River St", customer: "Bob Wilson", status: "Completed" },
+  { id: "ORD-9892", time: "09:45", amount: "₦1,550", address: "88 Sky Lane", customer: "Clara Davis", status: "Completed" },
+  { id: "ORD-9880", time: "08:15", amount: "₦600", address: "10 Hill Top", customer: "Daniel Lee", status: "Completed" },
 ];
 
 export default function DriverDailyActivityPage() {
@@ -39,7 +38,7 @@ export default function DriverDailyActivityPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-none shadow-sm p-6 bg-primary text-white rounded-3xl">
           <p className="text-xs uppercase font-bold tracking-widest opacity-80">Total Earned</p>
-          <h3 className="text-3xl font-bold mt-2">$42.00</h3>
+          <h3 className="text-3xl font-bold mt-2">₦4,200</h3>
         </Card>
         <Card className="border-none shadow-sm p-6 bg-white rounded-3xl">
           <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Trips Done</p>

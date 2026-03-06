@@ -23,11 +23,11 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const mockOrders = [
-  { id: "AQ-5521", customer: "Alice Johnson", items: "5x Bottled", total: "$62.50", status: "Delivering", date: "Oct 24, 2024", time: "14:20" },
-  { id: "AQ-5522", customer: "Bob Wilson", items: "10x Sachet", total: "$35.00", status: "Completed", date: "Oct 24, 2024", time: "11:05" },
-  { id: "AQ-5523", customer: "Clara Davis", items: "2x 19L Dispenser", total: "$30.00", status: "Completed", date: "Oct 23, 2024", time: "18:45" },
-  { id: "AQ-5524", customer: "Daniel Lee", items: "20x 750ml", total: "$24.00", status: "Cancelled", date: "Oct 23, 2024", time: "15:30" },
-  { id: "AQ-5525", customer: "Eva Martinez", items: "1x Bulk Pack", total: "$120.00", status: "Completed", date: "Oct 22, 2024", time: "09:15" },
+  { id: "AQ-5521", customer: "Alice Johnson", items: "5x Bottled", total: "₦6,250.00", status: "Delivering", date: "Oct 24, 2024", time: "14:20" },
+  { id: "AQ-5522", customer: "Bob Wilson", items: "10x Sachet", total: "₦3,500.00", status: "Completed", date: "Oct 24, 2024", time: "11:05" },
+  { id: "AQ-5523", customer: "Clara Davis", items: "2x 19L Dispenser", total: "₦3,000.00", status: "Completed", date: "Oct 23, 2024", time: "18:45" },
+  { id: "AQ-5524", customer: "Daniel Lee", items: "20x 750ml", total: "₦2,400.00", status: "Cancelled", date: "Oct 23, 2024", time: "15:30" },
+  { id: "AQ-5525", customer: "Eva Martinez", items: "1x Bulk Pack", total: "₦12,000.00", status: "Completed", date: "Oct 22, 2024", time: "09:15" },
 ];
 
 export default function AdminVendorOrdersPage() {

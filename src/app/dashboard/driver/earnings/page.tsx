@@ -25,32 +25,32 @@ import {
 } from "@/components/ui/select";
 
 const dailyData = [
-  { label: 'Mon', amount: 45 },
-  { label: 'Tue', amount: 52 },
-  { label: 'Wed', amount: 38 },
-  { label: 'Thu', amount: 65 },
-  { label: 'Fri', amount: 80 },
-  { label: 'Sat', amount: 120 },
-  { label: 'Sun', amount: 95 },
+  { label: 'Mon', amount: 4500 },
+  { label: 'Tue', amount: 5200 },
+  { label: 'Wed', amount: 3800 },
+  { label: 'Thu', amount: 6500 },
+  { label: 'Fri', amount: 8000 },
+  { label: 'Sat', amount: 12000 },
+  { label: 'Sun', amount: 9500 },
 ];
 
 const weeklyData = [
-  { label: 'Week 1', amount: 450 },
-  { label: 'Week 2', amount: 520 },
-  { label: 'Week 3', amount: 380 },
-  { label: 'Week 4', amount: 650 },
+  { label: 'Week 1', amount: 45000 },
+  { label: 'Week 2', amount: 52000 },
+  { label: 'Week 3', amount: 38000 },
+  { label: 'Week 4', amount: 65000 },
 ];
 
 const monthlyData = [
-  { label: 'Jul', amount: 1800 },
-  { label: 'Aug', amount: 2100 },
-  { label: 'Sep', amount: 1950 },
-  { label: 'Oct', amount: 2450 },
+  { label: 'Jul', amount: 180000 },
+  { label: 'Aug', amount: 210000 },
+  { label: 'Sep', amount: 195000 },
+  { label: 'Oct', amount: 245000 },
 ];
 
 const recentWithdrawals = [
-  { id: 'WID-9921', date: 'Oct 24, 2024', amount: '$150.00', status: 'Pending' },
-  { id: 'WID-9882', date: 'Oct 18, 2024', amount: '$240.00', status: 'Completed' },
+  { id: 'WID-9921', date: 'Oct 24, 2024', amount: '₦15,000.00', status: 'Pending' },
+  { id: 'WID-9882', date: 'Oct 18, 2024', amount: '₦24,000.00', status: 'Completed' },
 ];
 
 export default function DriverEarningsPage() {
@@ -89,7 +89,7 @@ export default function DriverEarningsPage() {
               <Badge className="bg-white/20 text-white border-none">Active Balance</Badge>
             </div>
             <div className="mt-8">
-              <h2 className="text-4xl font-bold font-headline">$452.80</h2>
+              <h2 className="text-4xl font-bold font-headline">₦45,280.00</h2>
               <p className="text-primary-foreground/70 text-sm mt-1 flex items-center gap-1">
                 Available for withdrawal
               </p>
@@ -127,9 +127,9 @@ export default function DriverEarningsPage() {
         <h3 className="font-bold text-lg px-2">Daily Activity</h3>
         <div className="space-y-3">
           {[
-            { date: 'Oct-24-2024', label: 'Today, Oct 24', trips: 12, earnings: '$142.50' },
-            { date: 'Oct-23-2024', label: 'Yesterday, Oct 23', trips: 8, earnings: '$88.20' },
-            { date: 'Oct-22-2024', label: 'Wednesday, Oct 22', trips: 15, earnings: '$185.00' },
+            { date: 'Oct-24-2024', label: 'Today, Oct 24', trips: 12, earnings: '₦14,250.00' },
+            { date: 'Oct-23-2024', label: 'Yesterday, Oct 23', trips: 8, earnings: '₦8,820.00' },
+            { date: 'Oct-22-2024', label: 'Wednesday, Oct 22', trips: 15, earnings: '₦18,500.00' },
           ].map((day, i) => (
             <Link key={i} href={`/dashboard/driver/activity/${day.date}`}>
               <div className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-transparent hover:border-primary/20 transition-all group cursor-pointer">

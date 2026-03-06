@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -21,11 +20,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const customers = [
-  { id: 1, name: "Alice Johnson", email: "alice@example.com", orders: 42, spent: "$1,250.00", joined: "May 2024", tier: "Gold" },
-  { id: 2, name: "Bob Wilson", email: "bob@example.com", orders: 12, spent: "$450.20", joined: "Jun 2024", tier: "Silver" },
-  { id: 3, name: "Clara Davis", email: "clara@example.com", orders: 8, spent: "$180.50", joined: "Jul 2024", tier: "Bronze" },
-  { id: 4, name: "Daniel Lee", email: "daniel@example.com", orders: 25, spent: "$890.00", joined: "Aug 2024", tier: "Silver" },
-  { id: 5, name: "Eva Martinez", email: "eva@example.com", orders: 56, spent: "$2,100.00", joined: "Apr 2024", tier: "Gold" },
+  { id: 1, name: "Alice Johnson", email: "alice@example.com", orders: 42, spent: "₦125,000.00", joined: "May 2024", tier: "Gold" },
+  { id: 2, name: "Bob Wilson", email: "bob@example.com", orders: 12, spent: "₦45,020.00", joined: "Jun 2024", tier: "Silver" },
+  { id: 3, name: "Clara Davis", email: "clara@example.com", orders: 8, spent: "₦18,050.00", joined: "Jul 2024", tier: "Bronze" },
+  { id: 4, name: "Daniel Lee", email: "daniel@example.com", orders: 25, spent: "₦89,000.00", joined: "Aug 2024", tier: "Silver" },
+  { id: 5, name: "Eva Martinez", email: "eva@example.com", orders: 56, spent: "₦210,000.00", joined: "Apr 2024", tier: "Gold" },
 ];
 
 export default function AdminCustomersPage() {
@@ -42,7 +41,7 @@ export default function AdminCustomersPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
           { title: "Total Users", value: "12,402", icon: Users, trend: "+12%", color: "bg-blue-500" },
-          { title: "Avg. CLV", value: "$182.40", icon: Star, trend: "+5.2%", color: "bg-amber-500" },
+          { title: "Avg. CLV", value: "₦18,240.40", icon: Star, trend: "+5.2%", color: "bg-amber-500" },
           { title: "Retention", value: "84%", icon: ArrowUpRight, trend: "+2.1%", color: "bg-emerald-500" },
           { title: "New Today", value: "42", icon: Calendar, trend: "+8", color: "bg-indigo-500" },
         ].map((stat, i) => (

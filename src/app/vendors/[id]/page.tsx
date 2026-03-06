@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -22,10 +21,10 @@ const vendorData = {
   description: "Premium purified water direct from the source. We use advanced osmosis and UV filtration to ensure the highest quality for your family.",
   categories: ["All", "Bottled", "Bags"],
   products: [
-    { id: 101, name: "Premium 750ml (Box of 12)", price: 12.50, image: "bottle-1", category: "Bottled" },
-    { id: 102, name: "Dispenser Refill 19L", price: 8.00, image: "hero-water", category: "Bottled" },
-    { id: 103, name: "Sachet Water (Pack 20)", price: 5.00, image: "bag-water", category: "Bags" },
-    { id: 104, name: "Distilled 5L Jug", price: 4.50, image: "bottle-1", category: "Bottled" },
+    { id: 101, name: "Premium 750ml (Box of 12)", price: 2500.00, image: "bottle-1", category: "Bottled" },
+    { id: 102, name: "Dispenser Refill 19L", price: 1000.00, image: "hero-water", category: "Bottled" },
+    { id: 103, name: "Sachet Water (Pack 20)", price: 500.00, image: "bag-water", category: "Bags" },
+    { id: 104, name: "Distilled 5L Jug", price: 800.00, image: "bottle-1", category: "Bottled" },
   ]
 };
 
@@ -101,7 +100,7 @@ export default function VendorDetailPage() {
                         <div className="flex flex-col justify-between flex-1 py-1">
                           <div>
                             <h4 className="font-bold text-sm leading-tight">{product.name}</h4>
-                            <p className="text-primary font-bold mt-1">${product.price.toFixed(2)}</p>
+                            <p className="text-primary font-bold mt-1">₦{product.price.toLocaleString()}</p>
                           </div>
                           <Button size="sm" className="h-8 rounded-lg w-fit gap-1">
                             <ShoppingCart className="h-3 w-3" /> Add
@@ -124,7 +123,7 @@ export default function VendorDetailPage() {
               <ShoppingCart className="h-6 w-6" />
               <span>2 Items in Cart</span>
             </div>
-            <span>$20.50</span>
+            <span>₦3,500.00</span>
           </Button>
         </Link>
       </div>

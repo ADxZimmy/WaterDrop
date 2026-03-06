@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -22,10 +21,10 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const orders = [
-  { id: "AQ-5521", vendor: "Aqua Pure", customer: "Alice Johnson", items: "5x Bottled", total: "$62.50", status: "Delivering", time: "12m ago" },
-  { id: "AQ-5522", vendor: "Blue Wave", customer: "Bob Wilson", items: "10x Sachet", total: "$35.00", status: "Accepted", time: "25m ago" },
-  { id: "AQ-5523", vendor: "Crystal Spring", customer: "Clara Davis", items: "2x 19L Dispenser", total: "$30.00", status: "Completed", time: "1h ago" },
-  { id: "AQ-5524", vendor: "Oasis Flow", customer: "Daniel Lee", items: "20x 750ml", total: "$24.00", status: "Cancelled", time: "2h ago" },
+  { id: "AQ-5521", vendor: "Aqua Pure", customer: "Alice Johnson", items: "5x Bottled", total: "₦6,250.00", status: "Delivering", time: "12m ago" },
+  { id: "AQ-5522", vendor: "Blue Wave", customer: "Bob Wilson", items: "10x Sachet", total: "₦3,500.00", status: "Accepted", time: "25m ago" },
+  { id: "AQ-5523", vendor: "Crystal Spring", customer: "Clara Davis", items: "2x 19L Dispenser", total: "₦3,000.00", status: "Completed", time: "1h ago" },
+  { id: "AQ-5524", vendor: "Oasis Flow", customer: "Daniel Lee", items: "20x 750ml", total: "₦2,400.00", status: "Cancelled", time: "2h ago" },
 ];
 
 export default function AdminOrdersPage() {
@@ -57,7 +56,7 @@ export default function AdminOrdersPage() {
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Avg. Ticket Size</p>
             <ShoppingBag className="h-4 w-4 text-primary" />
           </div>
-          <h3 className="text-3xl font-bold mt-2">$28.40</h3>
+          <h3 className="text-3xl font-bold mt-2">₦2,840.00</h3>
           <p className="text-xs text-slate-500 mt-1">Platform average per order</p>
         </Card>
         <Card className="border-none shadow-sm bg-primary text-white p-6 rounded-3xl">

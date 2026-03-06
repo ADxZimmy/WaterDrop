@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -33,17 +32,17 @@ const vendorDetails = {
   name: "Aqua Pure Factory",
   owner: "John Doe",
   email: "contact@aquapure.com",
-  phone: "+1 (555) 123-4567",
+  phone: "+234 800 123 4567",
   status: "Active",
   joined: "May 12, 2024",
-  address: "123 Industrial Estate, Phase 2, Blue City",
+  address: "123 Industrial Estate, Phase 2, Lagos",
   nafdac: "01-1234L",
   tin: "12345678-0001",
   cac: "RC-998822",
   rating: 4.8,
   reviews: 124,
   totalOrders: 1204,
-  totalRevenue: "$42,500.00",
+  totalRevenue: "₦4,250,000.00",
   commissionRate: "10%",
   activeDrivers: 8,
   bio: "Premium purified water direct from the source. We use advanced osmosis and UV filtration to ensure the highest quality for your family."

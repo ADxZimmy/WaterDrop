@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -26,12 +25,12 @@ import {
 import { cn } from "@/lib/utils";
 
 const revenueData = [
-  { name: 'Jul', rev: 45000, orders: 1200 },
-  { name: 'Aug', rev: 52000, orders: 1450 },
-  { name: 'Sep', rev: 48000, orders: 1300 },
-  { name: 'Oct', rev: 61000, orders: 1800 },
-  { name: 'Nov', rev: 59000, orders: 1750 },
-  { name: 'Dec', rev: 82000, orders: 2400 },
+  { name: 'Jul', rev: 450000, orders: 1200 },
+  { name: 'Aug', rev: 520000, orders: 1450 },
+  { name: 'Sep', rev: 480000, orders: 1300 },
+  { name: 'Oct', rev: 610000, orders: 1800 },
+  { name: 'Nov', rev: 590000, orders: 1750 },
+  { name: 'Dec', rev: 820000, orders: 2400 },
 ];
 
 const categoryData = [
@@ -42,10 +41,10 @@ const categoryData = [
 ];
 
 const topVendors = [
-  { name: "Aqua Pure Factory", revenue: "$12,450", orders: 420, rating: 4.9 },
-  { name: "Blue Wave Distro", revenue: "$9,200", orders: 310, rating: 4.8 },
-  { name: "Crystal Spring", revenue: "$8,800", orders: 280, rating: 4.7 },
-  { name: "Oasis Flow", revenue: "$7,500", orders: 240, rating: 4.5 },
+  { name: "Aqua Pure Factory", revenue: "₦1,245,000", orders: 420, rating: 4.9 },
+  { name: "Blue Wave Distro", revenue: "₦920,000", orders: 310, rating: 4.8 },
+  { name: "Crystal Spring", revenue: "₦880,000", orders: 280, rating: 4.7 },
+  { name: "Oasis Flow", revenue: "₦750,000", orders: 240, rating: 4.5 },
 ];
 
 const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444'];
@@ -83,7 +82,7 @@ export default function AdminAnalyticsPage() {
               <CardDescription>Consolidated earnings across all vendors</CardDescription>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-slate-900">$142,500.00</p>
+              <p className="text-2xl font-bold text-slate-900">₦14,250,000.00</p>
               <p className="text-xs text-emerald-600 flex items-center justify-end gap-1">
                 <ArrowUpRight className="h-3 w-3" /> +12.5%
               </p>
@@ -100,7 +99,7 @@ export default function AdminAnalyticsPage() {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} tickFormatter={(v) => `$${v/1000}k`} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} tickFormatter={(v) => `₦${v/1000}k`} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
                 />
@@ -198,9 +197,9 @@ export default function AdminAnalyticsPage() {
             <CardTitle className="text-sm mb-4">Regional Order Density</CardTitle>
             <div className="space-y-4">
               {[
-                { city: 'Blue City Central', count: 420, percent: 85 },
-                { city: 'Spring Hills', count: 310, percent: 62 },
-                { city: 'North Valley', count: 120, percent: 24 },
+                { city: 'Lagos Island', count: 420, percent: 85 },
+                { city: 'Ikeja', count: 310, percent: 62 },
+                { city: 'Lekki Phase 1', count: 120, percent: 24 },
               ].map((region) => (
                 <div key={region.city} className="space-y-1.5">
                   <div className="flex justify-between text-xs font-bold text-slate-600">

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -14,8 +13,8 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 
 const cartItems = [
-  { id: 1, name: "Premium Bottled Water (Box of 12)", price: 12.50, qty: 1, vendor: "Aqua Pure" },
-  { id: 2, name: "Dispenser Refill 19L", price: 8.00, qty: 1, vendor: "Aqua Pure" },
+  { id: 1, name: "Premium Bottled Water (Box of 12)", price: 2500.00, qty: 1, vendor: "Aqua Pure" },
+  { id: 2, name: "Dispenser Refill 19L", price: 1000.00, qty: 1, vendor: "Aqua Pure" },
 ];
 
 export default function CartPage() {
@@ -24,7 +23,7 @@ export default function CartPage() {
   const router = useRouter();
   
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
-  const deliveryFee = deliveryOption === 'standard' ? 0.00 : 5.00;
+  const deliveryFee = deliveryOption === 'standard' ? 0.00 : 1000.00;
   const total = subtotal + deliveryFee;
 
   if (step === 'success') {
@@ -77,7 +76,7 @@ export default function CartPage() {
                         </Button>
                       </div>
                       <div className="flex justify-between items-center">
-                        <p className="font-bold text-primary">${item.price.toFixed(2)}</p>
+                        <p className="font-bold text-primary">₦{item.price.toLocaleString()}</p>
                         <div className="flex items-center gap-3 bg-muted rounded-lg p-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
                             <Minus className="h-3 w-3" />
@@ -98,16 +97,16 @@ export default function CartPage() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">${subtotal.toFixed(2)}</span>
+                  <span className="font-medium">₦{subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Delivery Fee</span>
-                  <span className="font-medium">{deliveryFee === 0 ? 'Free' : `$${deliveryFee.toFixed(2)}`}</span>
+                  <span className="font-medium">{deliveryFee === 0 ? 'Free' : `₦${deliveryFee.toLocaleString()}`}</span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span className="text-primary">${total.toFixed(2)}</span>
+                  <span className="text-primary">₦{total.toLocaleString()}</span>
                 </div>
               </div>
               <Button className="w-full h-14 rounded-2xl text-lg shadow-lg shadow-primary/20" onClick={() => setStep('checkout')}>
@@ -137,7 +136,7 @@ export default function CartPage() {
                       </div>
                       <div className="space-y-0.5">
                         <p className="font-bold text-sm">Home</p>
-                        <p className="text-xs text-muted-foreground line-clamp-1">123 Ocean View Dr, Blue City, 90210</p>
+                        <p className="text-xs text-muted-foreground line-clamp-1">123 Ocean View Dr, Lagos, Nigeria</p>
                       </div>
                     </div>
                     <RadioGroupItem value="home" />
@@ -171,7 +170,7 @@ export default function CartPage() {
                   </Label>
                   <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="h-5 w-5 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px]">$</div>
+                      <div className="h-5 w-5 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px]">₦</div>
                       <p className="font-bold text-sm">Cash on Delivery</p>
                     </div>
                     <RadioGroupItem value="cash" />
@@ -208,7 +207,7 @@ export default function CartPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <p className="font-bold text-sm">$5.00</p>
+                      <p className="font-bold text-sm">₦1,000.00</p>
                       <RadioGroupItem value="priority" />
                     </div>
                   </Label>
@@ -219,7 +218,7 @@ export default function CartPage() {
             <Card className="border-none shadow-lg p-6 space-y-6">
               <div className="flex justify-between items-center">
                 <span className="text-lg font-bold">Total Amount</span>
-                <span className="text-2xl font-bold text-primary">${total.toFixed(2)}</span>
+                <span className="text-2xl font-bold text-primary">₦{total.toLocaleString()}</span>
               </div>
               <Button className="w-full h-14 rounded-2xl text-lg shadow-lg shadow-primary/20" onClick={() => setStep('success')}>
                 Place Order

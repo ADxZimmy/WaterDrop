@@ -1,11 +1,10 @@
-
 "use client";
 
 import React, { useState } from 'react';
 import { 
   Settings, 
   ShieldCheck, 
-  DollarSign, 
+  TrendingUp, 
   Globe, 
   Bell, 
   Lock, 
@@ -64,7 +63,7 @@ export default function AdminSettingsPage() {
             <Globe className="h-4 w-4 mr-2" /> Platform
           </TabsTrigger>
           <TabsTrigger value="financials" className="rounded-xl px-6 h-12 data-[state=active]:bg-primary data-[state=active]:text-white">
-            <DollarSign className="h-4 w-4 mr-2" /> Financials
+            <TrendingUp className="h-4 w-4 mr-2" /> Financials
           </TabsTrigger>
           <TabsTrigger value="compliance" className="rounded-xl px-6 h-12 data-[state=active]:bg-primary data-[state=active]:text-white">
             <ShieldCheck className="h-4 w-4 mr-2" /> Compliance
@@ -142,27 +141,27 @@ export default function AdminSettingsPage() {
                 <CardContent className="p-8 space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="bagCommission">Commission per Sachet Bag ($)</Label>
+                      <Label htmlFor="bagCommission">Commission per Sachet Bag (₦)</Label>
                       <div className="relative">
-                        <DollarSign className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                        <Input id="bagCommission" type="number" defaultValue="0.50" className="pl-10 rounded-xl h-11" />
+                        <span className="absolute left-3 top-3 h-4 w-4 text-slate-400 font-bold">₦</span>
+                        <Input id="bagCommission" type="number" defaultValue="100" className="pl-10 rounded-xl h-11" />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="refillCommission">Commission per Dispenser Refill ($)</Label>
+                      <Label htmlFor="refillCommission">Commission per Dispenser Refill (₦)</Label>
                       <div className="relative">
-                        <DollarSign className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                        <Input id="refillCommission" type="number" defaultValue="2.00" className="pl-10 rounded-xl h-11" />
+                        <span className="absolute left-3 top-3 h-4 w-4 text-slate-400 font-bold">₦</span>
+                        <Input id="refillCommission" type="number" defaultValue="500" className="pl-10 rounded-xl h-11" />
                       </div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="minOrder">Min. Order Value ($)</Label>
+                      <Label htmlFor="minOrder">Min. Order Value (₦)</Label>
                       <div className="relative">
-                        <DollarSign className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                        <Input id="minOrder" type="number" defaultValue="5.00" className="pl-10 rounded-xl h-11" />
+                        <span className="absolute left-3 top-3 h-4 w-4 text-slate-400 font-bold">₦</span>
+                        <Input id="minOrder" type="number" defaultValue="1000" className="pl-10 rounded-xl h-11" />
                       </div>
                     </div>
                   </div>
@@ -173,12 +172,12 @@ export default function AdminSettingsPage() {
                     <Label className="text-sm font-bold uppercase tracking-widest text-slate-400">Fixed Fees</Label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="baseDelivery">Base Delivery Fee ($)</Label>
-                        <Input id="baseDelivery" type="number" defaultValue="2.50" className="rounded-xl h-11" />
+                        <Label htmlFor="baseDelivery">Base Delivery Fee (₦)</Label>
+                        <Input id="baseDelivery" type="number" defaultValue="500" className="rounded-xl h-11" />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="priorityFee">Priority Surcharge ($)</Label>
-                        <Input id="priorityFee" type="number" defaultValue="5.00" className="rounded-xl h-11" />
+                        <Label htmlFor="priorityFee">Priority Surcharge (₦)</Label>
+                        <Input id="priorityFee" type="number" defaultValue="1000" className="rounded-xl h-11" />
                       </div>
                     </div>
                   </div>
@@ -241,7 +240,7 @@ export default function AdminSettingsPage() {
                   
                   <div className="space-y-4">
                     <div className="flex justify-between items-center text-sm font-bold uppercase text-slate-400 tracking-tighter">
-                      <span>Stripe Connect</span>
+                      <span>Payment Gateway</span>
                       <span className="text-emerald-500">Active</span>
                     </div>
                     <Input disabled value="sk_live_...9921" className="bg-slate-50 font-mono text-xs h-11" />

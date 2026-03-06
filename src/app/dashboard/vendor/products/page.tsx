@@ -14,9 +14,9 @@ import { generateProductDescription } from '@/ai/flows/generate-product-descript
 import { useToast } from "@/hooks/use-toast";
 
 const initialProducts = [
-  { id: 1, name: "Aqua Fresh 750ml", category: "Bottled Water", price: 1.20, stock: 500, status: "Active" },
-  { id: 2, name: "Bulk Dispenser (19L)", category: "Bulk Supply", price: 15.00, stock: 45, status: "Active" },
-  { id: 3, name: "Sachet Pack (20pcs)", category: "Bags of Water", price: 3.50, stock: 200, status: "Low Stock" },
+  { id: 1, name: "Aqua Fresh 750ml", category: "Bottled Water", price: 200.00, stock: 500, status: "Active" },
+  { id: 2, name: "Bulk Dispenser (19L)", category: "Bulk Supply", price: 1500.00, stock: 45, status: "Active" },
+  { id: 3, name: "Sachet Pack (20pcs)", category: "Bags of Water", price: 500.00, stock: 200, status: "Low Stock" },
 ];
 
 export default function VendorProductsPage() {
@@ -114,7 +114,7 @@ export default function VendorProductsPage() {
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="price">Price ($)</Label>
+                  <Label htmlFor="price">Price (₦)</Label>
                   <Input 
                     id="price" 
                     type="number" 
@@ -229,7 +229,7 @@ export default function VendorProductsPage() {
               <TableRow key={product.id} className="hover:bg-muted/20">
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>{product.category}</TableCell>
-                <TableCell>${product.price.toFixed(2)}</TableCell>
+                <TableCell>₦{product.price.toLocaleString()}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <span className={`h-2 w-2 rounded-full ${product.stock < 100 ? 'bg-red-500' : 'bg-green-500'}`}></span>

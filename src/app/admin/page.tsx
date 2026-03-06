@@ -31,13 +31,13 @@ import {
 } from 'recharts';
 
 const data = [
-  { name: 'Mon', revenue: 4500 },
-  { name: 'Tue', revenue: 5200 },
-  { name: 'Wed', revenue: 4800 },
-  { name: 'Thu', revenue: 6100 },
-  { name: 'Fri', revenue: 5900 },
-  { name: 'Sat', revenue: 8200 },
-  { name: 'Sun', revenue: 7500 },
+  { name: 'Mon', revenue: 45000 },
+  { name: 'Tue', revenue: 52000 },
+  { name: 'Wed', revenue: 48000 },
+  { name: 'Thu', revenue: 61000 },
+  { name: 'Fri', revenue: 59000 },
+  { name: 'Sat', revenue: 82000 },
+  { name: 'Sun', revenue: 75000 },
 ];
 
 export default function AdminOverviewPage() {
@@ -56,7 +56,7 @@ export default function AdminOverviewPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { title: "Total Revenue", value: "$142,500.00", icon: DollarSign, trend: "+12.5%", isUp: true, color: "bg-blue-500" },
+          { title: "Total Revenue", value: "₦14,250,000.00", icon: TrendingUp, trend: "+12.5%", isUp: true, color: "bg-blue-500" },
           { title: "Active Vendors", value: "84", icon: Store, trend: "+4", isUp: true, color: "bg-emerald-500" },
           { title: "Global Orders", value: "12,402", icon: ShoppingBag, trend: "+8.2%", isUp: true, color: "bg-amber-500" },
           { title: "Support Tickets", value: "5", icon: AlertCircle, trend: "-2", isUp: false, color: "bg-rose-500" },
@@ -102,7 +102,7 @@ export default function AdminOverviewPage() {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} tickFormatter={(v) => `$${v}`} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} tickFormatter={(v) => `₦${v/1000}k`} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
                 />

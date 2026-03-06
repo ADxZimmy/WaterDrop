@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -29,10 +28,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from "@/hooks/use-toast";
 
 const initialVendors = [
-  { id: 1, name: "Aqua Pure Factory", owner: "John Doe", status: "Active", orders: 1204, rating: 4.8, revenue: "$42,500", joined: "May 2024" },
-  { id: 2, name: "Blue Wave Distro", owner: "Sarah Smith", status: "Active", orders: 890, rating: 4.5, revenue: "$28,200", joined: "Jun 2024" },
-  { id: 3, name: "Crystal Spring", owner: "Michael Scott", status: "Warning", orders: 450, rating: 3.9, revenue: "$12,400", joined: "Jul 2024" },
-  { id: 4, name: "Oasis Flow", owner: "Janice Miller", status: "Active", orders: 670, rating: 4.7, revenue: "$19,800", joined: "Aug 2024" },
+  { id: 1, name: "Aqua Pure Factory", owner: "John Doe", status: "Active", orders: 1204, rating: 4.8, revenue: "₦4,250,000", joined: "May 2024" },
+  { id: 2, name: "Blue Wave Distro", owner: "Sarah Smith", status: "Active", orders: 890, rating: 4.5, revenue: "₦2,820,000", joined: "Jun 2024" },
+  { id: 3, name: "Crystal Spring", owner: "Michael Scott", status: "Warning", orders: 450, rating: 3.9, revenue: "₦1,240,000", joined: "Jul 2024" },
+  { id: 4, name: "Oasis Flow", owner: "Janice Miller", status: "Active", orders: 670, rating: 4.7, revenue: "₦1,980,000", joined: "Aug 2024" },
 ];
 
 export default function AdminVendorsPage() {

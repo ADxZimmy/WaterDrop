@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -12,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function WithdrawalPage() {
   const [step, setStep] = useState(1);
-  const [amount, setAmount] = useState('100.00');
+  const [amount, setAmount] = useState('10000.00');
 
   if (step === 3) {
     return (
@@ -21,7 +20,7 @@ export default function WithdrawalPage() {
           <CheckCircle2 className="h-12 w-12" />
         </div>
         <h1 className="text-3xl font-bold font-headline mb-2">Request Submitted!</h1>
-        <p className="text-muted-foreground mb-8 max-w-xs">Your withdrawal of ${amount} is being processed and will arrive in your bank account within 24 hours.</p>
+        <p className="text-muted-foreground mb-8 max-w-xs">Your withdrawal of ₦{parseFloat(amount).toLocaleString()} is being processed and will arrive in your bank account within 24 hours.</p>
         <Link href="/dashboard/driver/earnings">
           <Button className="w-full max-w-xs h-12 rounded-xl shadow-lg shadow-primary/20">Back to Earnings</Button>
         </Link>
@@ -45,12 +44,12 @@ export default function WithdrawalPage() {
           <Card className="border-none shadow-xl rounded-3xl overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
             <CardHeader className="bg-primary text-white p-8">
               <CardTitle className="text-lg">Enter Amount</CardTitle>
-              <CardDescription className="text-primary-foreground/80">Current balance available: $452.80</CardDescription>
+              <CardDescription>Current balance available: ₦45,280.00</CardDescription>
             </CardHeader>
             <CardContent className="p-8 space-y-6">
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground flex items-center justify-center">
-                  <DollarSign className="h-8 w-8" />
+                  <span className="text-2xl font-bold">₦</span>
                 </div>
                 <Input 
                   className="h-20 text-4xl font-bold pl-14 rounded-2xl border-2 focus:border-primary transition-all" 
@@ -60,14 +59,14 @@ export default function WithdrawalPage() {
                 />
               </div>
               <div className="grid grid-cols-3 gap-3">
-                {['50.00', '100.00', '250.00'].map((val) => (
+                {['5000.00', '10000.00', '25000.00'].map((val) => (
                   <Button 
                     key={val} 
                     variant="outline" 
                     className="h-12 rounded-xl font-bold hover:bg-primary/5 hover:text-primary hover:border-primary/20"
                     onClick={() => setAmount(val)}
                   >
-                    ${val}
+                    ₦{parseFloat(val).toLocaleString()}
                   </Button>
                 ))}
               </div>
@@ -94,7 +93,7 @@ export default function WithdrawalPage() {
                       <Building2 className="h-6 w-6" />
                     </div>
                     <div>
-                      <p className="font-bold">Chase Savings</p>
+                      <p className="font-bold">GTBank Savings</p>
                       <p className="text-xs text-muted-foreground">Ending in •••• 4452</p>
                     </div>
                   </div>
@@ -107,7 +106,7 @@ export default function WithdrawalPage() {
                     </div>
                     <div>
                       <p className="font-bold text-muted-foreground">Add New Account</p>
-                      <p className="text-xs text-muted-foreground">Link a new bank via Plaid</p>
+                      <p className="text-xs text-muted-foreground">Link a new bank account</p>
                     </div>
                   </div>
                   <RadioGroupItem value="new" disabled id="new" />
@@ -117,7 +116,7 @@ export default function WithdrawalPage() {
             <CardFooter className="p-8 pt-0 flex gap-3">
               <Button variant="outline" className="h-14 rounded-2xl px-8" onClick={() => setStep(1)}>Back</Button>
               <Button className="flex-1 h-14 rounded-2xl text-lg gap-2 shadow-lg shadow-primary/20" onClick={() => setStep(3)}>
-                Withdraw ${amount} <CheckCircle2 className="h-5 w-5" />
+                Withdraw ₦{parseFloat(amount).toLocaleString()} <CheckCircle2 className="h-5 w-5" />
               </Button>
             </CardFooter>
           </Card>
