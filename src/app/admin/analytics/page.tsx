@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -206,7 +207,9 @@ export default function AdminAnalyticsPage() {
               <CardTitle className="text-lg">Top Performing Vendors</CardTitle>
               <CardDescription>Ranked by monthly gross revenue</CardDescription>
             </div>
-            <Button variant="ghost" size="sm" className="text-primary rounded-lg">View Detailed</Button>
+            <Link href="/admin/analytics/vendors">
+              <Button variant="ghost" size="sm" className="text-primary rounded-lg">View Detailed</Button>
+            </Link>
           </CardHeader>
           <div className="p-0">
             {topVendors.map((vendor, i) => (
