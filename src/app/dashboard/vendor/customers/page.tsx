@@ -101,8 +101,7 @@ export default function VendorCustomersPage() {
               <TableHead>Loyalty</TableHead>
               <TableHead>Orders</TableHead>
               <TableHead>Total Spent</TableHead>
-              <TableHead>Last Order</TableHead>
-              <TableHead className="text-right pr-6">Action</TableHead>
+              <TableHead className="pr-6">Last Order</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -133,17 +132,12 @@ export default function VendorCustomersPage() {
                 </TableCell>
                 <TableCell className="font-medium">{customer.orders}</TableCell>
                 <TableCell className="font-bold">₦{customer.totalSpent.toLocaleString()}</TableCell>
-                <TableCell className="text-muted-foreground text-xs">{customer.lastOrder}</TableCell>
-                <TableCell className="text-right pr-6">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </TableCell>
+                <TableCell className="text-muted-foreground text-xs pr-6">{customer.lastOrder}</TableCell>
               </TableRow>
             ))}
             {filteredCustomers.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   No customers found matching the filters.
                 </TableCell>
               </TableRow>
