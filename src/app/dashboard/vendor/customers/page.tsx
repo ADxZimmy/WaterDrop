@@ -1,16 +1,22 @@
 
 "use client";
 
-import React from 'react';
-import { Users, Search, Mail, Phone, Calendar, Star, ChevronRight, MoreHorizontal } from 'lucide-react';
+import React, { useState } from 'react';
+import { Users, Search, Mail, Phone, Calendar, Star, ChevronRight, MoreHorizontal, Filter } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-const customers = [
+const initialCustomers = [
   { id: 1, name: "Alice Johnson", email: "alice@example.com", phone: "+1 555-101", orders: 42, totalSpent: 1250.00, lastOrder: "2 hours ago", loyalty: "Premium" },
   { id: 2, name: "Bob Wilson", email: "bob@example.com", phone: "+1 555-102", orders: 12, totalSpent: 450.20, lastOrder: "1 day ago", loyalty: "Standard" },
   { id: 3, name: "Clara Davis", email: "clara@example.com", phone: "+1 555-103", orders: 8, totalSpent: 180.50, lastOrder: "3 days ago", loyalty: "New" },
@@ -18,6 +24,16 @@ const customers = [
 ];
 
 export default function VendorCustomersPage() {
+  const [filter, setFilter] = useState<string>('All');
+  const [search, setSearch] = useState<string>("");
+
+  const filteredCustomers = initialCustomers.filter(c => {
+    const matchesFilter = filter === 'All' || c.loyalty === filter;
+    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || 
+                          c.email.toLowerCase().includes(search.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
       <div className="flex justify-between items-end">
@@ -33,7 +49,7 @@ export default function VendorCustomersPage() {
           { title: "Total Customers", value: "1,204", icon: Users, color: "bg-primary/10 text-primary" },
           { title: "New This Month", value: "142", icon: Star, color: "bg-yellow-100 text-yellow-600" },
           { title: "Active Today", value: "85", icon: Calendar, color: "bg-green-100 text-green-600" },
-          { title: "Avg. Life Value", value: "$185.20", icon: Star, color: "bg-purple-100 text-purple-600" },
+          { title: "Avg. Life Value", value: "₦18,240.00", icon: Star, color: "bg-purple-100 text-purple-600" },
         ].map((stat, i) => (
           <Card key={i} className="border-none shadow-sm p-6 rounded-3xl">
             <div className="flex items-center gap-4">
@@ -53,11 +69,28 @@ export default function VendorCustomersPage() {
         <div className="p-6 border-b flex flex-col md:flex-row gap-4 justify-between items-center">
           <div className="relative flex-1 w-full max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search customers..." className="pl-10 h-11 rounded-xl" />
+            <Input 
+              placeholder="Search customers..." 
+              className="pl-10 h-11 rounded-xl" 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
           <div className="flex gap-2 w-full md:w-auto">
             <Button variant="outline" className="rounded-xl flex-1 md:flex-none">Export</Button>
-            <Button variant="outline" className="rounded-xl flex-1 md:flex-none">Filter</Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="rounded-xl flex-1 md:flex-none gap-2">
+                  <Filter className="h-4 w-4" /> {filter === 'All' ? 'Filter' : filter}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setFilter('All')}>All Tiers</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilter('Premium')}>Premium Only</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilter('Standard')}>Standard Only</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilter('New')}>New Only</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -73,7 +106,7 @@ export default function VendorCustomersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {customers.map((customer) => (
+            {filteredCustomers.map((customer) => (
               <TableRow key={customer.id} className="group">
                 <TableCell className="pl-6">
                   <div className="flex items-center gap-3">
@@ -99,7 +132,7 @@ export default function VendorCustomersPage() {
                   </Badge>
                 </TableCell>
                 <TableCell className="font-medium">{customer.orders}</TableCell>
-                <TableCell className="font-bold">${customer.totalSpent.toFixed(2)}</TableCell>
+                <TableCell className="font-bold">₦{customer.totalSpent.toLocaleString()}</TableCell>
                 <TableCell className="text-muted-foreground text-xs">{customer.lastOrder}</TableCell>
                 <TableCell className="text-right pr-6">
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
@@ -108,6 +141,13 @@ export default function VendorCustomersPage() {
                 </TableCell>
               </TableRow>
             ))}
+            {filteredCustomers.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  No customers found matching the filters.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
