@@ -40,7 +40,7 @@ const activeDeliveries = [
     items: "5x PureLife Bottled (Pack)",
     status: "Accepted",
     vendor: "Aqua Pure Factory",
-    price: "$8.50"
+    price: "₦850.00"
   },
   {
     id: "ORD-1248",
@@ -50,7 +50,7 @@ const activeDeliveries = [
     items: "10x Sachet Water Bags",
     status: "Delivering",
     vendor: "Blue Wave Distro",
-    price: "$12.00"
+    price: "₦1,200.00"
   }
 ];
 
@@ -279,7 +279,7 @@ export default function DriverDashboard() {
               </Link>
               <Button className="rounded-xl h-11 gap-2">
                 <CheckCircle className="h-4 w-4" />
-                Complete
+                Start Delivery
               </Button>
             </CardFooter>
           </Card>
@@ -290,7 +290,7 @@ export default function DriverDashboard() {
         <div className="flex justify-between items-center">
           <div>
             <p className="text-primary-foreground/70 text-sm font-medium">Daily Earnings</p>
-            <h3 className="text-3xl font-bold font-headline mt-1">$142.50</h3>
+            <h3 className="text-3xl font-bold font-headline mt-1">₦14,250.00</h3>
           </div>
           <div className="text-right">
             <p className="text-primary-foreground/70 text-sm font-medium">Total Trips</p>
