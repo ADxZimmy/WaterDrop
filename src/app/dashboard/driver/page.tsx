@@ -98,6 +98,17 @@ export default function DriverDashboard() {
   };
 
   const handleStartDelivery = (id: string) => {
+    const hasActiveDelivery = deliveries.some(d => d.status === 'Delivering');
+    
+    if (hasActiveDelivery) {
+      toast({
+        title: "Active Delivery in Progress",
+        description: "You can only have one delivery in transit at a time. Please complete your current task.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setDeliveries(prev => prev.map(delivery => 
       delivery.id === id ? { ...delivery, status: 'Delivering' } : delivery
     ));
@@ -221,6 +232,8 @@ export default function DriverDashboard() {
     );
   }
 
+  const isAnyDeliveryActive = deliveries.some(d => d.status === 'Delivering');
+
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex items-center justify-between">
@@ -300,7 +313,7 @@ export default function DriverDashboard() {
                   delivery.status === 'Delivering' ? "bg-accent hover:bg-accent/90 cursor-default" : "shadow-lg shadow-primary/20"
                 )}
                 onClick={() => delivery.status !== 'Delivering' && handleStartDelivery(delivery.id)}
-                disabled={delivery.status === 'Delivering'}
+                disabled={delivery.status !== 'Delivering' && isAnyDeliveryActive}
               >
                 {delivery.status === 'Delivering' ? (
                   <>
