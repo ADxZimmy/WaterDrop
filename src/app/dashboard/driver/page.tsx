@@ -19,7 +19,9 @@ import {
   ShieldAlert, 
   CheckCircle2, 
   ChevronLeft,
-  Droplets
+  Droplets,
+  AlertTriangle,
+  Package
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +40,7 @@ const initialDeliveries = [
     address: "123 Ocean View Dr, Blue City",
     distance: "1.2 km",
     items: "5x PureLife Bottled (Pack)",
+    quantity: 5,
     status: "Accepted",
     vendor: "Aqua Pure Factory",
     price: "₦850.00"
@@ -48,6 +51,7 @@ const initialDeliveries = [
     address: "45 River St, Spring Hills",
     distance: "3.5 km",
     items: "10x Sachet Water Bags",
+    quantity: 10,
     status: "Accepted",
     vendor: "Blue Wave Distro",
     price: "₦1,200.00"
@@ -59,6 +63,7 @@ export default function DriverDashboard() {
   const [showSetup, setShowSetup] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [deliveries, setDeliveries] = useState(initialDeliveries);
+  const [loadedBags, setLoadedBags] = useState(20); // Default for demo
   const { toast } = useToast();
 
   useEffect(() => {
@@ -117,6 +122,12 @@ export default function DriverDashboard() {
       description: `Order ${id} is now in transit.`
     });
   };
+
+  const totalRequired = deliveries
+    .filter(d => d.status !== 'Completed')
+    .reduce((acc, curr) => acc + curr.quantity, 0);
+  
+  const isSufficient = loadedBags >= totalRequired;
 
   if (!isSetupComplete) {
     return (
@@ -236,10 +247,64 @@ export default function DriverDashboard() {
 
   return (
     <div className="p-4 md:p-8 space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
+        <Card className="border-none shadow-sm p-6 bg-white rounded-3xl relative overflow-hidden">
+          <div className="flex justify-between items-start">
+            <div className="flex items-center gap-4">
+              <div className={cn(
+                "h-14 w-14 rounded-2xl flex items-center justify-center transition-colors",
+                isSufficient ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"
+              )}>
+                {isSufficient ? <CheckCircle2 className="h-8 w-8" /> : <AlertTriangle className="h-8 w-8" />}
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Inventory Level</p>
+                <h3 className="text-2xl font-bold mt-1">{loadedBags} Units Loaded</h3>
+              </div>
+            </div>
+            <Badge className={cn(
+              "rounded-full px-3 border-none",
+              isSufficient ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+            )}>
+              {isSufficient ? "Enough for delivery" : "Stock Low"}
+            </Badge>
+          </div>
+          <div className="mt-6 flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Required for pending tasks:</span>
+            <span className={cn("font-bold", isSufficient ? "text-slate-900" : "text-rose-600")}>
+              {totalRequired} units
+            </span>
+          </div>
+          {!isSufficient && (
+            <div className="mt-4 p-3 bg-rose-50 border border-rose-100 rounded-xl flex gap-3 text-rose-800 text-xs">
+              <ShieldAlert className="h-4 w-4 shrink-0" />
+              <p>Warning: You do not have enough water bags loaded for all assigned orders.</p>
+            </div>
+          )}
+        </Card>
+
+        <Card className="border-none bg-primary text-white p-6 rounded-3xl shadow-xl shadow-primary/20 flex flex-col justify-between">
+          <div className="flex justify-between items-center">
+            <p className="text-primary-foreground/70 text-xs font-bold uppercase tracking-widest">Performance Today</p>
+            <Award className="h-5 w-5 opacity-50" />
+          </div>
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div>
+              <p className="text-2xl font-bold font-headline">₦14,250</p>
+              <p className="text-[10px] text-primary-foreground/70 uppercase">Daily Earnings</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold font-headline">12</p>
+              <p className="text-[10px] text-primary-foreground/70 uppercase">Trips Done</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold font-headline">Active Deliveries</h2>
-          <p className="text-sm text-muted-foreground">You have {deliveries.length} tasks assigned</p>
+          <p className="text-sm text-muted-foreground">You have {deliveries.filter(d => d.status !== 'Completed').length} tasks assigned</p>
         </div>
         <Badge className="bg-primary px-3 py-1">{deliveries.filter(d => d.status !== 'Completed').length} Active</Badge>
       </div>
@@ -331,19 +396,6 @@ export default function DriverDashboard() {
           </Card>
         ))}
       </div>
-
-      <Card className="border-none bg-primary text-white p-6 rounded-2xl shadow-xl shadow-primary/20">
-        <div className="flex justify-between items-center">
-          <div>
-            <p className="text-primary-foreground/70 text-sm font-medium">Daily Earnings</p>
-            <h3 className="text-3xl font-bold font-headline mt-1">₦14,250.00</h3>
-          </div>
-          <div className="text-right">
-            <p className="text-primary-foreground/70 text-sm font-medium">Total Trips</p>
-            <h3 className="text-3xl font-bold font-headline mt-1">12</h3>
-          </div>
-        </div>
-      </Card>
     </div>
   );
 }
