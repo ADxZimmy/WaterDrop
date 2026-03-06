@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Store, User, Shield, Bell, CreditCard, HelpCircle, MapPin, Clock, Camera } from 'lucide-react';
+import { Store, User, Shield, Bell, CreditCard, HelpCircle, MapPin, Clock, Camera, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,9 +25,16 @@ export default function VendorSettingsPage() {
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-10 text-foreground">
-      <div>
-        <h1 className="text-3xl font-bold font-headline">Store Settings</h1>
-        <p className="text-muted-foreground">Configure your business profile and preferences.</p>
+      <div className="flex items-center gap-4">
+        <Link href="/dashboard/vendor">
+          <Button variant="ghost" size="icon" className="rounded-xl">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        </Link>
+        <div>
+          <h1 className="text-3xl font-bold font-headline">Store Settings</h1>
+          <p className="text-muted-foreground">Configure your business profile and preferences.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">

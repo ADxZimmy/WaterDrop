@@ -1,7 +1,8 @@
 "use client";
 
 import React from 'react';
-import { User, Mail, Phone, Lock, Camera } from 'lucide-react';
+import Link from 'next/link';
+import { User, Mail, Phone, Lock, Camera, ArrowLeft } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,9 +12,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 export default function AccountSettingsPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold font-headline text-foreground">Account Settings</h1>
-        <p className="text-muted-foreground">Manage your personal account details and security.</p>
+      <div className="flex items-center gap-4">
+        <Link href="/dashboard/vendor/settings">
+          <Button variant="ghost" size="icon" className="rounded-xl">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        </Link>
+        <div>
+          <h1 className="text-3xl font-bold font-headline text-foreground">Account Settings</h1>
+          <p className="text-muted-foreground">Manage your personal account details and security.</p>
+        </div>
       </div>
 
       <div className="grid gap-8">

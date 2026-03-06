@@ -1,7 +1,8 @@
 "use client";
 
 import React from 'react';
-import { HelpCircle, MessageSquare, BookOpen, ExternalLink, Mail, Phone } from 'lucide-react';
+import Link from 'next/link';
+import { HelpCircle, MessageSquare, BookOpen, ExternalLink, Mail, Phone, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -9,9 +10,16 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 export default function HelpSettingsPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8 text-foreground">
-      <div>
-        <h1 className="text-3xl font-bold font-headline">Support & Help</h1>
-        <p className="text-muted-foreground">Find answers and get assistance with your store.</p>
+      <div className="flex items-center gap-4">
+        <Link href="/dashboard/vendor/settings">
+          <Button variant="ghost" size="icon" className="rounded-xl">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        </Link>
+        <div>
+          <h1 className="text-3xl font-bold font-headline">Support & Help</h1>
+          <p className="text-muted-foreground">Find answers and get assistance with your store.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

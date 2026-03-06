@@ -1,7 +1,8 @@
 "use client";
 
 import React from 'react';
-import { Bell, Mail, Smartphone, Monitor } from 'lucide-react';
+import Link from 'next/link';
+import { Bell, Mail, Smartphone, Monitor, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -11,9 +12,16 @@ import { Separator } from "@/components/ui/separator";
 export default function NotificationsSettingsPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold font-headline text-foreground">Notifications</h1>
-        <p className="text-muted-foreground">Control how and when you receive alerts from WaterDrop.</p>
+      <div className="flex items-center gap-4">
+        <Link href="/dashboard/vendor/settings">
+          <Button variant="ghost" size="icon" className="rounded-xl">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        </Link>
+        <div>
+          <h1 className="text-3xl font-bold font-headline text-foreground">Notifications</h1>
+          <p className="text-muted-foreground">Control how and when you receive alerts from WaterDrop.</p>
+        </div>
       </div>
 
       <Card className="border-none shadow-sm rounded-3xl overflow-hidden">

@@ -1,8 +1,8 @@
-
 "use client";
 
 import React from 'react';
-import { CreditCard, Plus, ArrowUpRight, CheckCircle2, Building2 } from 'lucide-react';
+import Link from 'next/link';
+import { CreditCard, Plus, ArrowUpRight, CheckCircle2, Building2, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,9 +11,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 export default function BillingSettingsPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8 text-foreground">
-      <div>
-        <h1 className="text-3xl font-bold font-headline">Billing & Payouts</h1>
-        <p className="text-muted-foreground">Manage your payment methods and view earning statements.</p>
+      <div className="flex items-center gap-4">
+        <Link href="/dashboard/vendor/settings">
+          <Button variant="ghost" size="icon" className="rounded-xl">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        </Link>
+        <div>
+          <h1 className="text-3xl font-bold font-headline">Billing & Payouts</h1>
+          <p className="text-muted-foreground">Manage your payment methods and view earning statements.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6">
