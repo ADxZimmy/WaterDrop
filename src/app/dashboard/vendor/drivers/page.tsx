@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const initialDrivers = [
   { id: 1, name: "John Driver", rating: 4.9, status: "Active", trips: 124, image: "https://picsum.photos/seed/d1/100" },
