@@ -16,7 +16,8 @@ import {
   XCircle,
   History,
   ExternalLink,
-  Plus
+  Plus,
+  CheckCircle2
 } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -142,12 +143,21 @@ export default function AdminVendorsPage() {
                       >
                         <ShieldAlert className="h-4 w-4" /> Issue Warning
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        className="gap-2 text-rose-600 cursor-pointer"
-                        onClick={() => handleUpdateStatus(vendor.id, 'Suspended')}
-                      >
-                        <XCircle className="h-4 w-4" /> Suspend Vendor
-                      </DropdownMenuItem>
+                      {vendor.status === 'Suspended' ? (
+                        <DropdownMenuItem 
+                          className="gap-2 text-emerald-600 cursor-pointer"
+                          onClick={() => handleUpdateStatus(vendor.id, 'Active')}
+                        >
+                          <CheckCircle2 className="h-4 w-4" /> Unsuspend Vendor
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem 
+                          className="gap-2 text-rose-600 cursor-pointer"
+                          onClick={() => handleUpdateStatus(vendor.id, 'Suspended')}
+                        >
+                          <XCircle className="h-4 w-4" /> Suspend Vendor
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
