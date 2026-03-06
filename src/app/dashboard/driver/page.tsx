@@ -21,7 +21,8 @@ import {
   ChevronLeft,
   Droplets,
   AlertTriangle,
-  Package
+  Package,
+  Edit2
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,6 +68,12 @@ export default function DriverDashboard() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Load inventory from localStorage
+    const savedInventory = localStorage.getItem('driver_loaded_bags');
+    if (savedInventory) {
+      setLoadedBags(parseInt(savedInventory));
+    }
+
     // Check for dev bypass
     const isDriverSetup = localStorage.getItem('driver_setup_complete') === 'true';
     if (isDriverSetup) {
@@ -145,7 +152,7 @@ export default function DriverDashboard() {
             <Truck className="h-10 w-10" />
           </div>
           <h2 className="text-2xl font-bold mb-2">Complete Your Driver Profile</h2>
-          <p className="text-muted-foreground mb-8 max-w-md">Link your account to a registered WaterDrop vendor and provide your vehicle details to start accepting orders.</p>
+          <p className="text-muted-foreground mb-8 max-md">Link your account to a registered WaterDrop vendor and provide your vehicle details to start accepting orders.</p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Button onClick={() => setShowSetup(true)} size="lg" className="rounded-xl px-8 shadow-lg shadow-primary/20">
               Start Setup Now
@@ -262,12 +269,19 @@ export default function DriverDashboard() {
                 <h3 className="text-2xl font-bold mt-1">{loadedBags} Units Loaded</h3>
               </div>
             </div>
-            <Badge className={cn(
-              "rounded-full px-3 border-none",
-              isSufficient ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-            )}>
-              {isSufficient ? "Enough for delivery" : "Stock Low"}
-            </Badge>
+            <div className="flex flex-col items-end gap-2">
+              <Badge className={cn(
+                "rounded-full px-3 border-none",
+                isSufficient ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+              )}>
+                {isSufficient ? "Enough for delivery" : "Stock Low"}
+              </Badge>
+              <Link href="/dashboard/driver/inventory">
+                <Button variant="outline" size="sm" className="h-8 text-[10px] uppercase font-bold tracking-tight rounded-lg gap-1 border-primary/20 text-primary hover:bg-primary/5 transition-all">
+                  <Edit2 className="h-3 w-3" /> Update
+                </Button>
+              </Link>
+            </div>
           </div>
           <div className="mt-6 flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Required for pending tasks:</span>
