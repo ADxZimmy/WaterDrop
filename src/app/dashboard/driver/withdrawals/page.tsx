@@ -9,13 +9,43 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
 const withdrawals = [
-  { id: 'WID-9921', date: 'Oct 24, 2024', time: '14:20 PM', amount: '$150.00', status: 'Pending', method: 'Chase Savings (•••• 4452)' },
-  { id: 'WID-9882', date: 'Oct 18, 2024', time: '09:15 AM', amount: '$240.00', status: 'Completed', method: 'Chase Savings (•••• 4452)' },
-  { id: 'WID-9851', date: 'Oct 12, 2024', time: '11:30 AM', amount: '$100.00', status: 'Completed', method: 'Chase Savings (•••• 4452)' },
-  { id: 'WID-9820', date: 'Oct 05, 2024', time: '16:45 PM', amount: '$320.00', status: 'Completed', method: 'Chase Savings (•••• 4452)' },
+  { id: 'WID-9921', date: 'Oct 24, 2024', time: '14:20 PM', amount: '₦15,000.00', status: 'Pending', method: 'GTBank Savings (•••• 4452)' },
+  { id: 'WID-9882', date: 'Oct 18, 2024', time: '09:15 AM', amount: '₦24,000.00', status: 'Completed', method: 'GTBank Savings (•••• 4452)' },
+  { id: 'WID-9851', date: 'Oct 12, 2024', time: '11:30 AM', amount: '₦10,000.00', status: 'Completed', method: 'GTBank Savings (•••• 4452)' },
+  { id: 'WID-9820', date: 'Oct 05, 2024', time: '16:45 PM', amount: '₦32,000.00', status: 'Completed', method: 'GTBank Savings (•••• 4452)' },
 ];
 
 export default function DriverWithdrawalHistoryPage() {
+  const handleDownloadReceipt = (withdrawal: typeof withdrawals[0]) => {
+    const receiptContent = `
+========================================
+       WATERDROP WITHDRAWAL RECEIPT
+========================================
+Receipt ID: ${withdrawal.id}
+Date: ${withdrawal.date}
+Time: ${withdrawal.time}
+Status: ${withdrawal.status}
+----------------------------------------
+AMOUNT: ${withdrawal.amount}
+METHOD: ${withdrawal.method}
+----------------------------------------
+Transaction processed via WaterDrop Payout System.
+Keep this receipt for your records.
+----------------------------------------
+Thank you for delivering with WaterDrop!
+========================================
+    `;
+    const blob = new Blob([receiptContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `receipt-${withdrawal.id}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-4">
@@ -76,7 +106,12 @@ export default function DriverWithdrawalHistoryPage() {
                   <DollarSign className="h-3.5 w-3.5" />
                   {item.method}
                 </div>
-                <Button variant="ghost" size="sm" className="h-8 gap-1 text-primary group-hover:bg-primary/5">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 gap-1 text-primary group-hover:bg-primary/5"
+                  onClick={() => handleDownloadReceipt(item)}
+                >
                   View Receipt <ChevronRight className="h-3 w-3" />
                 </Button>
               </div>
