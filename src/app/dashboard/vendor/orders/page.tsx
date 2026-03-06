@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { ShoppingBag, Truck, CheckCircle, Clock, Search, Filter, ArrowUpRight, User, Check, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +53,9 @@ export default function VendorOrdersPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="rounded-xl h-11 px-6">Export Orders</Button>
-          <Button className="rounded-xl h-11 px-6">View Analytics</Button>
+          <Link href="/dashboard/vendor/analytics">
+            <Button className="rounded-xl h-11 px-6">View Analytics</Button>
+          </Link>
         </div>
       </div>
 
@@ -168,10 +171,11 @@ export default function VendorOrdersPage() {
                   <div className="flex justify-end gap-2">
                     <Button 
                       size="sm" 
+                      variant="outline"
                       className={cn(
                         "h-8 rounded-lg gap-1 border-none shadow-sm",
-                        order.status === 'Accepted' ? "bg-green-600" : "bg-green-600 hover:bg-green-700 text-white",
-                        order.status !== 'Pending' && "opacity-50 cursor-not-allowed"
+                        order.status === 'Accepted' || order.status === 'Delivering' ? "bg-muted text-muted-foreground" : "bg-green-600 hover:bg-green-700 text-white",
+                        (order.status !== 'Pending') && "opacity-50 cursor-not-allowed"
                       )}
                       disabled={order.status !== 'Pending'}
                       onClick={() => updateOrderStatus(order.id, 'Accepted')}
@@ -184,7 +188,7 @@ export default function VendorOrdersPage() {
                       className={cn(
                         "h-8 rounded-lg gap-1",
                         order.status === 'Declined' ? "text-red-600 border-red-200" : "text-red-600 border-red-200 hover:bg-red-50",
-                        order.status !== 'Pending' && "opacity-50 cursor-not-allowed"
+                        (order.status !== 'Pending') && "opacity-50 cursor-not-allowed"
                       )}
                       disabled={order.status !== 'Pending'}
                       onClick={() => updateOrderStatus(order.id, 'Declined')}
