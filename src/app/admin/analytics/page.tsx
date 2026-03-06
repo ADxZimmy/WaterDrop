@@ -23,15 +23,31 @@ import {
   PieChart as RePieChart, Pie, Cell 
 } from 'recharts';
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const dataSets: Record<string, any[]> = {
-  'Day': [
+  'D': [
     { name: '08:00', rev: 45000, orders: 120 },
     { name: '10:00', rev: 52000, orders: 145 },
     { name: '12:00', rev: 88000, orders: 230 },
     { name: '14:00', rev: 61000, orders: 180 },
     { name: '16:00', rev: 59000, orders: 175 },
     { name: '18:00', rev: 82000, orders: 240 },
+  ],
+  'W': [
+    { name: 'Mon', rev: 120000, orders: 350 },
+    { name: 'Tue', rev: 145000, orders: 410 },
+    { name: 'Wed', rev: 110000, orders: 320 },
+    { name: 'Thu', rev: 165000, orders: 480 },
+    { name: 'Fri', rev: 190000, orders: 550 },
+    { name: 'Sat', rev: 245000, orders: 720 },
+    { name: 'Sun', rev: 210000, orders: 610 },
   ],
   '1m': [
     { name: 'Wk 1', rev: 350000, orders: 900 },
@@ -91,19 +107,23 @@ export default function AdminAnalyticsPage() {
           <h1 className="text-3xl font-bold font-headline text-slate-900">Platform Insights</h1>
           <p className="text-slate-500">Visualizing global marketplace growth and metrics.</p>
         </div>
-        <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-slate-200">
-          {['Day', '1m', '3m', '6m', '1y'].map((range) => (
-            <Button 
-              key={range}
-              variant="ghost" 
-              size="sm" 
-              className={cn("rounded-lg h-8 px-4", timeRange === range ? "bg-primary/10 text-primary font-bold" : "text-slate-500")}
-              onClick={() => setTimeRange(range)}
-            >
-              {range.toUpperCase()}
-            </Button>
-          ))}
-        </div>
+        
+        <Select value={timeRange} onValueChange={setTimeRange}>
+          <SelectTrigger className="w-[140px] rounded-xl h-11 border-slate-200 bg-white shadow-sm font-bold text-slate-700">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              <SelectValue placeholder="Range" />
+            </div>
+          </SelectTrigger>
+          <SelectContent className="rounded-xl shadow-xl border-slate-100">
+            <SelectItem value="D" className="font-bold">D (Day)</SelectItem>
+            <SelectItem value="W" className="font-bold">W (Week)</SelectItem>
+            <SelectItem value="1m" className="font-bold">1M</SelectItem>
+            <SelectItem value="3m" className="font-bold">3M</SelectItem>
+            <SelectItem value="6m" className="font-bold">6M</SelectItem>
+            <SelectItem value="1y" className="font-bold">1Y</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
