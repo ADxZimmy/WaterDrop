@@ -16,36 +16,6 @@ const withdrawals = [
 ];
 
 export default function DriverWithdrawalHistoryPage() {
-  const handleDownloadReceipt = (withdrawal: typeof withdrawals[0]) => {
-    const receiptContent = `
-========================================
-       WATERDROP WITHDRAWAL RECEIPT
-========================================
-Receipt ID: ${withdrawal.id}
-Date: ${withdrawal.date}
-Time: ${withdrawal.time}
-Status: ${withdrawal.status}
-----------------------------------------
-AMOUNT: ${withdrawal.amount}
-METHOD: ${withdrawal.method}
-----------------------------------------
-Transaction processed via WaterDrop Payout System.
-Keep this receipt for your records.
-----------------------------------------
-Thank you for delivering with WaterDrop!
-========================================
-    `;
-    const blob = new Blob([receiptContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `receipt-${withdrawal.id}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-4">
@@ -60,7 +30,7 @@ Thank you for delivering with WaterDrop!
         </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 text-foreground">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search withdrawals..." className="pl-10 h-11 rounded-xl" />
@@ -79,7 +49,7 @@ Thank you for delivering with WaterDrop!
                   <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${item.status === 'Pending' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>
                     <History className="h-6 w-6" />
                   </div>
-                  <div>
+                  <div className="text-foreground">
                     <h4 className="font-bold text-sm">{item.id}</h4>
                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold mt-0.5">
                       <Calendar className="h-3 w-3" /> {item.date}
@@ -106,14 +76,15 @@ Thank you for delivering with WaterDrop!
                   <DollarSign className="h-3.5 w-3.5" />
                   {item.method}
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 gap-1 text-primary group-hover:bg-primary/5"
-                  onClick={() => handleDownloadReceipt(item)}
-                >
-                  View Receipt <ChevronRight className="h-3 w-3" />
-                </Button>
+                <Link href={`/dashboard/driver/withdrawals/${item.id}/receipt`}>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 gap-1 text-primary group-hover:bg-primary/5"
+                  >
+                    View Receipt <ChevronRight className="h-3 w-3" />
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
