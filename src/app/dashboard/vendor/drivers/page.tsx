@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -24,21 +25,19 @@ export default function VendorDriversPage() {
   const { toast } = useToast();
 
   const toggleDriverStatus = (id: number) => {
-    setDrivers(prev => prev.map(driver => {
-      if (driver.id === id) {
-        const isDeactivated = driver.status === 'Deactivated';
-        const newStatus = isDeactivated ? 'Offline' : 'Deactivated';
-        
-        toast({
-          title: isDeactivated ? "Driver Activated" : "Driver Deactivated",
-          description: `${driver.name} has been set to ${newStatus.toLowerCase()}.`,
-          variant: isDeactivated ? "default" : "destructive"
-        });
+    const driver = drivers.find(d => d.id === id);
+    if (!driver) return;
 
-        return { ...driver, status: newStatus };
-      }
-      return driver;
-    }));
+    const isDeactivated = driver.status === 'Deactivated';
+    const newStatus = isDeactivated ? 'Offline' : 'Deactivated';
+    
+    setDrivers(prev => prev.map(d => d.id === id ? { ...d, status: newStatus } : d));
+
+    toast({
+      title: isDeactivated ? "Driver Activated" : "Driver Deactivated",
+      description: `${driver.name} has been set to ${newStatus.toLowerCase()}.`,
+      variant: isDeactivated ? "default" : "destructive"
+    });
   };
 
   return (
