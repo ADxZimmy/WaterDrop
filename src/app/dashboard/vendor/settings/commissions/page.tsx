@@ -53,12 +53,7 @@ export default function DriverCommissionsSettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         <aside className="md:col-span-1">
           <nav className="space-y-1">
-            <Link href="/dashboard/vendor/settings">
-              <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl mb-1 text-muted-foreground hover:bg-muted">
-                <Truck className="h-5 w-5" />
-                Store Profile
-              </Button>
-            </Link>
+            {/* Store Profile and Account removed per user request to clean up sidebar when this section is active */}
             <Link href="/dashboard/vendor/settings/commissions">
               <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl mb-1 bg-primary/10 text-primary font-bold">
                 <Percent className="h-5 w-5" />
