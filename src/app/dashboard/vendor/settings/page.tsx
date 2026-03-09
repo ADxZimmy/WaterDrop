@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Store, User, Shield, Bell, CreditCard, HelpCircle, MapPin, Clock, Camera, ArrowLeft } from 'lucide-react';
+import { Store, User, Shield, Bell, CreditCard, HelpCircle, MapPin, Clock, Camera, ArrowLeft, Percent } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 export default function VendorSettingsPage() {
   const settingLinks = [
     { name: "Store Profile", icon: Store, href: "/dashboard/vendor/settings", active: true },
+    { name: "Driver Commissions", icon: Percent, href: "/dashboard/vendor/settings/commissions" },
     { name: "Account", icon: User, href: "/dashboard/vendor/settings/account" },
     { name: "Notifications", icon: Bell, href: "/dashboard/vendor/settings/notifications" },
     { name: "Billing", icon: CreditCard, href: "/dashboard/vendor/settings/billing" },
