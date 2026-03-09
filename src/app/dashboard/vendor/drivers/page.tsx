@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Truck, Search, Plus, Star, MapPin, Phone, MessageSquare, MoreVertical, CheckCircle2, Clock, User, Wallet, Power, PowerOff } from 'lucide-react';
+import { Truck, Search, Plus, Star, MapPin, Phone, MessageSquare, MoreVertical, CheckCircle2, Clock, User, Wallet, Power, PowerOff, Percent } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -134,6 +134,11 @@ export default function VendorDriversPage() {
                   <DropdownMenuItem asChild className="cursor-pointer">
                     <Link href={`/dashboard/vendor/drivers/${driver.id}`} className="flex items-center gap-2">
                       <User className="h-4 w-4" /> View Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href={`/dashboard/vendor/drivers/${driver.id}/commission`} className="flex items-center gap-2">
+                      <Percent className="h-4 w-4" /> Individual Commission
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem 

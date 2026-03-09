@@ -1,9 +1,9 @@
-
 "use client";
 
 import React from 'react';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, User, Star, Award, MapPin, Truck, History, Wallet, CheckCircle2, Clock, Calendar } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowLeft, User, Star, Award, MapPin, Truck, History, Wallet, CheckCircle2, Clock, Calendar, Percent } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -48,6 +48,32 @@ export default function VendorDriverProfilePage() {
                 <p className="text-[10px] uppercase text-muted-foreground font-bold">Trips</p>
               </div>
             </div>
+
+            <Separator className="my-8" />
+
+            <div className="w-full space-y-4">
+              <Card className="border-none bg-primary/5 p-4 rounded-2xl text-left">
+                <div className="flex items-center gap-2 mb-3">
+                  <Percent className="h-4 w-4 text-primary" />
+                  <span className="font-bold text-xs uppercase tracking-wider">Active Commission</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Water Bags</span>
+                    <span className="font-bold text-primary">15%</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Water Packs</span>
+                    <span className="font-bold text-primary">₦200</span>
+                  </div>
+                </div>
+                <Link href={`/dashboard/vendor/drivers/${params.id}/commission`} className="block mt-4">
+                  <Button variant="outline" size="sm" className="w-full h-8 text-[10px] font-bold uppercase rounded-lg border-primary/20 text-primary hover:bg-primary/5">
+                    Update Rates
+                  </Button>
+                </Link>
+              </Card>
+            </div>
           </CardContent>
         </Card>
 
@@ -85,9 +111,9 @@ export default function VendorDriverProfilePage() {
             <CardContent className="p-0">
               <div className="divide-y">
                 {[
-                  { id: "ORD-9921", time: "2h ago", amount: "$8.50", status: "Success" },
-                  { id: "ORD-9918", time: "5h ago", amount: "$12.00", status: "Success" },
-                  { id: "ORD-9882", time: "Yesterday", amount: "$6.50", status: "Success" },
+                  { id: "ORD-9921", time: "2h ago", amount: "₦850.00", status: "Success" },
+                  { id: "ORD-9918", time: "5h ago", amount: "₦1,200.00", status: "Success" },
+                  { id: "ORD-9882", time: "Yesterday", amount: "₦650.00", status: "Success" },
                 ].map((trip, i) => (
                   <div key={i} className="flex items-center justify-between p-4 px-6 hover:bg-muted/10">
                     <div className="flex items-center gap-4">
@@ -100,7 +126,7 @@ export default function VendorDriverProfilePage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-sm">{trip.amount}</p>
+                      <p className="font-bold text-sm text-primary">{trip.amount}</p>
                       <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-200">
                         {trip.status}
                       </Badge>

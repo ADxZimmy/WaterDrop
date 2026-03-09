@@ -1,15 +1,15 @@
-
 "use client";
 
 import React from 'react';
 import Link from 'next/link';
-import { User, Mail, Phone, MapPin, Shield, Star, Award, Settings, LogOut, ChevronRight, Camera } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { User, Mail, Phone, MapPin, Shield, Star, Award, Settings, LogOut, ChevronRight, Camera, Percent, Info } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 export default function DriverProfilePage() {
   return (
@@ -50,6 +50,34 @@ export default function DriverProfilePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
+          <CardHeader className="bg-primary/5 p-6 border-b">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Percent className="h-5 w-5 text-primary" /> Your Commission Rates
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-muted/20 rounded-2xl">
+                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Water Bags</p>
+                <p className="text-2xl font-bold text-primary">15%</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Per individual bag</p>
+              </div>
+              <div className="p-4 bg-muted/20 rounded-2xl">
+                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Water Packs</p>
+                <p className="text-2xl font-bold text-primary">₦200</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Per case/box</p>
+              </div>
+            </div>
+            <div className="flex gap-3 p-3 bg-muted/30 rounded-xl">
+              <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                These rates are set by your vendor (Aqua Pure Factory) and apply to all your successful deliveries.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
           <CardHeader className="bg-muted/30 p-6">
             <CardTitle className="text-lg flex items-center gap-2">
               <User className="h-5 w-5 text-primary" /> Personal Information
@@ -76,37 +104,6 @@ export default function DriverProfilePage() {
                 <Award className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-mono font-bold">AQUA-2024</span>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
-          <CardHeader className="bg-muted/30 p-6">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Settings className="h-5 w-5 text-primary" /> Preferences
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-bold">Order Notifications</Label>
-                <p className="text-xs text-muted-foreground">Receive sound alerts for new tasks</p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-bold">Auto-Navigate</Label>
-                <p className="text-xs text-muted-foreground">Open map automatically when starting</p>
-              </div>
-              <Switch />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-bold">DarkMode</Label>
-                <p className="text-xs text-muted-foreground">Save battery on OLED screens</p>
-              </div>
-              <Switch />
             </div>
           </CardContent>
         </Card>
