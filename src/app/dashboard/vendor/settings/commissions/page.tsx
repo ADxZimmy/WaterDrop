@@ -179,14 +179,6 @@ export default function DriverCommissionsSettingsPage() {
                 </div>
                 <Switch defaultChecked />
               </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="font-bold">Distance Multiplier</Label>
-                  <p className="text-sm text-muted-foreground">Increase payout by 1.2x for deliveries over 10km.</p>
-                </div>
-                <Switch />
-              </div>
             </CardContent>
           </Card>
         </div>
