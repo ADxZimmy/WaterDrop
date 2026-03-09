@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -16,10 +17,10 @@ import { Separator } from "@/components/ui/separator";
 export default function VendorSettingsPage() {
   const settingLinks = [
     { name: "Store Profile", icon: Store, href: "/dashboard/vendor/settings", active: true },
-    { name: "Driver Commissions", icon: Percent, href: "/dashboard/vendor/settings/commissions" },
     { name: "Account", icon: User, href: "/dashboard/vendor/settings/account" },
     { name: "Notifications", icon: Bell, href: "/dashboard/vendor/settings/notifications" },
     { name: "Billing", icon: CreditCard, href: "/dashboard/vendor/settings/billing" },
+    { name: "Driver Commissions", icon: Percent, href: "/dashboard/vendor/settings/commissions" },
     { name: "Security", icon: Shield, href: "/dashboard/vendor/settings/security" },
     { name: "Help", icon: HelpCircle, href: "/dashboard/vendor/settings/help" },
   ];
