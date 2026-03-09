@@ -65,12 +65,6 @@ export default function DriverCommissionsSettingsPage() {
                 Driver Commissions
               </Button>
             </Link>
-            <Link href="/dashboard/vendor/settings/account">
-              <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl mb-1 text-muted-foreground hover:bg-muted">
-                <Save className="h-5 w-5" />
-                Account
-              </Button>
-            </Link>
           </nav>
         </aside>
 
