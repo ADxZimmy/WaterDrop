@@ -1,24 +1,26 @@
 # WaterDrop | Fresh Water Marketplace
 
-WaterDrop is a multi-vendor marketplace platform built with Next.js, tailored for the high-quality water industry. It provides a seamless experience for customers to order water, vendors to manage their storefronts, and drivers to handle deliveries.
+WaterDrop is a high-performance multi-vendor marketplace platform built with Next.js 15, tailored specifically for the drinking water industry. It connects customers with local water factories and distributors for seamless ordering and delivery.
 
-## Tech Stack
+## 🚀 Features
+
+- **Customer App**: Browse verified vendors, track orders in real-time, and manage subscriptions.
+- **Vendor Hub**: Manage products, fulfill orders, and coordinate a delivery fleet.
+- **Driver Portal**: Live navigation, inventory management, and earnings tracking.
+- **Super Admin**: Platform-wide oversight, vendor verification, and global analytics.
+- **AI Integration**: Genkit-powered automated product descriptions for vendors.
+- **PWA Ready**: Installable on mobile and desktop for an app-like experience.
+
+## 🛠 Tech Stack
 
 - **Framework**: Next.js 15 (App Router)
 - **Styling**: Tailwind CSS
 - **Components**: Shadcn UI
-- **AI**: Genkit (with Gemini 2.5 Flash)
-- **Database/Auth**: Firebase
+- **AI**: Google Genkit (Gemini 2.5 Flash)
+- **Backend**: Firebase (Authentication & Firestore)
+- **Charts**: Recharts
 
-## Features
-
-- **Multi-Role Dashboards**: Specific interfaces for Customers, Vendors, Drivers, and Super Admins.
-- **Real-time Tracking**: Live delivery updates for customers.
-- **Logistics Management**: Fleet management and individual driver commission settings for vendors.
-- **AI-Powered Product Descriptions**: Automated compelling copy generation for listings.
-- **Analytics**: Deep financial and operational insights.
-
-## Getting Started
+## 📦 Getting Started
 
 1. **Clone the repository**:
    ```bash
@@ -30,19 +32,17 @@ WaterDrop is a multi-vendor marketplace platform built with Next.js, tailored fo
    npm install
    ```
 
-3. **Run the development server**:
+3. **Environment Variables**:
+   Create a `.env` file with your Firebase and Gemini API keys.
+
+4. **Run the development server**:
    ```bash
    npm run dev
    ```
 
-4. **Run Genkit development environment**:
-   ```bash
-   npm run genkit:dev
-   ```
+## 🤝 Contributing
 
-## Environment Variables
-
-Create a `.env` file in the root directory and add your Firebase and Gemini API keys.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
