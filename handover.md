@@ -1,7 +1,12 @@
 # WaterDrop MVP Handover
 
-Last updated: 2026-03-15 12:06 (+01:00)  
-Agent: GPT-5 Codex
+Last updated: 2026-03-22 (rollback snapshot recorded)  
+Agent: Cursor (Composer)
+
+## Rollback snapshot
+- **Tag:** `snapshot/2026-03-22-mvp` → commit `4c59df6`
+- **Restore:** `git checkout snapshot/2026-03-22-mvp` (detached) or `git switch -c recovery/snapshot-2026-03-22 snapshot/2026-03-22-mvp` for a branch
+- Captures full MVP + Phase 5 kickoff state (Firebase-backed flows, driver payouts, execution events, customer order history) before continuing Phase 5 work
 
 ## Current Phase and Milestone
 - Phase: **5 - Post-MVP productization kickoff**
@@ -19,6 +24,7 @@ Agent: GPT-5 Codex
 - If any file changes are made in a turn, this file must be updated in the same turn.
 
 ## Completed
+- [x] Recorded git rollback snapshot tag `snapshot/2026-03-22-mvp` at commit `4c59df6` (see Rollback snapshot above).
 - [x] Added homepage suspense boundary wrapper to address prerender CSR bailout requirement in [`src/app/page.tsx`](src/app/page.tsx).
 - [x] Added suspense boundary wrappers for all `useSearchParams` route pages:
   - [`src/app/auth/login/page.tsx`](src/app/auth/login/page.tsx)
@@ -378,9 +384,7 @@ Agent: GPT-5 Codex
 - Driver dashboard/earnings/history/profile/order-reference/navigation/withdrawal surfaces no longer use fake data. They now consume the shared driver workspace, assigned-order, and payout-request APIs, and vendors can assign drivers plus approve/reject payout requests from live pages.
 - A small auth/perf win landed by using the role returned from `/api/auth/session` directly instead of fetching `/api/auth/me` immediately after login, and by removing post-redirect `router.refresh()` calls in shared sign-in/sign-out helpers.
 - The newest backend slice adds `driverAssignment` and `driverPayout` onto orders, persists vendor/default and per-driver commission configs, stores driver payout requests, and gates `out_for_delivery` behind an assigned active driver. This is wired through new vendor/driver APIs plus the fleet/profile/commission/withdrawal pages.
-- Continue with Phase 4 by deciding whether to add proof-of-delivery/driver execution events and handling the low-severity Genkit/Firebase Admin audit issues without forcing risky downgrades.
-- Continue with Phase 4 by deciding whether the new proof-of-delivery / execution-event slice is enough for MVP or needs one more pass for failed-attempt/photo/OTP support, then handle the low-severity Genkit/Firebase Admin audit issues without forcing risky downgrades.
-- Continue with Phase 4 by deciding whether the new proof-of-delivery / execution-event slice is enough for MVP or needs one more pass for failed-attempt/photo/OTP support, then handle or explicitly accept the remaining low-severity `firebase-admin` audit issues without forcing risky downgrades.
+- Continue Phase 5 from the rollback snapshot: richer delivery exception resolution, settlement/ledger foundations, and production readiness; keep accepting the documented low-severity `firebase-admin` audit risk unless a safe upstream fix appears.
 - The remaining `firebase-admin` audit findings are now explicitly documented as accepted MVP risk in [`README.md`](README.md) and this handoff; do not churn dependency versions further unless the risk posture changes or a safe upstream fix appears.
 - Phase 5 has now begun. The first post-MVP slice added a customer-owned `/api/orders/[id]` route, a new [`/dashboard/customer/orders/[id]`](src/app/dashboard/customer/orders/[id]/page.tsx) detail page, customer-visible execution-event history on the tracking surfaces, and a driver-side failed delivery attempt mutation that records exception notes without inventing fake telemetry or resolution states.
 - Keep this file updated with `Completed`, `In Progress`, `Next Up`, exact command failures, timestamp, and agent name every time files change.
