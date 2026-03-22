@@ -1,6 +1,6 @@
 # WaterDrop MVP Handover
 
-Last updated: 2026-03-22 (append-only payout settlement ledger)  
+Last updated: 2026-03-22 (ledger CSV + admin read path)  
 Agent: Cursor (Composer)
 
 ## Rollback snapshot
@@ -24,6 +24,7 @@ Agent: Cursor (Composer)
 - If any file changes are made in a turn, this file must be updated in the same turn.
 
 ## Completed
+- [x] Extended payout ledger: **CSV export** via `?format=csv` on vendor, driver, and new admin routes; **`GET /api/admin/payout-ledger`** (optional `vendorId`, `limit`, `format=csv`); admin UI [`/admin/payout-ledger`](src/app/admin/payout-ledger/page.tsx) with nav link; shared formatter [`src/lib/finance/payout-ledger-csv.ts`](src/lib/finance/payout-ledger-csv.ts); Download CSV actions on vendor withdrawals and driver earnings. Global ledger query uses `orderBy(createdAt desc)` — deploy Firestore indexes as needed if the console prompts.
 - [x] Added append-only **payout settlement ledger** (`payoutLedgerEntries` in Firestore) with kinds `commission_accrued`, `payout_requested`, `payout_paid`, and `payout_rejected`, wired from [`src/lib/finance/payout-ledger.ts`](src/lib/finance/payout-ledger.ts); read APIs [`GET /api/vendor/payout-ledger`](src/app/api/vendor/payout-ledger/route.ts) and [`GET /api/driver/payout-ledger`](src/app/api/driver/payout-ledger/route.ts); UI on vendor withdrawals and driver earnings. Deploy composite indexes from [`firestore.indexes.json`](firestore.indexes.json) (`firebase deploy --only firestore:indexes` or paste the console link) before relying on ledger queries in production.
 - [x] Added vendor delivery exception resolution after driver failed attempts: `deliveryException` on orders, execution events `delivery_exception_rescheduled` / `delivery_exception_return_to_vendor`, vendor PATCH `deliveryExceptionResolution`, customer-visible banners, and lifecycle rules (block naked OFD→preparing, block mark-delivered while exception open). Key files: [`src/lib/domain/schemas.ts`](src/lib/domain/schemas.ts), [`src/lib/orders/delivery-exception.ts`](src/lib/orders/delivery-exception.ts), [`src/lib/orders/status.ts`](src/lib/orders/status.ts), [`src/lib/driver/compensation.ts`](src/lib/driver/compensation.ts), [`src/app/api/vendor/orders/[id]/route.ts`](src/app/api/vendor/orders/[id]/route.ts), [`src/app/dashboard/vendor/orders/[id]/page.tsx`](src/app/dashboard/vendor/orders/[id]/page.tsx), [`src/app/dashboard/customer/track-order/page.tsx`](src/app/dashboard/customer/track-order/page.tsx), [`src/app/dashboard/customer/orders/[id]/page.tsx`](src/app/dashboard/customer/orders/[id]/page.tsx).
 - [x] Recorded git rollback snapshot tag `snapshot/2026-03-22-mvp` (see Rollback snapshot above).
@@ -344,13 +345,14 @@ Agent: Cursor (Composer)
   - [x] `npm run build` passes in this environment.
 
 ## In Progress
-- [ ] Phase 5 continuation: richer finance (vendor-side ledger exports, reconciliation), optional photo/OTP execution history, and production-operability improvements.
+- [ ] Phase 5 continuation: optional photo/OTP execution history, reconciliation-style reports beyond raw CSV, and production-operability improvements.
 
 ## Next Up
 - [x] ~~Extend delivery exceptions into vendor reschedule / return-to-vendor flows and customer-visible exception states.~~ (Shipped 2026-03-22.)
 - [x] ~~Immutable payout/audit records separate from mutable order documents (initial ledger slice).~~ (Shipped 2026-03-22.)
+- [x] ~~Settlement ledger CSV export and admin read path.~~ (Shipped 2026-03-22.)
 - [ ] Decide whether the execution-event model should grow further into photo evidence, OTP confirmation, and richer customer-visible event history across more surfaces.
-- [ ] Extend settlement ledger: CSV export, admin read path, or reconciliation reports if operations need them.
+- [ ] Optional: automated reconciliation summaries (totals by vendor/driver/period) or scheduled exports.
 - [ ] Revisit the accepted 8 low `firebase-admin` audit findings only if a non-breaking upstream remediation appears or production/compliance requirements change.
 
 ## Known Blockers / Risks
@@ -373,11 +375,11 @@ Agent: Cursor (Composer)
 
 ## Latest Verification
 - `npm run typecheck`:
-  - Passes on 2026-03-22 after payout ledger work.
+  - Passes on 2026-03-22 after ledger CSV + admin slice.
 - `npm run lint`:
-  - Passes clean on 2026-03-22 after payout ledger work.
+  - Passes clean on 2026-03-22 after ledger CSV + admin slice.
 - `npm run build`:
-  - Passes on 2026-03-22 after payout ledger work.
+  - Passes on 2026-03-22 after ledger CSV + admin slice.
 - `npm audit --json`:
   - Reports 8 low vulnerabilities, 0 moderate, 0 high, and 0 critical on 2026-03-15. The remaining findings all trace back to `firebase-admin` transitive dependencies.
 
@@ -392,4 +394,5 @@ Agent: Cursor (Composer)
 - Phase 5 has now begun. The first post-MVP slice added a customer-owned `/api/orders/[id]` route, a new [`/dashboard/customer/orders/[id]`](src/app/dashboard/customer/orders/[id]/page.tsx) detail page, customer-visible execution-event history on the tracking surfaces, and a driver-side failed delivery attempt mutation that records exception notes without inventing fake telemetry or resolution states.
 - Failed attempts now set `deliveryException.state` to `open`; vendors resolve via [`PATCH /api/vendor/orders/[id]`](src/app/api/vendor/orders/[id]/route.ts) with `deliveryExceptionResolution: "reschedule" | "return_to_vendor"` and optional `customerMessage`, which moves the order to `preparing` and records the new execution events for customer timelines.
 - Commission accrual and payout request lifecycle events append to **`payoutLedgerEntries`** (never updated in place). Failures to write ledger rows are logged and do not roll back order/payout mutations.
+- Admins can browse and export the same ledger from [`/admin/payout-ledger`](/admin/payout-ledger); vendors and drivers can download CSV from their ledger sections or `?format=csv` on their payout-ledger APIs.
 - Keep this file updated with `Completed`, `In Progress`, `Next Up`, exact command failures, timestamp, and agent name every time files change.

@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   Clock,
+  Download,
   ScrollText,
   Search,
   Wallet,
@@ -347,14 +348,22 @@ export default function VendorWithdrawalsPage() {
       </div>
 
       <Card className="border-none shadow-sm p-6 rounded-3xl bg-white">
-        <div className="flex items-center gap-2 mb-4">
-          <ScrollText className="h-5 w-5 text-primary" />
-          <div>
-            <h2 className="text-lg font-bold font-headline">Settlement audit log</h2>
-            <p className="text-sm text-muted-foreground">
-              Append-only record of commission accruals and payout actions (NGN).
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <ScrollText className="h-5 w-5 text-primary shrink-0" />
+            <div>
+              <h2 className="text-lg font-bold font-headline">Settlement audit log</h2>
+              <p className="text-sm text-muted-foreground">
+                Append-only record of commission accruals and payout actions (NGN).
+              </p>
+            </div>
           </div>
+          <Button variant="outline" size="sm" className="rounded-xl gap-2 shrink-0" asChild>
+            <a href="/api/vendor/payout-ledger?format=csv&limit=100">
+              <Download className="h-4 w-4" />
+              Download CSV
+            </a>
+          </Button>
         </div>
         {ledgerLoading ? (
           <p className="text-sm text-muted-foreground">Loading ledger…</p>

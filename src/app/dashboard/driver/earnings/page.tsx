@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Building2, Clock3, ScrollText, Truck, Wallet } from "lucide-react";
+import { Building2, Clock3, Download, ScrollText, Truck, Wallet } from "lucide-react";
 import type { PayoutLedgerEntry } from "@/lib/domain/schemas";
 import { getPayoutLedgerKindLabel } from "@/lib/finance/payout-ledger-labels";
 import { Badge } from "@/components/ui/badge";
@@ -274,14 +274,22 @@ export default function DriverEarningsPage() {
       </Card>
 
       <Card className="border-none shadow-sm rounded-[32px] overflow-hidden bg-white">
-        <CardHeader className="bg-slate-50 border-b flex flex-row items-center gap-2">
-          <ScrollText className="h-5 w-5 text-primary" />
-          <div>
-            <CardTitle>Payout audit log</CardTitle>
-            <p className="text-sm font-normal text-muted-foreground mt-1">
-              Append-only history of accruals and payout actions (NGN).
-            </p>
+        <CardHeader className="bg-slate-50 border-b flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <ScrollText className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <div>
+              <CardTitle>Payout audit log</CardTitle>
+              <p className="text-sm font-normal text-muted-foreground mt-1">
+                Append-only history of accruals and payout actions (NGN).
+              </p>
+            </div>
           </div>
+          <Button variant="outline" size="sm" className="rounded-xl gap-2 shrink-0" asChild>
+            <a href="/api/driver/payout-ledger?format=csv&limit=100">
+              <Download className="h-4 w-4" />
+              Download CSV
+            </a>
+          </Button>
         </CardHeader>
         <CardContent className="p-6">
           {ledgerLoading ? (

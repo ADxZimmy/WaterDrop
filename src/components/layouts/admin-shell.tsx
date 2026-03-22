@@ -16,6 +16,7 @@ import {
   Menu,
   Bell,
   Search,
+  ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ const adminNav = [
   { name: "Customers", href: "/admin/customers", icon: Users },
   { name: "Orders", href: "/admin/orders", icon: ShoppingBag },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+  { name: "Payout ledger", href: "/admin/payout-ledger", icon: ScrollText },
   { name: "System Settings", href: "/admin/settings", icon: Settings },
 ];
 

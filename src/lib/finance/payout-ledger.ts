@@ -87,7 +87,7 @@ export async function listVendorPayoutLedgerEntries(
     .collection(COLLECTION)
     .where("vendorId", "==", vendorId)
     .orderBy("createdAt", "desc")
-    .limit(Math.min(Math.max(limit, 1), 100))
+    .limit(Math.min(Math.max(limit, 1), 200))
     .get();
 
   return snapshot.docs.map((doc) => payoutLedgerEntrySchema.parse(doc.data()));
@@ -101,18 +101,18 @@ export async function listDriverPayoutLedgerEntries(
     .collection(COLLECTION)
     .where("driverUid", "==", driverUid)
     .orderBy("createdAt", "desc")
-    .limit(Math.min(Math.max(limit, 1), 100))
+    .limit(Math.min(Math.max(limit, 1), 200))
     .get();
 
   return snapshot.docs.map((doc) => payoutLedgerEntrySchema.parse(doc.data()));
 }
 
-export function getPayoutLedgerKindLabel(kind: PayoutLedgerEntry["kind"]) {
-  const labels: Record<PayoutLedgerEntry["kind"], string> = {
-    commission_accrued: "Commission accrued",
-    payout_requested: "Payout requested",
-    payout_paid: "Payout marked paid",
-    payout_rejected: "Payout rejected (restored)",
-  };
-  return labels[kind];
+export async function listPayoutLedgerEntriesGlobally(limit = 100): Promise<PayoutLedgerEntry[]> {
+  const snapshot = await getFirebaseAdminDb()
+    .collection(COLLECTION)
+    .orderBy("createdAt", "desc")
+    .limit(Math.min(Math.max(limit, 1), 200))
+    .get();
+
+  return snapshot.docs.map((doc) => payoutLedgerEntrySchema.parse(doc.data()));
 }

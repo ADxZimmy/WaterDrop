@@ -1,21 +1,28 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth/server";
 import { formatPayoutLedgerEntriesAsCsv } from "@/lib/finance/payout-ledger-csv";
-import { listDriverPayoutLedgerEntries } from "@/lib/finance/payout-ledger";
+import {
+  listPayoutLedgerEntriesGlobally,
+  listVendorPayoutLedgerEntries,
+} from "@/lib/finance/payout-ledger";
 
 export async function GET(request: Request) {
   try {
-    const user = await requireRole(["driver"]);
+    await requireRole(["admin"]);
     const { searchParams } = new URL(request.url);
     const limitParam = searchParams.get("limit");
-    const limit = limitParam ? Number.parseInt(limitParam, 10) : 50;
+    const vendorId = searchParams.get("vendorId")?.trim();
+    const limit = limitParam ? Number.parseInt(limitParam, 10) : 100;
     const isCsv = searchParams.get("format") === "csv";
+    const bounded = Number.isFinite(limit) ? Math.min(Math.max(limit, 1), 200) : 100;
 
-    const entries = await listDriverPayoutLedgerEntries(user.uid, Number.isFinite(limit) ? limit : 50);
+    const entries = vendorId
+      ? await listVendorPayoutLedgerEntries(vendorId, bounded)
+      : await listPayoutLedgerEntriesGlobally(bounded);
 
     if (isCsv) {
       const csv = formatPayoutLedgerEntriesAsCsv(entries);
-      const safe = user.uid.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 12) || "driver";
+      const safe = vendorId ? vendorId.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 16) : "all-platform";
       return new NextResponse(csv, {
         status: 200,
         headers: {
