@@ -1,43 +1,185 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Truck, Search, Plus, Star, MapPin, Phone, MessageSquare, MoreVertical, CheckCircle2, Clock, User, Wallet, Power, PowerOff, Percent } from 'lucide-react';
+import {
+  CheckCircle2,
+  Clock,
+  MoreVertical,
+  Percent,
+  Plus,
+  Search,
+  Truck,
+  User,
+  Wallet,
+} from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 
-const initialDrivers = [
-  { id: 1, name: "John Driver", rating: 4.9, status: "Active", trips: 124, image: "https://picsum.photos/seed/d1/100" },
-  { id: 2, name: "Sarah Delivery", rating: 4.8, status: "Busy", trips: 89, image: "https://picsum.photos/seed/d2/100" },
-  { id: 3, name: "Mike Moto", rating: 4.7, status: "Offline", trips: 256, image: "https://picsum.photos/seed/d3/100" },
-  { id: 4, name: "Dave Logistics", rating: 4.5, status: "Active", trips: 42, image: "https://picsum.photos/seed/d4/100" },
-];
+type VendorDriverRecord = {
+  uid: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  status: "pending" | "active" | "inactive";
+  vehicleType?: string;
+  licensePlate?: string;
+  loadedUnits: number;
+  activeOrdersCount: number;
+  deliveredOrdersCount: number;
+  availableBalanceNaira: number;
+  requestedBalanceNaira: number;
+  paidBalanceNaira: number;
+};
+
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function getStatusBadgeClass(status: VendorDriverRecord["status"]) {
+  if (status === "active") {
+    return "bg-green-50 text-green-700 border-green-200";
+  }
+
+  if (status === "inactive") {
+    return "bg-slate-100 text-slate-700 border-slate-200";
+  }
+
+  return "bg-yellow-50 text-yellow-700 border-yellow-200";
+}
 
 export default function VendorDriversPage() {
-  const [drivers, setDrivers] = useState(initialDrivers);
+  const [drivers, setDrivers] = useState<VendorDriverRecord[]>([]);
+  const [search, setSearch] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [updatingDriverUid, setUpdatingDriverUid] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const toggleDriverStatus = (id: number) => {
-    const driver = drivers.find(d => d.id === id);
-    if (!driver) return;
+  useEffect(() => {
+    let isMounted = true;
 
-    const isDeactivated = driver.status === 'Deactivated';
-    const newStatus = isDeactivated ? 'Offline' : 'Deactivated';
-    
-    setDrivers(prev => prev.map(d => d.id === id ? { ...d, status: newStatus } : d));
+    const loadDrivers = async () => {
+      try {
+        const response = await fetch("/api/vendor/drivers", { method: "GET" });
+        const payload = await response.json().catch(() => null);
 
-    toast({
-      title: isDeactivated ? "Driver Activated" : "Driver Deactivated",
-      description: `${driver.name} has been set to ${newStatus.toLowerCase()}.`,
-      variant: isDeactivated ? "default" : "destructive"
+        if (!response.ok) {
+          throw new Error(payload?.error ?? "Unable to load drivers.");
+        }
+
+        if (isMounted) {
+          setDrivers((payload?.drivers ?? []) as VendorDriverRecord[]);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setDrivers([]);
+          toast({
+            title: "Driver fleet unavailable",
+            description: error instanceof Error ? error.message : "Unable to load drivers.",
+            variant: "destructive",
+          });
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadDrivers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [toast]);
+
+  const filteredDrivers = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) {
+      return drivers;
+    }
+
+    return drivers.filter((driver) => {
+      const haystack = [
+        driver.name,
+        driver.email ?? "",
+        driver.phone ?? "",
+        driver.vehicleType ?? "",
+        driver.licensePlate ?? "",
+        driver.status,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(query);
     });
+  }, [drivers, search]);
+
+  const onlineCount = drivers.filter((driver) => driver.status === "active").length;
+  const totalActiveOrders = drivers.reduce(
+    (sum, driver) => sum + driver.activeOrdersCount,
+    0
+  );
+  const availableFleetBalance = drivers.reduce(
+    (sum, driver) => sum + driver.availableBalanceNaira,
+    0
+  );
+
+  const handleStatusUpdate = async (
+    driverUid: string,
+    nextStatus: VendorDriverRecord["status"]
+  ) => {
+    setUpdatingDriverUid(driverUid);
+
+    try {
+      const response = await fetch(`/api/vendor/drivers/${driverUid}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Unable to update driver status.");
+      }
+
+      const updatedDriver = payload?.driver as VendorDriverRecord | null;
+      if (!updatedDriver) {
+        throw new Error("Driver update response was incomplete.");
+      }
+
+      setDrivers((currentDrivers) =>
+        currentDrivers.map((driver) =>
+          driver.uid === updatedDriver.uid ? { ...driver, ...updatedDriver } : driver
+        )
+      );
+
+      toast({
+        title: "Driver status updated",
+        description: `${updatedDriver.name} is now ${updatedDriver.status}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Status update failed",
+        description:
+          error instanceof Error ? error.message : "Unable to update driver status.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingDriverUid((current) => (current === driverUid ? null : current));
+    }
   };
 
   return (
@@ -79,7 +221,7 @@ export default function VendorDriversPage() {
               <CheckCircle2 className="h-8 w-8" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{drivers.filter(d => d.status !== 'Deactivated' && d.status !== 'Offline').length}</p>
+              <p className="text-2xl font-bold">{onlineCount}</p>
               <p className="text-sm text-muted-foreground">Currently Online</p>
             </div>
           </div>
@@ -90,8 +232,19 @@ export default function VendorDriversPage() {
               <Clock className="h-8 w-8" />
             </div>
             <div>
-              <p className="text-2xl font-bold">15m</p>
-              <p className="text-sm text-muted-foreground">Avg. Delivery Time</p>
+              <p className="text-2xl font-bold">{totalActiveOrders}</p>
+              <p className="text-sm text-muted-foreground">Active Assigned Orders</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="border-none shadow-sm bg-white p-6 rounded-3xl">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+              <Wallet className="h-8 w-8" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{formatCurrency(availableFleetBalance)}</p>
+              <p className="text-sm text-muted-foreground">Accrued Driver Balance</p>
             </div>
           </div>
         </Card>
@@ -100,26 +253,34 @@ export default function VendorDriversPage() {
       <div className="flex gap-4 items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Filter drivers by name or status..." className="pl-10 h-11 rounded-xl" />
+          <Input
+            placeholder="Filter drivers by name, vehicle, plate, or status..."
+            className="pl-10 h-11 rounded-xl"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
         </div>
-        <Button variant="outline" className="h-11 px-6 rounded-xl">All Status</Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {drivers.map((driver) => (
-          <Card key={driver.id} className={cn(
-            "border-none shadow-sm overflow-hidden group hover:shadow-md transition-all",
-            driver.status === 'Deactivated' && "opacity-75 grayscale-[0.5]"
-          )}>
+        {isLoading ? (
+          <Card className="border-none shadow-sm overflow-hidden">
+            <CardContent className="p-6 text-sm text-muted-foreground">
+              Loading driver fleet...
+            </CardContent>
+          </Card>
+        ) : filteredDrivers.length === 0 ? (
+          <Card className="border-none shadow-sm overflow-hidden lg:col-span-4">
+            <CardContent className="p-8 text-center text-sm text-muted-foreground">
+              No drivers match the current filter.
+            </CardContent>
+          </Card>
+        ) : filteredDrivers.map((driver) => (
+          <Card key={driver.uid} className="border-none shadow-sm overflow-hidden group hover:shadow-md transition-all">
             <CardHeader className="pb-4 flex flex-row items-center justify-between">
               <Badge 
                 variant="outline" 
-                className={`text-[10px] font-bold ${
-                  driver.status === 'Active' ? 'bg-green-50 text-green-700 border-green-200' : 
-                  driver.status === 'Busy' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
-                  driver.status === 'Deactivated' ? 'bg-red-50 text-red-700 border-red-200' :
-                  'bg-gray-50 text-gray-700 border-gray-200'
-                }`}
+                className={`text-[10px] font-bold ${getStatusBadgeClass(driver.status)}`}
               >
                 {driver.status}
               </Badge>
@@ -131,47 +292,61 @@ export default function VendorDriversPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
                   <DropdownMenuItem asChild className="cursor-pointer">
-                    <Link href={`/dashboard/vendor/drivers/${driver.id}`} className="flex items-center gap-2">
+                    <Link href={`/dashboard/vendor/drivers/${driver.uid}`} className="flex items-center gap-2">
                       <User className="h-4 w-4" /> View Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="cursor-pointer">
-                    <Link href={`/dashboard/vendor/drivers/${driver.id}/commission`} className="flex items-center gap-2">
+                    <Link href={`/dashboard/vendor/drivers/${driver.uid}/commission`} className="flex items-center gap-2">
                       <Percent className="h-4 w-4" /> Individual Commission
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    className={cn(
-                      "cursor-pointer font-medium",
-                      driver.status === 'Deactivated' ? "text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50" : "text-destructive focus:text-destructive focus:bg-destructive/5"
-                    )}
-                    onClick={() => toggleDriverStatus(driver.id)}
+                  <DropdownMenuItem
+                    className="cursor-pointer font-medium"
+                    disabled={updatingDriverUid === driver.uid}
+                    onClick={() =>
+                      void handleStatusUpdate(
+                        driver.uid,
+                        driver.status === "active" ? "inactive" : "active"
+                      )
+                    }
                   >
-                    {driver.status === 'Deactivated' ? (
-                      <>
-                        <Power className="h-4 w-4 mr-2" /> Activate Driver
-                      </>
-                    ) : (
-                      <>
-                        <PowerOff className="h-4 w-4 mr-2" /> Deactivate Driver
-                      </>
-                    )}
+                    <Clock className="h-4 w-4 mr-2" />
+                    {updatingDriverUid === driver.uid
+                      ? "Updating status..."
+                      : driver.status === "active"
+                        ? "Suspend Driver"
+                        : "Activate Driver"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </CardHeader>
             <CardContent className="flex flex-col items-center text-center pb-6">
               <Avatar className="h-20 w-20 mb-4 border-2 border-primary/10">
-                <AvatarImage src={driver.image} />
                 <AvatarFallback>{driver.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
               </Avatar>
               <h4 className="font-bold">{driver.name}</h4>
-              <div className="flex items-center gap-1 text-yellow-500 text-sm mt-1">
-                <Star className="h-3 w-3 fill-current" />
-                <span>{driver.rating}</span>
-                <span className="text-muted-foreground ml-1">({driver.trips} trips)</span>
+              <p className="text-xs text-muted-foreground mt-1">
+                {driver.vehicleType ?? "Vehicle not set"}
+                {driver.licensePlate ? ` • ${driver.licensePlate}` : ""}
+              </p>
+              <div className="mt-4 w-full rounded-2xl bg-muted/30 p-4 text-left space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Active orders</span>
+                  <span className="font-semibold">{driver.activeOrdersCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Delivered</span>
+                  <span className="font-semibold">{driver.deliveredOrdersCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Accrued</span>
+                  <span className="font-semibold text-primary">
+                    {formatCurrency(driver.availableBalanceNaira)}
+                  </span>
+                </div>
               </div>
-              <Link href={`/dashboard/vendor/drivers/${driver.id}`} className="w-full mt-6">
+              <Link href={`/dashboard/vendor/drivers/${driver.uid}`} className="w-full mt-6">
                 <Button size="sm" variant="outline" className="w-full rounded-xl gap-2">
                   <User className="h-3 w-3" /> View Profile
                 </Button>

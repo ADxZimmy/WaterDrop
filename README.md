@@ -8,7 +8,7 @@ WaterDrop is a high-performance multi-vendor marketplace platform built with Nex
 - **Vendor Hub**: Manage products, fulfill orders, and coordinate a delivery fleet.
 - **Driver Portal**: Live navigation, inventory management, and earnings tracking.
 - **Super Admin**: Platform-wide oversight, vendor verification, and global analytics.
-- **AI Integration**: Genkit-powered automated product descriptions for vendors.
+- **Product Drafting**: Built-in vendor-side product description drafting without external AI dependencies.
 - **PWA Ready**: Installable on mobile and desktop for an app-like experience.
 
 ## 🛠 Tech Stack
@@ -16,7 +16,6 @@ WaterDrop is a high-performance multi-vendor marketplace platform built with Nex
 - **Framework**: Next.js 15 (App Router)
 - **Styling**: Tailwind CSS
 - **Components**: Shadcn UI
-- **AI**: Google Genkit (Gemini 2.5 Flash)
 - **Backend**: Firebase (Authentication & Firestore)
 - **Charts**: Recharts
 
@@ -39,6 +38,12 @@ WaterDrop is a high-performance multi-vendor marketplace platform built with Nex
    ```bash
    npm run dev
    ```
+
+## Security Notes
+
+- `npm audit --omit=dev` currently reports 8 low-severity vulnerabilities, all in the `firebase-admin` transitive tree.
+- The audit-suggested fix is a semver-major move to `firebase-admin@10.3.0`, which is a downgrade from the current `13.7.0` baseline and is not treated as a safe automatic remediation.
+- For the current MVP, this remaining audit output is an accepted dependency risk rather than an unreviewed cleanup gap.
 
 ## 🤝 Contributing
 

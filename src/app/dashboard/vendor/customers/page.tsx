@@ -2,8 +2,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Users, Search, Mail, Phone, Calendar, Star, ChevronRight, MoreHorizontal, Filter } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users, Search, Calendar, Star, Filter } from 'lucide-react';
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

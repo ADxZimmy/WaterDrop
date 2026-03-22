@@ -1,17 +1,17 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Droplets, ShieldCheck, ArrowRight, RefreshCw, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, ArrowRight, RefreshCw, ArrowLeft } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 
-export default function VerifyPage() {
+function VerifyPageContent() {
   const [code, setCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const router = useRouter();
@@ -109,5 +109,17 @@ export default function VerifyPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+function VerifyPageFallback() {
+  return <div className="min-h-screen bg-background" />;
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<VerifyPageFallback />}>
+      <VerifyPageContent />
+    </Suspense>
   );
 }

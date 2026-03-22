@@ -17,24 +17,60 @@ export default function DriverInventoryUpdatePage() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const savedInventory = localStorage.getItem('driver_loaded_bags');
-    if (savedInventory) {
-      setLoadedBags(parseInt(savedInventory));
-    }
+    let isMounted = true;
+
+    const loadInventory = async () => {
+      try {
+        const response = await fetch('/api/driver/profile', { method: 'GET' });
+        if (!response.ok) {
+          throw new Error('Unable to load inventory.');
+        }
+
+        const payload = await response.json();
+        if (isMounted) {
+          setLoadedBags(payload?.profile?.loadedUnits ?? 0);
+        }
+      } catch {
+        if (isMounted) {
+          setLoadedBags(0);
+        }
+      }
+    };
+
+    void loadInventory();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API delay
-    setTimeout(() => {
-      localStorage.setItem('driver_loaded_bags', loadedBags.toString());
+    try {
+      const response = await fetch('/api/driver/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ loadedUnits: loadedBags }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? 'Unable to update inventory.');
+      }
+
       toast({
         title: "Inventory Updated",
         description: `Your loaded stock has been set to ${loadedBags} units.`
       });
-      setIsSaving(false);
       router.push('/dashboard/driver');
-    }, 800);
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : 'Unable to update inventory.',
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const adjustQuantity = (amount: number) => {

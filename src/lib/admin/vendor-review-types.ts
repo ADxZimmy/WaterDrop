@@ -1,0 +1,26 @@
+export type AdminVendorReviewRecord = {
+  vendorId: string;
+  ownerUid: string;
+  businessName: string;
+  businessType?: string;
+  status: "pending" | "approved" | "rejected";
+  ownerName: string;
+  ownerEmail: string;
+  ownerPhone?: string;
+  address?: string;
+  nafdacNumber?: string;
+  cacNumber?: string;
+  taxId?: string;
+  description?: string;
+  deliveryRadiusKm?: number;
+  createdAt: number;
+  updatedAt: number;
+  submittedAt: number | null;
+  reviewedAt: number | null;
+  reviewedBy: string | null;
+  reviewNotes: string | null;
+  totalOrders: number;
+  revenueNaira: number;
+  productCount: number;
+  activeProductCount: number;
+};

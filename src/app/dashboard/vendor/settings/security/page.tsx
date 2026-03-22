@@ -2,8 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Shield, Key, Smartphone, Lock, UserCheck, Trash2, Monitor, ArrowLeft } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Smartphone, Trash2, Monitor, ArrowLeft } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";

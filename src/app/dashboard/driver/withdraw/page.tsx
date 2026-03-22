@@ -1,127 +1,184 @@
 "use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Wallet, Building2, CreditCard, CheckCircle2, ChevronRight, DollarSign } from 'lucide-react';
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Building2, CheckCircle2, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useDriverWorkspace } from "@/hooks/use-driver-workspace";
+import { useToast } from "@/hooks/use-toast";
+
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
 
 export default function WithdrawalPage() {
-  const [step, setStep] = useState(1);
-  const [amount, setAmount] = useState('10000.00');
+  const router = useRouter();
+  const { toast } = useToast();
+  const { workspace, isLoading, error } = useDriverWorkspace();
+  const [destinationLabel, setDestinationLabel] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (step === 3) {
+  const handleSubmit = async () => {
+    if (!destinationLabel.trim()) {
+      toast({
+        title: "Destination required",
+        description: "Enter the bank or payout destination label for this request.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/driver/payout-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ destinationLabel }),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Unable to create payout request.");
+      }
+
+      toast({
+        title: "Payout request submitted",
+        description: "Your live withdrawal request has been sent to your vendor for review.",
+      });
+
+      router.push(`/dashboard/driver/withdrawals/${payload.payoutRequest.id}/receipt`);
+    } catch (submitError) {
+      toast({
+        title: "Request failed",
+        description:
+          submitError instanceof Error
+            ? submitError.message
+            : "Unable to create payout request.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in duration-500">
-        <div className="h-24 w-24 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-6 animate-bounce">
-          <CheckCircle2 className="h-12 w-12" />
-        </div>
-        <h1 className="text-3xl font-bold font-headline mb-2">Request Submitted!</h1>
-        <p className="text-muted-foreground mb-8 max-w-xs">Your withdrawal of ₦{parseFloat(amount).toLocaleString()} is being processed and will arrive in your bank account within 24 hours.</p>
-        <Link href="/dashboard/driver/earnings">
-          <Button className="w-full max-w-xs h-12 rounded-xl shadow-lg shadow-primary/20">Back to Earnings</Button>
-        </Link>
+      <div className="p-4 md:p-8 text-sm text-muted-foreground">
+        Loading withdrawal request form...
       </div>
     );
   }
 
+  if (error || !workspace) {
+    return (
+      <div className="p-4 md:p-8 max-w-3xl mx-auto">
+        <Card className="border-none shadow-sm rounded-3xl">
+          <CardContent className="p-8 space-y-2">
+            <h1 className="text-2xl font-bold font-headline">Withdrawal unavailable</h1>
+            <p className="text-sm text-muted-foreground">
+              {error ?? "Unable to load withdrawal form."}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const availableBalanceNaira = workspace.payouts.availableBalanceNaira;
+
   return (
-    <div className="p-4 md:p-8 space-y-6 max-w-2xl mx-auto">
+    <div className="p-4 md:p-8 space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-4">
         <Link href="/dashboard/driver/earnings">
           <Button variant="ghost" size="icon" className="rounded-xl">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <h1 className="text-2xl font-bold font-headline">Withdraw Funds</h1>
+        <h1 className="text-2xl font-bold font-headline">Request Withdrawal</h1>
       </div>
 
-      <div className="space-y-6">
-        {step === 1 && (
-          <Card className="border-none shadow-xl rounded-3xl overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-            <CardHeader className="bg-primary text-white p-8">
-              <CardTitle className="text-lg">Enter Amount</CardTitle>
-              <CardDescription>Current balance available: ₦45,280.00</CardDescription>
-            </CardHeader>
-            <CardContent className="p-8 space-y-6">
-              <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground flex items-center justify-center">
-                  <span className="text-2xl font-bold">₦</span>
-                </div>
-                <Input 
-                  className="h-20 text-4xl font-bold pl-14 rounded-2xl border-2 focus:border-primary transition-all" 
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  type="number"
-                />
+      <Card className="border-none shadow-xl rounded-3xl overflow-hidden">
+        <CardHeader className="bg-primary text-white p-8">
+          <CardTitle className="text-lg">Available Balance</CardTitle>
+          <CardDescription className="text-primary-foreground/80">
+            WaterDrop currently withdraws the full available accrued balance per request.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-8 space-y-6">
+          <div className="rounded-3xl bg-primary/5 border border-primary/10 p-6">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                <Wallet className="h-6 w-6" />
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                {['5000.00', '10000.00', '25000.00'].map((val) => (
-                  <Button 
-                    key={val} 
-                    variant="outline" 
-                    className="h-12 rounded-xl font-bold hover:bg-primary/5 hover:text-primary hover:border-primary/20"
-                    onClick={() => setAmount(val)}
-                  >
-                    ₦{parseFloat(val).toLocaleString()}
-                  </Button>
-                ))}
+              <div>
+                <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">
+                  Amount to Request
+                </p>
+                <p className="text-3xl font-bold text-slate-900 mt-1">
+                  {formatCurrency(availableBalanceNaira)}
+                </p>
               </div>
-            </CardContent>
-            <CardFooter className="p-8 pt-0">
-              <Button className="w-full h-14 rounded-2xl text-lg gap-2 shadow-lg shadow-primary/20" onClick={() => setStep(2)}>
-                Continue <ChevronRight className="h-5 w-5" />
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
+            </div>
+          </div>
 
-        {step === 2 && (
-          <Card className="border-none shadow-xl rounded-3xl overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-            <CardHeader className="bg-primary text-white p-8">
-              <CardTitle className="text-lg">Select Bank Account</CardTitle>
-              <CardDescription className="text-primary-foreground/80">Where should we send your money?</CardDescription>
-            </CardHeader>
-            <CardContent className="p-8">
-              <RadioGroup defaultValue="bank1" className="space-y-4">
-                <Label className="flex items-center justify-between p-6 bg-white rounded-2xl border-2 cursor-pointer hover:border-primary/50 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
-                      <Building2 className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="font-bold">GTBank Savings</p>
-                      <p className="text-xs text-muted-foreground">Ending in •••• 4452</p>
-                    </div>
-                  </div>
-                  <RadioGroupItem value="bank1" id="bank1" />
-                </Label>
-                <Label className="flex items-center justify-between p-6 bg-white rounded-2xl border-2 cursor-pointer opacity-50 cursor-not-allowed">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 bg-muted rounded-xl flex items-center justify-center text-muted-foreground">
-                      <CreditCard className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-muted-foreground">Add New Account</p>
-                      <p className="text-xs text-muted-foreground">Link a new bank account</p>
-                    </div>
-                  </div>
-                  <RadioGroupItem value="new" disabled id="new" />
-                </Label>
-              </RadioGroup>
-            </CardContent>
-            <CardFooter className="p-8 pt-0 flex gap-3">
-              <Button variant="outline" className="h-14 rounded-2xl px-8" onClick={() => setStep(1)}>Back</Button>
-              <Button className="flex-1 h-14 rounded-2xl text-lg gap-2 shadow-lg shadow-primary/20" onClick={() => setStep(3)}>
-                Withdraw ₦{parseFloat(amount).toLocaleString()} <CheckCircle2 className="h-5 w-5" />
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="destinationLabel">Payout destination</Label>
+            <div className="relative">
+              <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="destinationLabel"
+                placeholder="e.g. GTBank Savings (•••• 4452)"
+                className="pl-10 h-12 rounded-2xl"
+                value={destinationLabel}
+                onChange={(event) => setDestinationLabel(event.target.value)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This label is stored with the payout request so your vendor can identify the destination.
+            </p>
+          </div>
+
+          {availableBalanceNaira === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-muted-foreground">
+              You do not have any accrued delivered-order balance available yet.
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-900">
+              Submitting this request will move all currently available accrued payouts into a pending vendor review.
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="p-8 pt-0 flex gap-3">
+          <Link href="/dashboard/driver/earnings" className="flex-1">
+            <Button variant="outline" className="w-full h-12 rounded-2xl">
+              Cancel
+            </Button>
+          </Link>
+          <Button
+            className="flex-1 h-12 rounded-2xl shadow-lg shadow-primary/20 gap-2"
+            onClick={() => void handleSubmit()}
+            disabled={isSubmitting || availableBalanceNaira <= 0}
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            {isSubmitting ? "Submitting..." : "Submit Payout Request"}
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

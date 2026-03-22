@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Bell, Clock, ShoppingBag, Users, AlertCircle, TrendingUp, ChevronRight } from 'lucide-react';
+import { Clock, ShoppingBag, Users, AlertCircle, TrendingUp, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 

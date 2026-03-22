@@ -1,30 +1,238 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Trash2, Plus, Minus, CreditCard, Truck, MapPin, CheckCircle2, Zap } from 'lucide-react';
+import type { CustomerAddress, PaymentMethod } from "@/lib/domain/schemas";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { formatCustomerAddress, getDefaultCustomerAddress } from "@/lib/customer/preferences";
+import { useToast } from "@/hooks/use-toast";
+import { getPaymentMethodLabel } from "@/lib/orders/status";
 
-const cartItems = [
-  { id: 1, name: "Premium Bottled Water (Box of 12)", price: 2500.00, qty: 1, vendor: "Aqua Pure" },
-  { id: 2, name: "Dispenser Refill 19L", price: 1000.00, qty: 1, vendor: "Aqua Pure" },
-];
+type CartItem = {
+  productId: string;
+  name: string;
+  quantity: number;
+  unitPriceNaira: number;
+};
+
+type CartResponse = {
+  cart: null | {
+    vendorName: string;
+    items: CartItem[];
+  };
+};
+
+type OrderResponse = {
+  order: {
+    id: string;
+  };
+};
+
+type CustomerPreferencesResponse = {
+  preferences: null | {
+    addresses: CustomerAddress[];
+    preferredPaymentMethod: PaymentMethod;
+  };
+};
 
 export default function CartPage() {
   const [step, setStep] = useState<'cart' | 'checkout' | 'success'>('cart');
   const [deliveryOption, setDeliveryOption] = useState<'standard' | 'priority'>('standard');
+  const [cart, setCart] = useState<CartResponse["cart"]>(null);
+  const [customerPreferences, setCustomerPreferences] = useState<CustomerPreferencesResponse["preferences"]>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>('cod');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
   const router = useRouter();
-  
-  const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
-  const deliveryFee = deliveryOption === 'standard' ? 0.00 : 1000.00;
+  const { toast } = useToast();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadPageData = async () => {
+      try {
+        const [cartResponse, preferencesResponse] = await Promise.all([
+          fetch('/api/cart', { method: 'GET' }),
+          fetch('/api/customer/preferences', { method: 'GET' }),
+        ]);
+
+        if (!cartResponse.ok) {
+          throw new Error('Unable to load cart.');
+        }
+
+        const cartPayload: CartResponse = await cartResponse.json();
+        if (isMounted) {
+          setCart(cartPayload.cart);
+        }
+
+        if (preferencesResponse.ok) {
+          const preferencesPayload: CustomerPreferencesResponse = await preferencesResponse.json();
+          const defaultAddress = getDefaultCustomerAddress(
+            preferencesPayload.preferences?.addresses ?? []
+          );
+
+          if (isMounted) {
+            setCustomerPreferences(preferencesPayload.preferences);
+            setSelectedAddressId(defaultAddress?.id ?? null);
+            setSelectedPaymentMethod(
+              preferencesPayload.preferences?.preferredPaymentMethod ?? 'cod'
+            );
+          }
+        }
+      } catch (error) {
+        if (isMounted) {
+          setCart(null);
+          toast({
+            title: 'Cart Unavailable',
+            description: error instanceof Error ? error.message : 'Unable to load cart.',
+            variant: 'destructive',
+          });
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadPageData();
+    return () => {
+      isMounted = false;
+    };
+  }, [toast]);
+
+  const subtotal = useMemo(
+    () => (cart?.items ?? []).reduce((acc, item) => acc + item.unitPriceNaira * item.quantity, 0),
+    [cart]
+  );
+  const deliveryFee = deliveryOption === 'standard' ? 0 : 1000;
   const total = subtotal + deliveryFee;
+  const selectedAddress =
+    customerPreferences?.addresses.find((address) => address.id === selectedAddressId) ??
+    getDefaultCustomerAddress(customerPreferences?.addresses ?? []);
+
+  const updateQuantity = async (productId: string, quantity: number) => {
+    try {
+      const response = await fetch('/api/cart', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, quantity }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? 'Unable to update cart.');
+      }
+
+      const payload: CartResponse = await response.json();
+      setCart(payload.cart);
+    } catch (error) {
+      toast({
+        title: 'Update Failed',
+        description: error instanceof Error ? error.message : 'Unable to update cart.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const removeItem = async (productId: string) => {
+    try {
+      const response = await fetch('/api/cart', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? 'Unable to remove item.');
+      }
+
+      const payload: CartResponse = await response.json();
+      setCart(payload.cart);
+    } catch (error) {
+      toast({
+        title: 'Remove Failed',
+        description: error instanceof Error ? error.message : 'Unable to remove item.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const placeOrder = async () => {
+    if (!selectedAddress) {
+      toast({
+        title: 'Address Required',
+        description: 'Add and select a delivery address before placing your order.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deliveryFeeNaira: deliveryFee,
+          paymentMethod: selectedPaymentMethod,
+          deliveryAddress: formatCustomerAddress(selectedAddress),
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? 'Unable to place order.');
+      }
+
+      const payload: OrderResponse = await response.json();
+      setOrderId(payload.order.id);
+      setCart(null);
+      setStep('success');
+
+      if (
+        customerPreferences &&
+        customerPreferences.preferredPaymentMethod !== selectedPaymentMethod
+      ) {
+        const preferencesResponse = await fetch('/api/customer/preferences', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            addresses: customerPreferences.addresses,
+            preferredPaymentMethod: selectedPaymentMethod,
+          }),
+        });
+
+        if (preferencesResponse.ok) {
+          const preferencesPayload: CustomerPreferencesResponse =
+            await preferencesResponse.json();
+          setCustomerPreferences(preferencesPayload.preferences);
+        }
+      }
+    } catch (error) {
+      toast({
+        title: 'Checkout Failed',
+        description: error instanceof Error ? error.message : 'Unable to place order.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-background p-8 text-sm text-muted-foreground">Loading cart...</div>;
+  }
 
   if (step === 'success') {
     return (
@@ -33,15 +241,16 @@ export default function CartPage() {
           <CheckCircle2 className="h-12 w-12" />
         </div>
         <h1 className="text-3xl font-bold font-headline mb-2">Order Confirmed!</h1>
-        <p className="text-muted-foreground mb-8 max-w-xs">Your water is being prepared and will be delivered in approximately {deliveryOption === 'priority' ? '8' : '12'} minutes.</p>
+        <p className="text-muted-foreground mb-8 max-w-xs">Your water order has been created and queued for fulfillment.</p>
         <div className="space-y-4 w-full max-w-xs">
           <Link href="/dashboard/customer/track-order">
             <Button className="w-full h-14 rounded-2xl text-lg shadow-lg shadow-primary/20">Track Order Now</Button>
           </Link>
-          <Link href="/?loggedin=true">
+          <Link href="/">
             <Button variant="ghost" className="w-full h-12 rounded-xl text-muted-foreground">Go back to Home</Button>
           </Link>
         </div>
+        {orderId && <p className="mt-4 text-xs text-muted-foreground">Order ID: {orderId}</p>}
       </div>
     );
   }
@@ -50,17 +259,32 @@ export default function CartPage() {
     <div className="min-h-screen bg-background pb-10">
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="icon" onClick={() => step === 'checkout' ? setStep('cart') : router.push('/?loggedin=true')}>
+          <Button variant="ghost" size="icon" onClick={() => step === 'checkout' ? setStep('cart') : router.push('/')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-2xl font-bold font-headline">{step === 'cart' ? 'Shopping Cart' : 'Checkout'}</h1>
         </div>
 
-        {step === 'cart' ? (
+        {!cart || cart.items.length === 0 ? (
+          <Card className="border-none shadow-sm p-10 text-center">
+            <CardContent className="space-y-4 p-0">
+              <h2 className="text-xl font-bold">Your cart is empty</h2>
+              <p className="text-muted-foreground">Add products from a vendor catalog to begin checkout.</p>
+              <Link href="/">
+                <Button className="rounded-xl">Browse Vendors</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : step === 'cart' ? (
           <div className="space-y-6">
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Vendor</p>
+              <p className="font-semibold">{cart.vendorName}</p>
+            </div>
+
             <div className="space-y-4">
-              {cartItems.map((item) => (
-                <Card key={item.id} className="border-none shadow-sm overflow-hidden">
+              {cart.items.map((item) => (
+                <Card key={item.productId} className="border-none shadow-sm overflow-hidden">
                   <CardContent className="p-4 flex gap-4">
                     <div className="h-20 w-20 bg-muted rounded-xl shrink-0 flex items-center justify-center">
                       <Truck className="h-8 w-8 text-primary/20" />
@@ -69,20 +293,20 @@ export default function CartPage() {
                       <div className="flex justify-between items-start">
                         <div>
                           <h4 className="font-bold text-sm">{item.name}</h4>
-                          <p className="text-xs text-muted-foreground">{item.vendor}</p>
+                          <p className="text-xs text-muted-foreground">{cart.vendorName}</p>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItem(item.productId)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                       <div className="flex justify-between items-center">
-                        <p className="font-bold text-primary">₦{item.price.toLocaleString()}</p>
+                        <p className="font-bold text-primary">₦{item.unitPriceNaira.toLocaleString()}</p>
                         <div className="flex items-center gap-3 bg-muted rounded-lg p-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md" onClick={() => updateQuantity(item.productId, Math.max(0, item.quantity - 1))}>
                             <Minus className="h-3 w-3" />
                           </Button>
-                          <span className="text-sm font-bold w-4 text-center">{item.qty}</span>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
+                          <span className="text-sm font-bold w-4 text-center">{item.quantity}</span>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md" onClick={() => updateQuantity(item.productId, item.quantity + 1)}>
                             <Plus className="h-3 w-3" />
                           </Button>
                         </div>
@@ -119,69 +343,91 @@ export default function CartPage() {
             <div className="space-y-6">
               <section>
                 <h3 className="font-bold mb-3 flex items-center gap-2"><MapPin className="h-5 w-5 text-primary" /> Delivery Address</h3>
-                <RadioGroup defaultValue="home" className="space-y-2">
-                  <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Plus className="h-5 w-5 text-muted-foreground" />
-                      <div className="space-y-0.5">
-                        <p className="font-bold text-sm">Add new address</p>
+                {customerPreferences?.addresses.length ? (
+                  <RadioGroup
+                    value={selectedAddressId ?? undefined}
+                    onValueChange={setSelectedAddressId}
+                    className="space-y-2"
+                  >
+                    {customerPreferences.addresses.map((address) => (
+                      <Label key={address.id} className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="relative h-5 w-5 flex items-center justify-center">
+                            <MapPin className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-sm">{address.label}</p>
+                              {address.isDefault && (
+                                <Badge className="text-[10px] h-4 px-1.5 bg-primary/10 text-primary border-none">
+                                  Default
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {formatCustomerAddress(address)}
+                            </p>
+                          </div>
+                        </div>
+                        <RadioGroupItem value={address.id} />
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                ) : (
+                  <Card className="border-none shadow-sm">
+                    <CardContent className="p-5 space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Save a delivery address in your customer settings before checkout.
+                      </p>
+                      <div className="flex gap-3">
+                        <Link href="/dashboard/customer/settings/addresses" className="flex-1">
+                          <Button variant="outline" className="w-full rounded-xl">
+                            Manage Addresses
+                          </Button>
+                        </Link>
+                        <Link href="/" className="flex-1">
+                          <Button className="w-full rounded-xl">Go to Home</Button>
+                        </Link>
                       </div>
-                    </div>
-                    <RadioGroupItem value="new_address" />
-                  </Label>
-                  <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="relative h-5 w-5 flex items-center justify-center">
-                        <MapPin className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="space-y-0.5">
-                        <p className="font-bold text-sm">Home</p>
-                        <p className="text-xs text-muted-foreground line-clamp-1">123 Ocean View Dr, Lagos, Nigeria</p>
-                      </div>
-                    </div>
-                    <RadioGroupItem value="home" />
-                  </Label>
-                </RadioGroup>
+                    </CardContent>
+                  </Card>
+                )}
               </section>
 
               <section>
                 <h3 className="font-bold mb-3 flex items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Payment Method</h3>
-                <RadioGroup defaultValue="saved_card" className="space-y-2">
-                  <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="h-5 w-5 text-muted-foreground" />
-                      <div className="space-y-0.5">
-                        <p className="font-bold text-sm">Add debit/credit card</p>
-                      </div>
-                    </div>
-                    <RadioGroupItem value="new_card" />
-                  </Label>
-                  <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="relative h-5 w-5 flex items-center justify-center">
-                        <CreditCard className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="space-y-0.5">
-                        <p className="font-bold text-sm">Visa ending in 4452</p>
-                        <p className="text-[10px] text-muted-foreground uppercase">Previously added card</p>
-                      </div>
-                    </div>
-                    <RadioGroupItem value="saved_card" />
-                  </Label>
+                <RadioGroup
+                  value={selectedPaymentMethod}
+                  onValueChange={(value) => setSelectedPaymentMethod(value as PaymentMethod)}
+                  className="space-y-2"
+                >
                   <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="h-5 w-5 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px]">₦</div>
-                      <p className="font-bold text-sm">Cash on Delivery</p>
+                      <div>
+                        <p className="font-bold text-sm">{getPaymentMethodLabel('cod')}</p>
+                        <p className="text-xs text-muted-foreground">Pay the rider or vendor when the order arrives.</p>
+                      </div>
                     </div>
-                    <RadioGroupItem value="cash" />
+                    <RadioGroupItem value="cod" />
+                  </Label>
+                  <Label className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center text-white text-[10px]">₦</div>
+                      <div>
+                        <p className="font-bold text-sm">{getPaymentMethodLabel('manual_transfer')}</p>
+                        <p className="text-xs text-muted-foreground">Transfer details will be shared after the vendor accepts the order.</p>
+                      </div>
+                    </div>
+                    <RadioGroupItem value="manual_transfer" />
                   </Label>
                 </RadioGroup>
               </section>
 
               <section>
                 <h3 className="font-bold mb-3 flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> Delivery Options</h3>
-                <RadioGroup 
-                  value={deliveryOption} 
+                <RadioGroup
+                  value={deliveryOption}
                   onValueChange={(v) => setDeliveryOption(v as 'standard' | 'priority')}
                   className="space-y-2"
                 >
@@ -220,8 +466,12 @@ export default function CartPage() {
                 <span className="text-lg font-bold">Total Amount</span>
                 <span className="text-2xl font-bold text-primary">₦{total.toLocaleString()}</span>
               </div>
-              <Button className="w-full h-14 rounded-2xl text-lg shadow-lg shadow-primary/20" onClick={() => setStep('success')}>
-                Place Order
+              <Button
+                className="w-full h-14 rounded-2xl text-lg shadow-lg shadow-primary/20"
+                onClick={placeOrder}
+                disabled={isSubmitting || !selectedAddress}
+              >
+                {isSubmitting ? 'Placing Order...' : 'Place Order'}
               </Button>
             </Card>
           </div>

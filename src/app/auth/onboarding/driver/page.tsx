@@ -2,12 +2,11 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Truck, 
-  Link as LinkIcon, 
-  CheckCircle2, 
+import {
+  Truck,
+  Link as LinkIcon,
+  CheckCircle2,
   ArrowRight,
-  Droplets,
   Building2,
   ShieldAlert
 } from 'lucide-react';
@@ -19,32 +18,56 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function DriverOnboarding() {
   const [vendorId, setVendorId] = useState('');
+  const [vehicleType, setVehicleType] = useState('');
+  const [licensePlate, setLicensePlate] = useState('');
   const [isLinking, setIsLinking] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleLinkVendor = (e: React.FormEvent) => {
+  const handleLinkVendor = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!vendorId.trim()) {
+
+    if (!vendorId.trim() || !vehicleType.trim() || !licensePlate.trim()) {
       toast({
         title: "ID Required",
-        description: "Please enter a valid Vendor ID to continue.",
+        description: "Please complete the vendor and vehicle details to continue.",
         variant: "destructive"
       });
       return;
     }
 
     setIsLinking(true);
-    
-    // Simulate linking process
-    setTimeout(() => {
+
+    try {
+      const response = await fetch('/api/driver/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vendorId,
+          vehicleType,
+          licensePlate,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? 'Unable to link driver profile.');
+      }
+
       toast({
         title: "Account Linked!",
         description: "Successfully connected to the vendor. You can now receive orders."
       });
       router.push('/dashboard/driver');
-    }, 1500);
+    } catch (error) {
+      toast({
+        title: "Linking Failed",
+        description: error instanceof Error ? error.message : 'Unable to link driver profile.',
+        variant: "destructive"
+      });
+    } finally {
+      setIsLinking(false);
+    }
   };
 
   return (
@@ -75,9 +98,9 @@ export default function DriverOnboarding() {
                 <Label htmlFor="vendorId" className="text-foreground font-bold">Vendor ID</Label>
                 <div className="relative">
                   <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input 
-                    id="vendorId" 
-                    placeholder="e.g. VND-8821-X" 
+                  <Input
+                    id="vendorId"
+                    placeholder="e.g. VND-8821-X"
                     className="pl-10 h-12 rounded-xl border-2 focus:border-primary transition-all text-lg tracking-wider font-mono"
                     value={vendorId}
                     onChange={(e) => setVendorId(e.target.value)}
@@ -85,17 +108,41 @@ export default function DriverOnboarding() {
                   />
                 </div>
                 <p className="text-[10px] text-muted-foreground flex items-center gap-1 px-1">
-                  <ShieldAlert className="h-3 w-3" /> 
+                  <ShieldAlert className="h-3 w-3" />
                   Contact your vendor manager if you don't have an ID yet.
                 </p>
               </div>
 
-              <Button 
-                type="submit" 
+              <div className="space-y-3">
+                <Label htmlFor="vehicleType" className="text-foreground font-bold">Vehicle Type</Label>
+                <Input
+                  id="vehicleType"
+                  placeholder="e.g. Delivery Van"
+                  className="h-12 rounded-xl"
+                  value={vehicleType}
+                  onChange={(e) => setVehicleType(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="licensePlate" className="text-foreground font-bold">License Plate</Label>
+                <Input
+                  id="licensePlate"
+                  placeholder="e.g. WD-204-LAG"
+                  className="h-12 rounded-xl uppercase font-mono"
+                  value={licensePlate}
+                  onChange={(e) => setLicensePlate(e.target.value.toUpperCase())}
+                  required
+                />
+              </div>
+
+              <Button
+                type="submit"
                 className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 gap-2 mt-4"
                 disabled={isLinking}
               >
-                {isLinking ? "Connecting..." : "Link Account"} 
+                {isLinking ? "Connecting..." : "Link Account"}
                 <ArrowRight className="h-5 w-5" />
               </Button>
             </form>
@@ -114,7 +161,7 @@ export default function DriverOnboarding() {
         </Card>
 
         <div className="mt-8 text-center">
-          <button 
+          <button
             onClick={() => router.push('/dashboard/driver')}
             className="text-sm text-primary hover:underline font-medium"
           >

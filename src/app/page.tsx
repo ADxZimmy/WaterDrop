@@ -1,10 +1,9 @@
 
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { Suspense, useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   ShoppingCart, 
   Search, 
@@ -13,28 +12,23 @@ import {
   ArrowRight, 
   User, 
   Truck, 
-  Star, 
   MapPin, 
   Download,
   Menu,
   ShoppingBag,
-  Heart,
   Settings,
   LogOut,
-  Bell,
   ChevronRight,
-  LayoutDashboard,
-  ChevronLeft,
-  Home as HomeIcon,
   CheckCircle2
 } from 'lucide-react';
+import type { CustomerAddress, OrderStatus, PaymentMethod } from "@/lib/domain/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
   Carousel,
@@ -46,56 +40,40 @@ import {
 import { cn } from "@/lib/utils";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from "@/hooks/use-toast";
+import { getOrderStatusLabel } from "@/lib/orders/status";
 
-const categories = ["All", "Bottled Water", "Bags of Water"];
+type VendorCatalogRecord = {
+  vendorId: string;
+  businessName: string;
+  businessType?: string;
+  description?: string;
+  deliveryRadiusKm?: number;
+  productCount?: number;
+  catalogCategories?: string[];
+};
 
-const vendors = [
-  {
-    id: "1",
-    name: "Aqua Pure Factory",
-    rating: 4.8,
-    reviews: 124,
-    distance: "1.2 km",
-    image: "vendor-1",
-    category: "Bottled Water"
-  },
-  {
-    id: "2",
-    name: "Blue Wave Distro",
-    rating: 4.5,
-    reviews: 89,
-    distance: "2.4 km",
-    image: "vendor-2",
-    category: "Bags of Water"
-  },
-  {
-    id: "3",
-    name: "Crystal Spring",
-    rating: 4.9,
-    reviews: 210,
-    distance: "0.8 km",
-    image: "vendor-1",
-    category: "Bottled Water"
-  },
-  {
-    id: "4",
-    name: "Oasis Flow",
-    rating: 4.7,
-    reviews: 156,
-    distance: "3.1 km",
-    image: "vendor-2",
-    category: "Bags of Water"
-  },
-  {
-    id: "5",
-    name: "Pure Life Springs",
-    rating: 4.6,
-    reviews: 95,
-    distance: "1.8 km",
-    image: "vendor-1",
-    category: "Bottled Water"
-  }
-];
+type CustomerPreferencesResponse = {
+  preferences: null | {
+    addresses: CustomerAddress[];
+    preferredPaymentMethod: PaymentMethod;
+  };
+};
+
+type CartResponse = {
+  cart: null | {
+    items: Array<{
+      quantity: number;
+    }>;
+  };
+};
+
+type LatestOrderResponse = {
+  order: null | {
+    id: string;
+    vendorName?: string;
+    status: OrderStatus;
+  };
+};
 
 const customerNavItems = [
   { name: 'Marketplace', href: '/', icon: Store },
@@ -104,43 +82,278 @@ const customerNavItems = [
   { name: 'Settings', href: '/dashboard/customer/settings', icon: Settings },
 ];
 
-export default function Home() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+function HomePageContent() {
   const { toast } = useToast();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [sessionRole, setSessionRole] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [vendorCatalog, setVendorCatalog] = useState<VendorCatalogRecord[]>([]);
+  const [customerPreferences, setCustomerPreferences] = useState<CustomerPreferencesResponse["preferences"]>(null);
+  const [isSavingOnboarding, setIsSavingOnboarding] = useState(false);
+  const [cartItemsCount, setCartItemsCount] = useState(0);
+  const [activeOrder, setActiveOrder] = useState<LatestOrderResponse["order"]>(null);
+  const [addressDraft, setAddressDraft] = useState({
+    street: "",
+    city: "",
+    postalCode: "",
+    state: "",
+    country: "Nigeria",
+  });
 
   useEffect(() => {
-    if (searchParams.get('loggedin') === 'true') {
-      setIsLoggedIn(true);
-    }
-    if (searchParams.get('firstlogin') === 'true') {
-      setShowOnboarding(true);
-    }
-  }, [searchParams]);
+    let isMounted = true;
+
+    const loadSession = async () => {
+      try {
+        const response = await fetch('/api/auth/me', { method: 'GET' });
+
+        if (!response.ok) {
+          if (isMounted) {
+            setSessionRole(null);
+          }
+          return;
+        }
+
+        const profile = await response.json();
+        if (isMounted) {
+          setSessionRole(profile?.role ?? "customer");
+        }
+      } catch {
+        if (isMounted) {
+          setSessionRole(null);
+        }
+      }
+    };
+
+    void loadSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCustomerPreferences = async () => {
+      if (sessionRole !== "customer") {
+        if (isMounted) {
+          setCustomerPreferences(null);
+          setShowOnboarding(false);
+        }
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/customer/preferences', { method: 'GET' });
+        if (!response.ok) {
+          throw new Error('Unable to load customer preferences.');
+        }
+
+        const payload: CustomerPreferencesResponse = await response.json();
+        if (isMounted) {
+          setCustomerPreferences(payload.preferences);
+          setShowOnboarding((payload.preferences?.addresses.length ?? 0) === 0);
+        }
+      } catch {
+        if (isMounted) {
+          setCustomerPreferences(null);
+          setShowOnboarding(false);
+        }
+      }
+    };
+
+    void loadCustomerPreferences();
+    return () => {
+      isMounted = false;
+    };
+  }, [sessionRole]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCustomerNavState = async () => {
+      if (sessionRole !== "customer") {
+        if (isMounted) {
+          setCartItemsCount(0);
+          setActiveOrder(null);
+        }
+        return;
+      }
+
+      try {
+        const [cartResponse, latestOrderResponse] = await Promise.all([
+          fetch('/api/cart', { method: 'GET' }),
+          fetch('/api/orders/latest', { method: 'GET' }),
+        ]);
+
+        let nextCartCount = 0;
+        let nextActiveOrder: LatestOrderResponse["order"] = null;
+
+        if (cartResponse.ok) {
+          const cartPayload: CartResponse = await cartResponse.json();
+          nextCartCount = (cartPayload.cart?.items ?? []).reduce(
+            (sum, item) => sum + item.quantity,
+            0
+          );
+        }
+
+        if (latestOrderResponse.ok) {
+          const latestOrderPayload: LatestOrderResponse = await latestOrderResponse.json();
+          nextActiveOrder = latestOrderPayload.order;
+        }
+
+        if (isMounted) {
+          setCartItemsCount(nextCartCount);
+          setActiveOrder(nextActiveOrder);
+        }
+      } catch {
+        if (isMounted) {
+          setCartItemsCount(0);
+          setActiveOrder(null);
+        }
+      }
+    };
+
+    void loadCustomerNavState();
+    return () => {
+      isMounted = false;
+    };
+  }, [sessionRole]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadVendors = async () => {
+      try {
+        const response = await fetch('/api/vendors', { method: 'GET' });
+        if (!response.ok) {
+          throw new Error('Unable to load vendors.');
+        }
+
+        const payload = await response.json();
+        if (isMounted) {
+          setVendorCatalog(payload.vendors ?? []);
+        }
+      } catch {
+        if (isMounted) {
+          setVendorCatalog([]);
+        }
+      }
+    };
+
+    void loadVendors();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const isLoggedIn = sessionRole !== null;
+  const isCustomerSession = sessionRole === "customer";
+  const homeHref = "/";
+  const dashboardHref =
+    sessionRole === "vendor"
+      ? "/dashboard/vendor"
+      : sessionRole === "driver"
+        ? "/dashboard/driver"
+        : sessionRole === "admin"
+          ? "/admin"
+          : "/dashboard/customer";
+
+  const availableCategories = useMemo(() => {
+    const categories = vendorCatalog.flatMap((vendor) => vendor.catalogCategories ?? []);
+    return ["All", ...new Set(categories.filter(Boolean))];
+  }, [vendorCatalog]);
+
+  const resolvedVendors = useMemo(() => {
+    return vendorCatalog.map((vendor, index) => ({
+      id: vendor.vendorId,
+      name: vendor.businessName,
+      description:
+        vendor.description?.trim() || "Approved WaterDrop vendor ready for delivery orders.",
+      distance:
+        vendor.deliveryRadiusKm
+          ? `${vendor.deliveryRadiusKm} km delivery radius`
+          : "Delivery radius available on request",
+      image: index % 2 === 0 ? "vendor-1" : "vendor-2",
+      productCount: vendor.productCount ?? 0,
+      businessType: vendor.businessType ?? "Water supplier",
+      categoryLabels:
+        vendor.catalogCategories && vendor.catalogCategories.length > 0
+          ? vendor.catalogCategories
+          : [vendor.businessType ?? "Water supply"],
+    }));
+  }, [vendorCatalog]);
 
   const filteredVendors = useMemo(() => {
-    return vendors.filter(vendor => {
-      const matchesCategory = activeCategory === "All" || vendor.category === activeCategory;
+    return resolvedVendors.filter(vendor => {
+      const matchesCategory =
+        activeCategory === "All" || vendor.categoryLabels.includes(activeCategory);
       const matchesSearch = vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            vendor.category.toLowerCase().includes(searchQuery.toLowerCase());
+                            vendor.businessType.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            vendor.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            vendor.categoryLabels.some((category) =>
+                              category.toLowerCase().includes(searchQuery.toLowerCase())
+                            );
       return matchesCategory && matchesSearch;
     });
-  }, [searchQuery, activeCategory]);
+  }, [searchQuery, activeCategory, resolvedVendors]);
 
-  const handleSaveOnboarding = (e: React.FormEvent) => {
+  const handleSaveOnboarding = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowOnboarding(false);
-    toast({
-      title: "Profile Completed!",
-      description: "Your delivery address has been saved successfully."
-    });
-    // Remove params from URL
-    router.replace('/?loggedin=true');
+    setIsSavingOnboarding(true);
+
+    try {
+      const response = await fetch('/api/customer/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          addresses: [
+            {
+              id: 'home',
+              label: 'Home',
+              street: addressDraft.street,
+              city: addressDraft.city,
+              postalCode: addressDraft.postalCode,
+              state: addressDraft.state,
+              country: addressDraft.country,
+              isDefault: true,
+            },
+          ],
+          preferredPaymentMethod: customerPreferences?.preferredPaymentMethod ?? 'cod',
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? 'Unable to save delivery address.');
+      }
+
+      const payload: CustomerPreferencesResponse = await response.json();
+      setCustomerPreferences(payload.preferences);
+      setShowOnboarding(false);
+      setAddressDraft({
+        street: "",
+        city: "",
+        postalCode: "",
+        state: "",
+        country: "Nigeria",
+      });
+      toast({
+        title: "Profile Completed!",
+        description: "Your delivery address has been saved successfully."
+      });
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : "Unable to save delivery address.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingOnboarding(false);
+    }
   };
 
   const SidebarContent = () => (
@@ -170,7 +383,7 @@ export default function Home() {
 
       <nav className="flex-1 p-4 space-y-1">
         {customerNavItems.map((item) => (
-          <Link key={item.name} href={item.href + (item.href === '/' ? (isLoggedIn ? '?loggedin=true' : '') : '')} onClick={() => setIsSidebarOpen(false)}>
+          <Link key={item.name} href={item.href} onClick={() => setIsSidebarOpen(false)}>
             <Button
               variant="ghost"
               className={cn(
@@ -187,7 +400,7 @@ export default function Home() {
       </nav>
 
       <div className="p-4 border-t bg-muted/5">
-        <Link href="/auth/login" onClick={() => setIsLoggedIn(false)}>
+        <Link href="/auth/login">
           <Button variant="ghost" className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl h-12">
             <LogOut className="h-5 w-5" />
             <span className="font-bold">Sign Out</span>
@@ -199,7 +412,7 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen">
-      {isLoggedIn && (
+      {isCustomerSession && (
         <aside className="hidden lg:flex w-64 border-r bg-white flex-col sticky top-0 h-screen">
           <SidebarContent />
         </aside>
@@ -210,7 +423,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16 items-center">
               <div className="flex items-center gap-2">
-                {isLoggedIn && (
+                {isCustomerSession && (
                   <div className="lg:hidden">
                     <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
                       <SheetTrigger asChild>
@@ -228,7 +441,7 @@ export default function Home() {
                     </Sheet>
                   </div>
                 )}
-                <Link href={isLoggedIn ? "/?loggedin=true" : "/"} className="flex items-center gap-2">
+                <Link href={homeHref} className="flex items-center gap-2">
                   <Droplets className="h-8 w-8 text-primary" />
                   <span className="text-2xl font-bold tracking-tight text-primary font-headline">WaterDrop</span>
                 </Link>
@@ -247,7 +460,7 @@ export default function Home() {
               </div>
 
               <div className="flex items-center gap-3">
-                <Link href="/dashboard/customer/orders">
+                <Link href={isLoggedIn ? "/dashboard/customer/orders" : "/auth/login?redirect=/dashboard/customer/orders"}>
                   <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/5 rounded-full">
                     <Truck className="h-5 w-5" />
                   </Button>
@@ -255,7 +468,11 @@ export default function Home() {
                 <Link href="/cart">
                   <Button variant="ghost" size="icon" className="relative rounded-full">
                     <ShoppingCart className="h-5 w-5" />
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 rounded-full text-[10px]">2</Badge>
+                    {cartItemsCount > 0 && (
+                      <Badge className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center px-1 rounded-full text-[10px]">
+                        {cartItemsCount}
+                      </Badge>
+                    )}
                   </Button>
                 </Link>
                 
@@ -277,7 +494,7 @@ export default function Home() {
                     </Link>
                   </>
                 ) : (
-                  <Link href="/dashboard/customer" className="hidden sm:block">
+                  <Link href={dashboardHref} className="hidden sm:block">
                     <Avatar className="h-9 w-9 border-2 border-primary/10 hover:border-primary/30 transition-all">
                       <AvatarImage src="https://picsum.photos/seed/user-44/200" />
                       <AvatarFallback>JD</AvatarFallback>
@@ -290,21 +507,26 @@ export default function Home() {
         </nav>
 
         <main className="flex-grow">
-          <div className="bg-primary/10 border-b border-primary/20 py-3 px-4">
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white">
-                  <Truck className="h-4 w-4" />
+          {isCustomerSession && activeOrder && (
+            <div className="bg-primary/10 border-b border-primary/20 py-3 px-4">
+              <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white shrink-0">
+                    <Truck className="h-4 w-4" />
+                  </div>
+                  <p className="text-sm font-bold text-primary truncate">
+                    Active order: {getOrderStatusLabel(activeOrder.status)}
+                    {activeOrder.vendorName ? ` with ${activeOrder.vendorName}` : ""}
+                  </p>
                 </div>
-                <p className="text-sm font-bold text-primary">You have an order in transit!</p>
+                <Link href="/dashboard/customer/track-order">
+                  <Button size="sm" className="rounded-full h-8 px-4 text-xs">Track Order</Button>
+                </Link>
               </div>
-              <Link href="/dashboard/customer/orders">
-                <Button size="sm" className="rounded-full h-8 px-4 text-xs">View Orders</Button>
-              </Link>
             </div>
-          </div>
+          )}
 
-          {!isLoggedIn && (
+          {!isCustomerSession && (
             <section className="relative h-[550px] flex items-center overflow-hidden">
               <div className="absolute inset-0 z-0">
                 <Image 
@@ -367,7 +589,7 @@ export default function Home() {
                   <p className="text-muted-foreground">Order direct from the best sources near you</p>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  {categories.map((cat) => (
+                  {availableCategories.map((cat) => (
                     <Button 
                       key={cat} 
                       variant={activeCategory === cat ? "default" : "outline"} 
@@ -392,7 +614,7 @@ export default function Home() {
                     <CarouselContent className="-ml-4">
                       {filteredVendors.map((vendor) => (
                         <CarouselItem key={vendor.id} className="pl-4 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
-                          <Link href={`/vendors/${vendor.id}${isLoggedIn ? '?loggedin=true' : ''}`}>
+                          <Link href={`/vendors/${vendor.id}`}>
                             <Card className="group hover:shadow-2xl transition-all duration-300 border-none bg-white rounded-3xl overflow-hidden flex flex-col h-full">
                               <div className="relative w-full h-44 overflow-hidden shrink-0">
                                 <Image 
@@ -403,16 +625,30 @@ export default function Home() {
                                 />
                               </div>
                               <CardContent className="p-6 flex-1 flex flex-col justify-center">
-                                <h4 className="text-xl font-bold truncate">{vendor.name}</h4>
-                                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-2">
-                                  <div className="flex items-center gap-1 text-yellow-500 font-bold">
-                                    <Star className="h-3 w-3 fill-current" /> {vendor.rating}
+                                <div className="flex items-start justify-between gap-3">
+                                  <h4 className="text-xl font-bold truncate">{vendor.name}</h4>
+                                  <Badge variant="outline" className="text-[10px] uppercase tracking-wider shrink-0">
+                                    {vendor.productCount} item{vendor.productCount === 1 ? "" : "s"}
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground leading-relaxed mt-2 line-clamp-2">
+                                  {vendor.description}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-3">
+                                  <div className="flex items-center gap-1">
+                                    <ShoppingBag className="h-3 w-3" /> {vendor.businessType}
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <MapPin className="h-3 w-3" /> {vendor.distance}
                                   </div>
                                 </div>
-                                <Badge variant="outline" className="text-[10px] uppercase tracking-wider mt-3 w-fit">{vendor.category}</Badge>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  {vendor.categoryLabels.slice(0, 2).map((category) => (
+                                    <Badge key={category} variant="outline" className="text-[10px] uppercase tracking-wider">
+                                      {category}
+                                    </Badge>
+                                  ))}
+                                </div>
                                 <div className="mt-4 flex items-center gap-1 text-primary text-sm font-bold group-hover:gap-2 transition-all">
                                   View Products <ArrowRight className="h-4 w-4" />
                                 </div>
@@ -433,8 +669,14 @@ export default function Home() {
                   <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 text-muted-foreground">
                     <Search className="h-8 w-8" />
                   </div>
-                  <h3 className="text-xl font-bold">No vendors found</h3>
-                  <p className="text-muted-foreground">Try adjusting your search or category filters.</p>
+                  <h3 className="text-xl font-bold">
+                    {resolvedVendors.length === 0 ? "No verified vendors live yet" : "No vendors found"}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {resolvedVendors.length === 0
+                      ? "Approved vendors with active products will appear here once their catalogs are published."
+                      : "Try adjusting your search or category filters."}
+                  </p>
                   <Button 
                     variant="link" 
                     className="mt-2 text-primary"
@@ -468,25 +710,57 @@ export default function Home() {
                 <Label htmlFor="street">Street Address</Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input id="street" placeholder="123 Blue Spring Rd" className="pl-10 h-12 rounded-xl" required />
+                  <Input
+                    id="street"
+                    placeholder="123 Blue Spring Rd"
+                    className="pl-10 h-12 rounded-xl"
+                    required
+                    value={addressDraft.street}
+                    onChange={(e) => setAddressDraft((current) => ({ ...current, street: e.target.value }))}
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="city">City</Label>
-                  <Input id="city" placeholder="Ocean View" className="h-12 rounded-xl" required />
+                  <Input
+                    id="city"
+                    placeholder="Lagos"
+                    className="h-12 rounded-xl"
+                    required
+                    value={addressDraft.city}
+                    onChange={(e) => setAddressDraft((current) => ({ ...current, city: e.target.value }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="zip">ZIP Code</Label>
-                  <Input id="zip" placeholder="90210" className="h-12 rounded-xl" required />
+                  <Input
+                    id="zip"
+                    placeholder="100001"
+                    className="h-12 rounded-xl"
+                    required
+                    value={addressDraft.postalCode}
+                    onChange={(e) => setAddressDraft((current) => ({ ...current, postalCode: e.target.value }))}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="state">State / Province</Label>
-                <Input id="state" placeholder="California" className="h-12 rounded-xl" required />
+                <Input
+                  id="state"
+                  placeholder="Lagos State"
+                  className="h-12 rounded-xl"
+                  required
+                  value={addressDraft.state}
+                  onChange={(e) => setAddressDraft((current) => ({ ...current, state: e.target.value }))}
+                />
               </div>
-              <Button type="submit" className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg shadow-primary/20 mt-4">
-                Save & Continue
+              <Button
+                type="submit"
+                className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg shadow-primary/20 mt-4"
+                disabled={isSavingOnboarding}
+              >
+                {isSavingOnboarding ? "Saving..." : "Save & Continue"}
               </Button>
             </form>
           </DialogContent>
@@ -516,9 +790,9 @@ export default function Home() {
               <div>
                 <h4 className="font-bold mb-4">Quick Links</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><Link href={isLoggedIn ? "/?loggedin=true#vendors" : "/#vendors"} className="hover:text-primary">All Vendors</Link></li>
+                  <li><Link href="/#vendors" className="hover:text-primary">All Vendors</Link></li>
                   <li><Link href="/dashboard/customer/orders" className="hover:text-primary">My Orders</Link></li>
-                  <li><Link href="/admin" className="hover:text-primary">Super Admin Portal</Link></li>
+                  <li><Link href="/auth/admin" className="hover:text-primary">Super Admin Portal</Link></li>
                 </ul>
               </div>
               <div>
@@ -543,5 +817,17 @@ export default function Home() {
         </footer>
       </div>
     </div>
+  );
+}
+
+function HomePageFallback() {
+  return <div className="min-h-screen bg-background" />;
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<HomePageFallback />}>
+      <HomePageContent />
+    </Suspense>
   );
 }

@@ -1,58 +1,154 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { 
-  ArrowLeft, 
-  TrendingUp, 
-  Star, 
-  ShoppingBag, 
-  DollarSign, 
+import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  Boxes,
   Search,
-  Filter,
-  ArrowUpRight,
+  ShoppingBag,
+  TrendingUp,
   Trophy,
-  Medal,
-  Award,
-  ChevronRight
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from "lucide-react";
+import type { AdminAnalyticsPayload } from "@/lib/admin/ops-types";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-const allVendorsRanked = [
-  { id: 1, name: "Aqua Pure Factory", revenue: 1245000, orders: 420, rating: 4.9, status: "Active" },
-  { id: 2, name: "Blue Wave Distro", revenue: 920000, orders: 310, rating: 4.8, status: "Active" },
-  { id: 3, name: "Crystal Spring", revenue: 880000, orders: 280, rating: 4.7, status: "Warning" },
-  { id: 4, name: "Oasis Flow", revenue: 750000, orders: 240, rating: 4.5, status: "Active" },
-  { id: 5, name: "Pure Life Springs", revenue: 620000, orders: 190, rating: 4.6, status: "Active" },
-  { id: 6, name: "Deep Well Co", revenue: 510000, orders: 150, rating: 4.4, status: "Active" },
-  { id: 7, name: "Nature's Gift", revenue: 420000, orders: 120, rating: 4.2, status: "Suspended" },
-  { id: 8, name: "Arctic Chill", revenue: 380000, orders: 110, rating: 4.3, status: "Active" },
-  { id: 9, name: "Clear Stream Ltd", revenue: 310000, orders: 95, rating: 4.1, status: "Active" },
-  { id: 10, name: "Hydra Flow", revenue: 285000, orders: 82, rating: 4.0, status: "Active" },
-];
+type AdminAnalyticsResponse = {
+  analytics: AdminAnalyticsPayload;
+};
+
+function formatNaira(value: number) {
+  return `₦${value.toLocaleString("en-NG")}`;
+}
+
+function getVendorStatusClassName(status: "pending" | "approved" | "rejected") {
+  if (status === "approved") {
+    return "bg-emerald-100 text-emerald-700";
+  }
+
+  if (status === "rejected") {
+    return "bg-rose-100 text-rose-700";
+  }
+
+  return "bg-amber-100 text-amber-700";
+}
 
 export default function AdminVendorRankingsPage() {
+  const [analytics, setAnalytics] = useState<AdminAnalyticsPayload | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  const filteredRankings = useMemo(() => {
-    return allVendorsRanked
-      .filter(v => v.name.toLowerCase().includes(search.toLowerCase()))
-      .sort((a, b) => b.revenue - a.revenue);
-  }, [search]);
+  useEffect(() => {
+    let isMounted = true;
 
-  const getRankIcon = (index: number) => {
-    switch (index) {
-      case 0: return <Trophy className="h-5 w-5 text-yellow-500" />;
-      case 1: return <Medal className="h-5 w-5 text-slate-400" />;
-      case 2: return <Award className="h-5 w-5 text-amber-600" />;
-      default: return <span className="text-xs font-bold text-slate-400">#{index + 1}</span>;
+    const loadAnalytics = async () => {
+      try {
+        const response = await fetch("/api/admin/analytics", { method: "GET" });
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          throw new Error(payload?.error ?? "Unable to load vendor rankings.");
+        }
+
+        const payload: AdminAnalyticsResponse = await response.json();
+        if (isMounted) {
+          setAnalytics(payload.analytics ?? null);
+          setError(null);
+        }
+      } catch (fetchError) {
+        if (isMounted) {
+          setAnalytics(null);
+          setError(
+            fetchError instanceof Error
+              ? fetchError.message
+              : "Unable to load vendor rankings."
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadAnalytics();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const rankings = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const records = analytics?.vendorRankings ?? [];
+
+    return records.filter((vendor) => {
+      if (query.length === 0) {
+        return true;
+      }
+
+      return (
+        vendor.businessName.toLowerCase().includes(query) ||
+        vendor.ownerName.toLowerCase().includes(query) ||
+        vendor.vendorId.toLowerCase().includes(query)
+      );
+    });
+  }, [analytics, search]);
+
+  const highestEarner = rankings[0] ?? null;
+  const averageMonthlyRevenue = useMemo(() => {
+    if (rankings.length === 0) {
+      return 0;
     }
-  };
+
+    return Math.round(
+      rankings.reduce((sum, vendor) => sum + vendor.monthlyRevenueNaira, 0) /
+        rankings.length
+    );
+  }, [rankings]);
+  const topCatalogVendor = useMemo(
+    () =>
+      [...rankings].sort(
+        (left, right) => right.activeProductCount - left.activeProductCount
+      )[0] ?? null,
+    [rankings]
+  );
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto p-8 text-sm text-muted-foreground">
+        Loading vendor rankings...
+      </div>
+    );
+  }
+
+  if (!analytics || error) {
+    return (
+      <div className="max-w-4xl mx-auto p-8">
+        <Card className="border-none shadow-sm rounded-3xl">
+          <CardContent className="p-8 space-y-4">
+            <h1 className="text-2xl font-bold text-slate-900">
+              Vendor rankings unavailable
+            </h1>
+            <p className="text-sm text-slate-500">
+              {error ?? "Unable to load vendor rankings."}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
@@ -63,31 +159,53 @@ export default function AdminVendorRankingsPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold font-headline text-slate-900">Vendor Performance rankings</h1>
-          <p className="text-slate-500">Global leaderboard based on monthly gross revenue.</p>
+          <h1 className="text-3xl font-bold font-headline text-slate-900">
+            Vendor Performance Rankings
+          </h1>
+          <p className="text-slate-500">
+            Marketplace leaderboard based on current month revenue.
+          </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-none shadow-sm bg-slate-900 text-white p-6 rounded-[32px]">
-          <p className="text-xs uppercase font-bold tracking-widest opacity-60">Highest Earner</p>
-          <h3 className="text-2xl font-bold mt-2">Aqua Pure Factory</h3>
+          <p className="text-xs uppercase font-bold tracking-widest opacity-60">
+            Highest Earner
+          </p>
+          <h3 className="text-2xl font-bold mt-2">
+            {highestEarner?.businessName ?? "No vendors yet"}
+          </h3>
           <div className="mt-4 flex items-center gap-2 text-emerald-400 text-xs font-bold">
-            <TrendingUp className="h-4 w-4" /> Leading by ₦325k
+            <TrendingUp className="h-4 w-4" />
+            {highestEarner
+              ? formatNaira(highestEarner.monthlyRevenueNaira)
+              : "Awaiting live orders"}
           </div>
         </Card>
         <Card className="border-none shadow-sm bg-primary text-white p-6 rounded-[32px]">
-          <p className="text-xs uppercase font-bold tracking-widest opacity-60">Avg. Revenue / Vendor</p>
-          <h3 className="text-2xl font-bold mt-2">₦682,000</h3>
+          <p className="text-xs uppercase font-bold tracking-widest opacity-60">
+            Avg. Monthly Revenue
+          </p>
+          <h3 className="text-2xl font-bold mt-2">
+            {formatNaira(averageMonthlyRevenue)}
+          </h3>
           <div className="mt-4 text-white/80 text-xs font-bold">
-            Based on active platform vendors
+            Across {rankings.length} registered vendors
           </div>
         </Card>
         <Card className="border-none shadow-sm bg-white p-6 rounded-[32px]">
-          <p className="text-xs uppercase font-bold tracking-widest text-slate-400">Top Satisfaction</p>
-          <h3 className="text-2xl font-bold mt-2">Crystal Spring</h3>
-          <div className="mt-4 flex items-center gap-1 text-yellow-500 text-xs font-bold">
-            <Star className="h-4 w-4 fill-current" /> 4.9 Rating
+          <p className="text-xs uppercase font-bold tracking-widest text-slate-400">
+            Deepest Active Catalog
+          </p>
+          <h3 className="text-2xl font-bold mt-2">
+            {topCatalogVendor?.businessName ?? "No vendors yet"}
+          </h3>
+          <div className="mt-4 flex items-center gap-1 text-primary text-xs font-bold">
+            <Boxes className="h-4 w-4" />
+            {topCatalogVendor
+              ? `${topCatalogVendor.activeProductCount} active products`
+              : "Awaiting catalog data"}
           </div>
         </Card>
       </div>
@@ -95,83 +213,96 @@ export default function AdminVendorRankingsPage() {
       <div className="flex gap-4 items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input 
-            placeholder="Search vendors by name..." 
+          <Input
+            placeholder="Search vendors by business name, owner, or ID..."
             className="pl-10 h-11 rounded-xl bg-white border-slate-200"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
           />
         </div>
-        <Button variant="outline" className="h-11 px-6 rounded-xl bg-white border-slate-200 gap-2">
-          <Filter className="h-4 w-4" /> Rank Filters
-        </Button>
       </div>
 
       <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white">
-        <Table>
-          <TableHeader className="bg-slate-50">
-            <TableRow>
-              <TableHead className="w-[80px] pl-8 text-center">Rank</TableHead>
-              <TableHead>Vendor</TableHead>
-              <TableHead>Monthly Revenue</TableHead>
-              <TableHead>Total Orders</TableHead>
-              <TableHead>Avg. Rating</TableHead>
-              <TableHead className="pr-8">Compliance</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredRankings.map((vendor, index) => (
-              <TableRow key={vendor.id} className="group hover:bg-slate-50/50">
-                <TableCell className="pl-8 text-center">
-                  <div className="flex justify-center">
-                    {getRankIcon(index)}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Link href={`/admin/vendors/${vendor.id}`} className="group/vendor">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9 border border-slate-100 group-hover/vendor:border-primary/30 transition-colors">
-                        <AvatarImage src={`https://picsum.photos/seed/${vendor.id}/100`} />
-                        <AvatarFallback>{vendor.name[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-sm text-slate-900 group-hover/vendor:text-primary transition-colors">{vendor.name}</span>
-                        <span className="text-[10px] text-slate-400 uppercase tracking-tighter">VND-{vendor.id}</span>
-                      </div>
+        {rankings.length === 0 ? (
+          <div className="p-10 text-center space-y-3">
+            <h2 className="text-xl font-bold text-slate-900">
+              No vendor rankings match this view
+            </h2>
+            <p className="text-sm text-slate-500">
+              Try another search term or wait for new marketplace activity.
+            </p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader className="bg-slate-50">
+              <TableRow>
+                <TableHead className="w-[80px] pl-8 text-center">Rank</TableHead>
+                <TableHead>Vendor</TableHead>
+                <TableHead>Monthly Revenue</TableHead>
+                <TableHead>Gross Revenue</TableHead>
+                <TableHead>Total Orders</TableHead>
+                <TableHead>Active Catalog</TableHead>
+                <TableHead className="pr-8">Compliance</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rankings.map((vendor, index) => (
+                <TableRow key={vendor.vendorId} className="group hover:bg-slate-50/50">
+                  <TableCell className="pl-8 text-center">
+                    <div className="flex justify-center">
+                      {index === 0 ? (
+                        <Trophy className="h-5 w-5 text-yellow-500" />
+                      ) : (
+                        <span className="text-xs font-bold text-slate-400">
+                          #{index + 1}
+                        </span>
+                      )}
                     </div>
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1 font-bold text-slate-900">
-                    ₦{vendor.revenue.toLocaleString()}
-                    {index < 3 && <ArrowUpRight className="h-3 w-3 text-emerald-500" />}
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm font-medium text-slate-600">
-                  {vendor.orders.toLocaleString()} orders
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1 text-yellow-500 font-bold text-sm">
-                    <Star className="h-3 w-3 fill-current" /> {vendor.rating}
-                  </div>
-                </TableCell>
-                <TableCell className="pr-8">
-                  <Link href={`/admin/vendors/${vendor.id}`}>
-                    <Badge 
-                      className={`rounded-full px-3 border-none text-[10px] font-bold cursor-pointer hover:opacity-80 transition-opacity ${
-                        vendor.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 
-                        vendor.status === 'Warning' ? 'bg-amber-100 text-amber-700' : 
-                        'bg-rose-100 text-rose-700'
-                      }`}
+                  </TableCell>
+                  <TableCell>
+                    <Link href={`/admin/vendors/${vendor.vendorId}`}>
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 border border-slate-100 rounded-xl flex items-center justify-center bg-slate-100 text-primary font-semibold">
+                          {vendor.businessName[0]}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-bold text-sm text-slate-900 truncate">
+                            {vendor.businessName}
+                          </span>
+                          <span className="text-[10px] text-slate-400 uppercase tracking-tighter truncate">
+                            {vendor.vendorId} • {vendor.ownerName}
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  </TableCell>
+                  <TableCell className="font-bold text-slate-900">
+                    {formatNaira(vendor.monthlyRevenueNaira)}
+                  </TableCell>
+                  <TableCell className="font-medium text-primary">
+                    {formatNaira(vendor.revenueNaira)}
+                  </TableCell>
+                  <TableCell className="text-sm font-medium text-slate-600">
+                    <div className="flex items-center gap-1">
+                      <ShoppingBag className="h-3.5 w-3.5 text-slate-400" />
+                      {vendor.totalOrders.toLocaleString("en-NG")}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm text-slate-600">
+                    {vendor.activeProductCount} / {vendor.productCount}
+                  </TableCell>
+                  <TableCell className="pr-8">
+                    <Badge
+                      className={`rounded-full px-3 border-none text-[10px] font-bold ${getVendorStatusClassName(vendor.status)}`}
                     >
                       {vendor.status}
                     </Badge>
-                  </Link>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </Card>
     </div>
   );

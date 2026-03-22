@@ -1,414 +1,411 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { 
-  MapPin, 
-  Phone, 
-  Truck, 
-  CheckCircle, 
-  Navigation, 
-  Clock, 
-  User, 
-  MessageSquare, 
-  ChevronRight, 
-  Building2, 
-  Award, 
-  Link as LinkIcon, 
-  ShieldAlert, 
-  CheckCircle2, 
-  ChevronLeft,
-  Droplets,
-  AlertTriangle,
-  Package,
-  Edit2
-} from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import React from "react";
+import Link from "next/link";
+import {
+  Building2,
+  CheckCircle2,
+  Clock3,
+  Edit2,
+  MapPin,
+  Navigation,
+  Truck,
+  User,
+  Wallet,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useDriverWorkspace } from "@/hooks/use-driver-workspace";
 
-const initialDeliveries = [
-  {
-    id: "ORD-1245",
-    customer: "John Doe",
-    address: "123 Ocean View Dr, Blue City",
-    distance: "1.2 km",
-    items: "5x PureLife Bottled (Pack)",
-    quantity: 5,
-    status: "Accepted",
-    vendor: "Aqua Pure Factory",
-    price: "₦850.00"
-  },
-  {
-    id: "ORD-1248",
-    customer: "Sarah Smith",
-    address: "45 River St, Spring Hills",
-    distance: "3.5 km",
-    items: "10x Sachet Water Bags",
-    quantity: 10,
-    status: "Accepted",
-    vendor: "Blue Wave Distro",
-    price: "₦1,200.00"
+function getDisplayName(firstName?: string, lastName?: string, email?: string) {
+  const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
+  return fullName || email || "Driver";
+}
+
+function formatDateTime(timestamp: number | null) {
+  if (!timestamp) {
+    return "No activity yet";
   }
-];
+
+  return new Date(timestamp).toLocaleString("en-NG", {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function getDriverStatusClassName(status: "pending" | "active" | "inactive") {
+  if (status === "active") {
+    return "bg-emerald-100 text-emerald-700 border-emerald-200";
+  }
+
+  if (status === "inactive") {
+    return "bg-slate-100 text-slate-700 border-slate-200";
+  }
+
+  return "bg-amber-100 text-amber-700 border-amber-200";
+}
+
+function getVendorStatusClassName(status: "pending" | "approved" | "rejected") {
+  if (status === "approved") {
+    return "bg-emerald-100 text-emerald-700";
+  }
+
+  if (status === "rejected") {
+    return "bg-rose-100 text-rose-700";
+  }
+
+  return "bg-amber-100 text-amber-700";
+}
+
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
 
 export default function DriverDashboard() {
-  const [isSetupComplete, setIsSetupComplete] = useState(false);
-  const [showSetup, setShowSetup] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [deliveries, setDeliveries] = useState(initialDeliveries);
-  const [loadedBags, setLoadedBags] = useState(20); // Default for demo
-  const { toast } = useToast();
+  const { workspace, isLoading, error } = useDriverWorkspace();
 
-  useEffect(() => {
-    // Load inventory from localStorage
-    const savedInventory = localStorage.getItem('driver_loaded_bags');
-    if (savedInventory) {
-      setLoadedBags(parseInt(savedInventory));
-    }
-
-    // Check for dev bypass
-    const isDriverSetup = localStorage.getItem('driver_setup_complete') === 'true';
-    if (isDriverSetup) {
-      setIsSetupComplete(true);
-    } else {
-      const timer = setTimeout(() => setShowSetup(true), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  const handleNext = () => {
-    if (currentStep < 2) setCurrentStep(currentStep + 1);
-  };
-
-  const handleBack = () => {
-    if (currentStep > 1) setCurrentStep(currentStep - 1);
-  };
-
-  const handleSubmitSetup = () => {
-    localStorage.setItem('driver_setup_complete', 'true');
-    setIsSetupComplete(true);
-    setShowSetup(false);
-    toast({
-      title: "Account Ready!",
-      description: "You are now linked to your vendor and ready to receive orders."
-    });
-  };
-
-  const handleDevBypass = () => {
-    localStorage.setItem('driver_setup_complete', 'true');
-    setIsSetupComplete(true);
-    setShowSetup(false);
-    window.location.reload();
-  };
-
-  const handleStartDelivery = (id: string) => {
-    const hasActiveDelivery = deliveries.some(d => d.status === 'Delivering');
-    
-    if (hasActiveDelivery) {
-      toast({
-        title: "Active Delivery in Progress",
-        description: "You can only have one delivery in transit at a time. Please complete your current task.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setDeliveries(prev => prev.map(delivery => 
-      delivery.id === id ? { ...delivery, status: 'Delivering' } : delivery
-    ));
-    toast({
-      title: "Delivery Started",
-      description: `Order ${id} is now in transit.`
-    });
-  };
-
-  const totalRequired = deliveries
-    .filter(d => d.status !== 'Completed')
-    .reduce((acc, curr) => acc + curr.quantity, 0);
-  
-  const isSufficient = loadedBags >= totalRequired;
-
-  if (!isSetupComplete) {
+  if (isLoading) {
     return (
-      <div className="p-4 md:p-8 space-y-6 max-w-4xl mx-auto">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold font-headline">Driver Dashboard</h2>
-            <p className="text-sm text-muted-foreground">Setup required to start delivering</p>
-          </div>
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Pending Setup</Badge>
-        </div>
-
-        <Card className="border-dashed border-2 bg-muted/5 flex flex-col items-center justify-center p-12 text-center min-h-[400px] rounded-[32px]">
-          <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-6">
-            <Truck className="h-10 w-10" />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">Complete Your Driver Profile</h2>
-          <p className="text-muted-foreground mb-8 max-md">Link your account to a registered WaterDrop vendor and provide your vehicle details to start accepting orders.</p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button onClick={() => setShowSetup(true)} size="lg" className="rounded-xl px-8 shadow-lg shadow-primary/20">
-              Start Setup Now
-            </Button>
-            <Button variant="outline" size="lg" className="rounded-xl px-8 border-orange-200 text-orange-600 bg-orange-50 hover:bg-orange-100" onClick={handleDevBypass}>
-              [DEV] Bypass Setup
-            </Button>
-          </div>
-        </Card>
-
-        <Dialog open={showSetup} onOpenChange={setShowSetup}>
-          <DialogContent className="sm:max-w-md p-0 border-none overflow-hidden rounded-[32px] shadow-2xl">
-            <div className="bg-primary p-8 text-white">
-              <div className="flex items-center gap-3 mb-4">
-                <Truck className="h-8 w-8" />
-                <span className="font-bold text-2xl tracking-tight font-headline">Driver Setup</span>
-              </div>
-              <DialogTitle className="text-2xl font-bold">Link Your Account</DialogTitle>
-              <DialogDescription className="text-primary-foreground/80 mt-2">
-                Connect with your water supplier and verify your vehicle.
-              </DialogDescription>
-              <div className="flex gap-2 mt-6">
-                {[1, 2].map((s) => (
-                  <div key={s} className={cn("h-1.5 rounded-full flex-1 transition-all", s <= currentStep ? "bg-white" : "bg-white/20")} />
-                ))}
-              </div>
-            </div>
-
-            <div className="p-8 bg-white">
-              {currentStep === 1 && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
-                  <div className="flex items-center gap-2 text-primary font-bold text-lg mb-2">
-                    <Building2 className="h-5 w-5" /> 1. Vendor Connection
-                  </div>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="vendorId">Vendor ID</Label>
-                      <div className="relative">
-                        <LinkIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input id="vendorId" placeholder="e.g. VND-8821-X" className="pl-10 h-12 rounded-xl border-2" />
-                      </div>
-                      <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                        <ShieldAlert className="h-3 w-3" /> Get this ID from your water factory manager.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 2 && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
-                  <div className="flex items-center gap-2 text-primary font-bold text-lg mb-2">
-                    <Award className="h-5 w-5" /> 2. Vehicle Details
-                  </div>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="vehicleType">Vehicle Type</Label>
-                      <Select>
-                        <SelectTrigger className="h-12 rounded-xl">
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="bike">Motorcycle / Scooter</SelectItem>
-                          <SelectItem value="van">Delivery Van</SelectItem>
-                          <SelectItem value="truck">Light Truck</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="license">License Plate Number</Label>
-                      <Input id="license" placeholder="e.g. AQUA-2024" className="h-12 rounded-xl border-2 uppercase font-mono" />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="p-8 border-t flex justify-between bg-muted/10">
-              <Button variant="ghost" onClick={handleBack} disabled={currentStep === 1} className="rounded-xl h-12">
-                <ChevronLeft className="h-4 w-4 mr-2" /> Back
-              </Button>
-              {currentStep === 2 ? (
-                <Button onClick={handleSubmitSetup} className="rounded-xl h-12 px-10 shadow-lg shadow-primary/20">
-                  Complete & Start <CheckCircle2 className="h-4 w-4 ml-2" />
-                </Button>
-              ) : (
-                <Button onClick={handleNext} className="rounded-xl h-12 px-10">
-                  Continue <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
+      <div className="p-4 md:p-8 text-sm text-muted-foreground">
+        Loading driver workspace...
       </div>
     );
   }
 
-  const isAnyDeliveryActive = deliveries.some(d => d.status === 'Delivering');
+  if (error || !workspace) {
+    return (
+      <div className="p-4 md:p-8 max-w-4xl mx-auto">
+        <Card className="border-none shadow-sm rounded-3xl">
+          <CardContent className="p-8 space-y-2">
+            <h1 className="text-2xl font-bold font-headline">Driver workspace unavailable</h1>
+            <p className="text-sm text-muted-foreground">
+              {error ?? "Unable to load driver workspace."}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const { user, driver, vendor, assignments, payouts, activeOrders, recentPayoutRequests, capabilities } = workspace;
+
+  if (!driver || driver.status !== "active") {
+    return (
+      <div className="p-4 md:p-8 space-y-6 max-w-4xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold font-headline">Driver Dashboard</h1>
+            <p className="text-sm text-muted-foreground">
+              Finish your live profile setup before delivery tools can unlock.
+            </p>
+          </div>
+          <Badge
+            variant="outline"
+            className={driver ? getDriverStatusClassName(driver.status) : "bg-amber-50 text-amber-700 border-amber-200"}
+          >
+            {driver ? driver.status : "setup required"}
+          </Badge>
+        </div>
+
+        <Card className="border-dashed border-2 bg-muted/5 rounded-[32px]">
+          <CardContent className="p-12 text-center space-y-6">
+            <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto">
+              <Truck className="h-10 w-10" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">Complete Your Driver Profile</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Link your account to a registered WaterDrop vendor and provide your
+                vehicle details. Orders and payouts only become available after your
+                profile is active and your vendor starts assigning deliveries to you.
+              </p>
+            </div>
+            {driver ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 text-left max-w-xl mx-auto space-y-2">
+                <p className="text-sm font-semibold text-slate-900">
+                  Existing profile
+                </p>
+                <p className="text-sm text-slate-600">
+                  Vendor ID: {driver.vendorId}
+                </p>
+                <p className="text-sm text-slate-600">
+                  Vehicle: {driver.vehicleType ?? "Not set"}
+                </p>
+                <p className="text-sm text-slate-600">
+                  Plate: {driver.licensePlate ?? "Not set"}
+                </p>
+                <p className="text-sm text-slate-600">
+                  Loaded units: {driver.loadedUnits.toLocaleString("en-NG")}
+                </p>
+              </div>
+            ) : null}
+            <Link href="/auth/onboarding/driver">
+              <Button size="lg" className="rounded-xl px-8 shadow-lg shadow-primary/20">
+                {driver ? "Continue Setup" : "Start Setup Now"}
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 md:p-8 space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
-        <Card className="border-none shadow-sm p-6 bg-white rounded-3xl relative overflow-hidden">
-          <div className="flex justify-between items-start">
-            <div className="flex items-center gap-4">
-              <div className={cn(
-                "h-14 w-14 rounded-2xl flex items-center justify-center transition-colors",
-                isSufficient ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"
-              )}>
-                {isSufficient ? <CheckCircle2 className="h-8 w-8" /> : <AlertTriangle className="h-8 w-8" />}
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Inventory Level</p>
-                <h3 className="text-2xl font-bold mt-1">{loadedBags} Units Loaded</h3>
-              </div>
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              <Badge className={cn(
-                "rounded-full px-3 border-none",
-                isSufficient ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-              )}>
-                {isSufficient ? "Enough for delivery" : "Stock Low"}
-              </Badge>
-              <Link href="/dashboard/driver/inventory">
-                <Button variant="outline" size="sm" className="h-8 text-[10px] uppercase font-bold tracking-tight rounded-lg gap-1 border-primary/20 text-primary hover:bg-primary/5 transition-all">
-                  <Edit2 className="h-3 w-3" /> Update
-                </Button>
-              </Link>
-            </div>
-          </div>
-          <div className="mt-6 flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Required for pending tasks:</span>
-            <span className={cn("font-bold", isSufficient ? "text-slate-900" : "text-rose-600")}>
-              {totalRequired} units
-            </span>
-          </div>
-          {!isSufficient && (
-            <div className="mt-4 p-3 bg-rose-50 border border-rose-100 rounded-xl flex gap-3 text-rose-800 text-xs">
-              <ShieldAlert className="h-4 w-4 shrink-0" />
-              <p>Warning: You do not have enough water bags loaded for all assigned orders.</p>
-            </div>
-          )}
-        </Card>
-
-        <Card className="border-none bg-primary text-white p-6 rounded-3xl shadow-xl shadow-primary/20 flex flex-col justify-between">
-          <div className="flex justify-between items-center">
-            <p className="text-primary-foreground/70 text-xs font-bold uppercase tracking-widest">Performance Today</p>
-            <Award className="h-5 w-5 opacity-50" />
-          </div>
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div>
-              <p className="text-2xl font-bold font-headline">₦14,250</p>
-              <p className="text-[10px] text-primary-foreground/70 uppercase">Daily Earnings</p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold font-headline">12</p>
-              <p className="text-[10px] text-primary-foreground/70 uppercase">Trips Done</p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-8 space-y-6 max-w-6xl mx-auto">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold font-headline">Active Deliveries</h2>
-          <p className="text-sm text-muted-foreground">You have {deliveries.filter(d => d.status !== 'Completed').length} tasks assigned</p>
+          <h1 className="text-3xl font-bold font-headline">
+            Welcome back, {getDisplayName(user.firstName, user.lastName, user.email)}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+              Live driver profile, active delivery assignments, and payout snapshot.
+          </p>
         </div>
-        <Badge className="bg-primary px-3 py-1">{deliveries.filter(d => d.status !== 'Completed').length} Active</Badge>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline" className={getDriverStatusClassName(driver.status)}>
+            {driver.status}
+          </Badge>
+          {vendor ? (
+            <Badge className={`border-none ${getVendorStatusClassName(vendor.status)}`}>
+              {vendor.businessName}
+            </Badge>
+          ) : null}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {deliveries.map((delivery) => (
-          <Card 
-            key={delivery.id} 
-            className={cn(
-              "border-none shadow-lg overflow-hidden relative transition-all duration-300", 
-              delivery.status === 'Delivering' ? "bg-primary/5 ring-2 ring-primary/20 scale-[1.02]" : "bg-white"
-            )}
-          >
-            <div className={`absolute top-0 left-0 w-1.5 h-full ${delivery.status === 'Accepted' ? 'bg-blue-400' : 'bg-primary'}`}></div>
-            <CardHeader className="pb-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-lg">{delivery.id}</CardTitle>
-                    <Badge variant="outline" className={cn("text-[10px] font-bold", delivery.status === 'Delivering' ? "bg-primary text-white border-none" : "")}>
-                      {delivery.status === 'Accepted' ? 'Ready for Pickup' : 'In Transit'}
-                    </Badge>
-                  </div>
-                  <CardDescription className="flex items-center gap-1 mt-1">
-                    <User className="h-3 w-3" /> {delivery.customer}
-                  </CardDescription>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-primary">{delivery.price}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase">Estimated Earning</p>
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <Card className="border-none shadow-sm rounded-3xl bg-white">
+          <CardContent className="p-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                <Truck className="h-6 w-6" />
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="mt-1 h-5 w-5 bg-muted rounded flex items-center justify-center text-muted-foreground">
-                    <ChevronRight className="h-3 w-3" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Pickup</p>
-                    <p className="text-sm font-bold">{delivery.vendor}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="mt-1 h-5 w-5 bg-primary rounded flex items-center justify-center text-white">
-                    <MapPin className="h-3 w-3" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Dropoff</p>
-                    <p className="text-sm font-bold">{delivery.address}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-xs py-3 border-t">
-                <span className="text-muted-foreground">Items:</span>
-                <span className="font-semibold">{delivery.items}</span>
-              </div>
-            </CardContent>
-            <CardFooter className="grid grid-cols-2 gap-3">
-              <Link href={`/dashboard/driver/navigate/${delivery.id}`} className="w-full">
-                <Button variant="outline" className="w-full rounded-xl h-11 gap-2">
-                  <Navigation className="h-4 w-4" />
-                  Navigate
+              <Link href="/dashboard/driver/inventory">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-lg border-primary/20 text-primary"
+                >
+                  <Edit2 className="h-3 w-3 mr-1" />
+                  Update
                 </Button>
               </Link>
-              <Button 
-                className={cn(
-                  "rounded-xl h-11 gap-2 transition-all", 
-                  delivery.status === 'Delivering' ? "bg-accent hover:bg-accent/90 cursor-default" : "shadow-lg shadow-primary/20"
-                )}
-                onClick={() => delivery.status !== 'Delivering' && handleStartDelivery(delivery.id)}
-                disabled={delivery.status !== 'Delivering' && isAnyDeliveryActive}
-              >
-                {delivery.status === 'Delivering' ? (
-                  <>
-                    <Truck className="h-4 w-4 animate-bounce" />
-                    In Transit
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4" />
-                    Start Delivery
-                  </>
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                Loaded Units
+              </p>
+              <h2 className="text-3xl font-bold text-slate-900 mt-2">
+                {driver.loadedUnits.toLocaleString("en-NG")}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-2">
+                Live stock count from your driver inventory profile.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm rounded-3xl bg-white">
+          <CardContent className="p-6 space-y-3">
+            <div className="h-12 w-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center">
+              <Building2 className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                Vendor Assignment
+              </p>
+              <h2 className="text-xl font-bold text-slate-900 mt-2">
+                {vendor?.businessName ?? driver.vendorId}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-2">
+                {driver.vehicleType ?? "Vehicle type not set"}{" "}
+                {driver.licensePlate ? `• ${driver.licensePlate}` : ""}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm rounded-3xl bg-white">
+          <CardContent className="p-6 space-y-3">
+            <div className="h-12 w-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+              <CheckCircle2 className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                Active Assignments
+              </p>
+              <h2 className="text-3xl font-bold text-slate-900 mt-2">
+                {assignments.activeAssignedOrders.toLocaleString("en-NG")}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-2">
+                Orders currently assigned to your driver account and still in progress.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm rounded-3xl bg-white">
+          <CardContent className="p-6 space-y-3">
+            <div className="h-12 w-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center">
+              <Wallet className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                Available Balance
+              </p>
+              <h2 className="text-lg font-bold text-slate-900 mt-2">
+                {formatCurrency(payouts.availableBalanceNaira)}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-2">
+                Accrued from delivered orders that have not yet been withdrawn.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <Card className="xl:col-span-2 border-none shadow-sm rounded-3xl bg-white">
+          <CardHeader className="border-b bg-slate-50 rounded-t-3xl">
+            <CardTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-primary" />
+              Assigned Deliveries
+            </CardTitle>
+            <CardDescription>
+              Orders below are truly linked to your driver account.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4">
+            {activeOrders.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-muted-foreground">
+                No active deliveries are assigned to you right now.
+              </div>
+            ) : (
+              activeOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="rounded-2xl border border-slate-200 p-4 flex flex-col xl:flex-row xl:items-center gap-4"
+                >
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold text-slate-900">{order.id}</p>
+                      <Badge className="bg-slate-100 text-slate-700 border-none">
+                        {order.status.replaceAll("_", " ")}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-slate-700">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span>{order.customerName}</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-sm text-slate-600">
+                      <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <span>{order.deliveryAddress ?? "Delivery address unavailable"}</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span>Total {formatCurrency(order.totalNaira)}</span>
+                      <span>Updated {formatDateTime(order.updatedAt)}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <Link href={`/dashboard/driver/orders/${order.id}`}>
+                      <Button variant="outline" className="rounded-xl">
+                        View Details
+                      </Button>
+                    </Link>
+                    <Link href={`/dashboard/driver/navigate/${order.id}`}>
+                      <Button className="rounded-xl shadow-lg shadow-primary/20">
+                        <Navigation className="h-4 w-4 mr-2" />
+                        Navigate
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))
+            )}
+            {vendor?.reviewNotes ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+                <p className="font-semibold text-slate-900 mb-1">Latest vendor review note</p>
+                <p>{vendor.reviewNotes}</p>
+              </div>
+            ) : null}
+            <div className="flex flex-wrap gap-3">
+              <Link href="/dashboard/driver/inventory">
+                <Button className="rounded-xl shadow-lg shadow-primary/20">
+                  Manage Inventory
+                </Button>
+              </Link>
+              <Link href="/dashboard/driver/profile">
+                <Button variant="outline" className="rounded-xl">
+                  Review Driver Profile
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm rounded-3xl bg-white">
+          <CardHeader className="border-b bg-slate-50 rounded-t-3xl">
+            <CardTitle className="flex items-center gap-2">
+              <Clock3 className="h-5 w-5 text-primary" />
+              Payout Snapshot
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-600">Available</span>
+              <span className="font-semibold text-slate-900">
+                {formatCurrency(payouts.availableBalanceNaira)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-600">Requested</span>
+              <span className="font-semibold text-slate-900">
+                {formatCurrency(payouts.requestedBalanceNaira)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-600">Paid lifetime</span>
+              <span className="font-semibold text-slate-900">
+                {formatCurrency(payouts.lifetimePaidNaira)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-600">Pending requests</span>
+              <span className="font-semibold text-slate-900">
+                {recentPayoutRequests.filter((request) => request.status === "pending").length}
+              </span>
+            </div>
+            <div className="rounded-2xl border border-slate-200 p-4 text-sm text-muted-foreground">
+              Driver assignment and payout accrual are live. Navigation telemetry and
+              self-service security controls remain deferred.
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-600">Assignments</span>
+              <Badge className={capabilities.driverAssignments ? "bg-emerald-100 text-emerald-700 border-none" : "bg-slate-100 text-slate-700 border-none"}>
+                {capabilities.driverAssignments ? "Live" : "Deferred"}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-600">Navigation guidance</span>
+              <Badge className={capabilities.turnByTurnNavigation ? "bg-emerald-100 text-emerald-700 border-none" : "bg-slate-100 text-slate-700 border-none"}>
+                {capabilities.turnByTurnNavigation ? "Live" : "External maps only"}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

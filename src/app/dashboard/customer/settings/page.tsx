@@ -11,7 +11,6 @@ import {
   CreditCard, 
   ChevronRight, 
   ArrowLeft,
-  Settings as SettingsIcon,
   HelpCircle,
   MessageSquare
 } from 'lucide-react';
@@ -19,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 const settingLinks = [
-  { name: "My Profile", icon: User, href: "/dashboard/customer/settings/profile", desc: "Change your name, email, and phone" },
+  { name: "My Profile", icon: User, href: "/dashboard/customer/settings/profile", desc: "Update your name and phone, and review your email" },
   { name: "Delivery Addresses", icon: MapPin, href: "/dashboard/customer/settings/addresses", desc: "Manage where we deliver your water" },
   { name: "Payment Methods", icon: CreditCard, href: "/dashboard/customer/settings/payments", desc: "Add or remove cards and wallets" },
   { name: "Notifications", icon: Bell, href: "/dashboard/customer/settings/notifications", desc: "Control alerts and promotional news" },

@@ -1,81 +1,222 @@
-
 "use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { Search, Filter, History, MapPin, Calendar, Clock, ChevronRight } from 'lucide-react';
-import { Card, CardContent } from "@/components/ui/card";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { Calendar, Clock3, History, MapPin, Truck, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { useDriverWorkspace } from "@/hooks/use-driver-workspace";
 
-const history = [
-  { id: "ORD-9921", date: "Oct 24, 2024", time: "14:20", status: "Completed", amount: "$8.50", address: "123 Ocean View Dr", items: "5x PureLife" },
-  { id: "ORD-9918", date: "Oct 24, 2024", time: "11:05", status: "Completed", amount: "$12.00", address: "45 River St", items: "10x Sachet Packs" },
-  { id: "ORD-9882", date: "Oct 23, 2024", time: "18:45", status: "Completed", amount: "$6.50", address: "88 Sky Lane", items: "2x 19L Dispenser" },
-  { id: "ORD-9851", date: "Oct 23, 2024", time: "15:30", status: "Cancelled", amount: "$0.00", address: "22 Park Ave", items: "1x Bulk Pack" },
-  { id: "ORD-9840", date: "Oct 23, 2024", time: "09:15", status: "Completed", amount: "$10.00", address: "10 Hill Top", items: "8x 750ml Bottled" },
-];
+type DriverOrderRecord = {
+  id: string;
+  customerName: string;
+  deliveryAddress?: string;
+  totalNaira: number;
+  status: string;
+  updatedAt: number;
+  driverPayout?: {
+    amountNaira: number;
+  };
+};
+
+function formatDateTime(timestamp: number | null) {
+  if (!timestamp) {
+    return "No activity yet";
+  }
+
+  return new Date(timestamp).toLocaleString("en-NG", {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
 export default function DriverHistoryPage() {
+  const { workspace, isLoading, error } = useDriverWorkspace();
+  const [orders, setOrders] = useState<DriverOrderRecord[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadOrders = async () => {
+      try {
+        const response = await fetch("/api/driver/orders", { method: "GET" });
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(payload?.error ?? "Unable to load assigned order history.");
+        }
+
+        if (isMounted) {
+          setOrders((payload?.orders ?? []) as DriverOrderRecord[]);
+          setOrdersError(null);
+        }
+      } catch (fetchError) {
+        if (isMounted) {
+          setOrders([]);
+          setOrdersError(
+            fetchError instanceof Error
+              ? fetchError.message
+              : "Unable to load assigned order history."
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setOrdersLoading(false);
+        }
+      }
+    };
+
+    void loadOrders();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-8 text-sm text-muted-foreground">
+        Loading driver history...
+      </div>
+    );
+  }
+
+  if (error || !workspace) {
+    return (
+      <div className="p-4 md:p-8 max-w-4xl mx-auto">
+        <Card className="border-none shadow-sm rounded-3xl">
+          <CardContent className="p-8 space-y-2">
+            <h1 className="text-2xl font-bold font-headline">Driver history unavailable</h1>
+            <p className="text-sm text-muted-foreground">
+              {error ?? "Unable to load driver history."}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const { driver } = workspace;
+
+  if (!driver) {
+    return (
+      <div className="p-4 md:p-8 max-w-4xl mx-auto">
+        <Card className="border-none shadow-sm rounded-3xl">
+          <CardContent className="p-8 space-y-4">
+            <h1 className="text-2xl font-bold font-headline">Trip History</h1>
+            <p className="text-sm text-muted-foreground">
+              Complete your driver setup before trip history can be evaluated.
+            </p>
+            <Link href="/auth/onboarding/driver">
+              <Button className="rounded-xl shadow-lg shadow-primary/20">
+                Complete Driver Setup
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4 md:p-8 space-y-6 max-w-4xl mx-auto">
+    <div className="p-4 md:p-8 space-y-6 max-w-5xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold font-headline">Trip History</h1>
-        <p className="text-muted-foreground">Review your past deliveries and activities.</p>
+        <p className="text-muted-foreground">
+          Assigned orders now form your live delivery history.
+        </p>
       </div>
 
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search orders..." className="pl-10 h-11 rounded-xl" />
-        </div>
-        <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl">
-          <Filter className="h-4 w-4" />
-        </Button>
-      </div>
-
-      <div className="space-y-4">
-        {history.map((trip) => (
-          <Link key={trip.id} href={`/dashboard/driver/orders/${trip.id}`}>
-            <Card className="border-none shadow-sm overflow-hidden hover:shadow-md transition-shadow group mb-4">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${trip.status === 'Completed' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                      <History className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-sm">{trip.id}</h4>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-medium mt-0.5">
-                        <Calendar className="h-3 w-3" /> {trip.date}
-                        <span className="h-1 w-1 bg-muted-foreground/30 rounded-full"></span>
-                        <Clock className="h-3 w-3" /> {trip.time}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`font-bold text-lg ${trip.status === 'Completed' ? 'text-primary' : 'text-muted-foreground'}`}>{trip.amount}</p>
-                    <Badge variant="outline" className={`text-[10px] mt-1 ${trip.status === 'Completed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                      {trip.status}
+      {ordersLoading ? (
+        <Card className="border-none shadow-sm rounded-3xl bg-white">
+          <CardContent className="p-8 text-sm text-muted-foreground">
+            Loading assigned order history...
+          </CardContent>
+        </Card>
+      ) : ordersError ? (
+        <Card className="border-none shadow-sm rounded-3xl bg-white">
+          <CardContent className="p-8 text-sm text-destructive">{ordersError}</CardContent>
+        </Card>
+      ) : orders.length === 0 ? (
+        <Card className="border-none shadow-sm rounded-3xl bg-white">
+          <CardContent className="p-8 space-y-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              No orders have been assigned to your driver account yet.
+            </p>
+            <Link href="/dashboard/driver">
+              <Button className="rounded-xl shadow-lg shadow-primary/20">
+                Back to Dashboard
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {orders.map((order) => (
+            <Card key={order.id} className="border-none shadow-sm rounded-3xl bg-white">
+              <CardContent className="p-6 flex flex-col md:flex-row md:items-center gap-4">
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-semibold text-slate-900">{order.id}</p>
+                    <Badge className="bg-slate-100 text-slate-700 border-none">
+                      {order.status.replaceAll("_", " ")}
                     </Badge>
                   </div>
-                </div>
-                
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-muted/50">
-                  <div className="flex items-start gap-2 max-w-sm">
-                    <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                    <p className="text-sm text-muted-foreground line-clamp-1">{trip.address}</p>
+                  <div className="flex items-center gap-2 text-sm text-slate-700">
+                    <History className="h-4 w-4 text-muted-foreground" />
+                    <span>{order.customerName}</span>
                   </div>
-                  <Button variant="ghost" size="sm" className="h-8 gap-1 text-primary group-hover:bg-primary/5">
-                    Details <ChevronRight className="h-3 w-3" />
-                  </Button>
+                  <div className="flex items-start gap-2 text-sm text-slate-600">
+                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <span>{order.deliveryAddress ?? "Delivery address unavailable"}</span>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {formatDateTime(order.updatedAt)}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Wallet className="h-3.5 w-3.5" />
+                      ₦{order.totalNaira.toLocaleString("en-NG")}
+                    </span>
+                    {order.driverPayout ? (
+                      <span className="inline-flex items-center gap-1">
+                        <Truck className="h-3.5 w-3.5" />
+                        Payout ₦{order.driverPayout.amountNaira.toLocaleString("en-NG")}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Link href={`/dashboard/driver/orders/${order.id}`}>
+                    <Button variant="outline" className="rounded-xl">
+                      Details
+                    </Button>
+                  </Link>
+                  <Link href={`/dashboard/driver/navigate/${order.id}`}>
+                    <Button className="rounded-xl shadow-lg shadow-primary/20">
+                      Route
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
-          </Link>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+
+      <Card className="border-none shadow-sm rounded-3xl bg-white">
+        <CardContent className="p-6 flex items-center gap-3 text-sm text-muted-foreground">
+          <Clock3 className="h-4 w-4" />
+          Assignment and payout history are live. Turn-by-turn telemetry is still handled outside
+          WaterDrop.
+        </CardContent>
+      </Card>
     </div>
   );
 }

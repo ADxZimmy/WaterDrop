@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Percent, Save, Info, Truck, DollarSign } from 'lucide-react';
+import { ArrowLeft, Percent, Save, Info, DollarSign } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,19 +22,100 @@ export default function DriverCommissionsSettingsPage() {
   // State for Packs
   const [packType, setPackType] = useState<'percentage' | 'fixed'>('percentage');
   const [packValue, setPackValue] = useState(15);
+  const [priorityFeeToDriver, setPriorityFeeToDriver] = useState(false);
   
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleSave = () => {
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadConfig = async () => {
+      try {
+        const response = await fetch("/api/vendor/commissions", { method: "GET" });
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(payload?.error ?? "Unable to load commission settings.");
+        }
+
+        if (isMounted) {
+          const config = payload?.config;
+          setBagType(config?.bagsRule?.mode ?? 'percentage');
+          setBagValue(config?.bagsRule?.value ?? 15);
+          setPackType(config?.bottledRule?.mode ?? 'percentage');
+          setPackValue(config?.bottledRule?.value ?? 15);
+          setPriorityFeeToDriver(Boolean(config?.priorityFeeToDriver));
+        }
+      } catch (error) {
+        if (isMounted) {
+          toast({
+            title: "Commission settings unavailable",
+            description:
+              error instanceof Error
+                ? error.message
+                : "Unable to load commission settings.",
+            variant: "destructive",
+          });
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadConfig();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [toast]);
+
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
+
+    try {
+      const response = await fetch("/api/vendor/commissions", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bagsRule: { mode: bagType, value: bagValue },
+          bottledRule: { mode: packType, value: packValue },
+          bulkRule: { mode: packType, value: packValue },
+          otherRule: { mode: packType, value: packValue },
+          priorityFeeToDriver,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Unable to save commission settings.");
+      }
+
       setIsSaving(false);
       toast({
         title: "Commission Rates Updated",
         description: `Commission settings for bags and packs have been successfully saved.`,
       });
-    }, 1000);
+    } catch (error) {
+      setIsSaving(false);
+      toast({
+        title: "Save failed",
+        description:
+          error instanceof Error ? error.message : "Unable to save commission settings.",
+        variant: "destructive",
+      });
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-8 max-w-5xl mx-auto text-sm text-muted-foreground">
+        Loading commission settings...
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-10 text-foreground">
@@ -232,7 +313,10 @@ export default function DriverCommissionsSettingsPage() {
                   <Label className="font-bold">Priority Surcharge Bonus</Label>
                   <p className="text-sm text-muted-foreground">Give drivers 100% of the priority delivery fee.</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={priorityFeeToDriver}
+                  onCheckedChange={setPriorityFeeToDriver}
+                />
               </div>
             </CardContent>
             <CardFooter className="p-8 border-t flex justify-end bg-muted/5">

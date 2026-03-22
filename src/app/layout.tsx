@@ -1,8 +1,15 @@
+import { Inter } from 'next/font/google';
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { MobileNav } from "@/components/mobile-nav";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: 'WaterDrop | Fresh Water Marketplace',
@@ -35,14 +42,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="font-body">
+      <body className={`${inter.variable} font-body`}>
         <div className="flex flex-col min-h-screen">
           <main className="flex-1 w-full max-w-full pb-16 md:pb-0 relative">
             {children}

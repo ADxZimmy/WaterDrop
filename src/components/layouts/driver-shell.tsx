@@ -1,0 +1,168 @@
+"use client";
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Truck,
+  History,
+  Wallet,
+  User,
+  LogOut,
+  LayoutDashboard,
+  Bell,
+  Menu,
+  ChevronLeft,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useAuthSignOut } from "@/hooks/use-auth-sign-out";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+type LayoutUser = {
+  email: string;
+  firstName?: string;
+};
+
+const driverNav = [
+  { name: "Dashboard", href: "/dashboard/driver", icon: LayoutDashboard },
+  { name: "Earnings", href: "/dashboard/driver/earnings", icon: Wallet },
+  { name: "Trip History", href: "/dashboard/driver/history", icon: History },
+  { name: "Profile", href: "/dashboard/driver/profile", icon: User },
+];
+
+export function DriverShell({
+  children,
+  user,
+}: {
+  children: React.ReactNode;
+  user: LayoutUser;
+}) {
+  const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
+  const firstName = user.firstName || "Driver";
+  const { isSigningOut, signOut } = useAuthSignOut();
+
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full bg-white">
+      <div className="p-6 flex items-center justify-start gap-3 border-b">
+        <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
+          <Truck className="h-6 w-6" />
+        </div>
+        <div className="text-left">
+          <span className="text-xl font-bold tracking-tight text-primary font-headline block leading-none">
+            WaterDrop
+          </span>
+          <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">
+            Driver Portal
+          </span>
+        </div>
+      </div>
+
+      <nav className="flex-1 p-4 space-y-1">
+        {driverNav.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link key={item.name} href={item.href} onClick={() => setIsOpen(false)}>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "w-full justify-end gap-2 h-12 px-4 rounded-xl transition-all group",
+                  isActive ? "bg-primary/10 text-primary font-bold shadow-sm" : "text-muted-foreground hover:bg-muted"
+                )}
+              >
+                {isActive && <ChevronLeft className="h-4 w-4 opacity-50 mr-auto" />}
+                <span className="text-sm">{item.name}</span>
+                <item.icon
+                  className={cn("h-5 w-5 transition-transform group-hover:scale-110", isActive && "text-primary")}
+                />
+              </Button>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="p-4 border-t bg-muted/5">
+        <Button
+          variant="ghost"
+          className="w-full justify-end gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl h-12"
+          disabled={isSigningOut}
+          onClick={() => void signOut()}
+        >
+          <span className="font-bold">{isSigningOut ? "Signing Out..." : "Sign Out"}</span>
+          <LogOut className="h-5 w-5" />
+        </Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row overflow-x-hidden">
+      <aside className="hidden lg:flex w-72 border-r bg-white flex-col sticky top-0 h-screen">
+        <SidebarContent />
+      </aside>
+
+      <div className="flex-1 flex flex-col min-h-screen w-full">
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b p-4 px-6 flex justify-between items-center h-20">
+          <div className="flex items-center gap-4">
+            <div className="lg:hidden">
+              <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-12 w-12 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    <Menu className="h-6 w-6 text-foreground" />
+                    <span className="sr-only">Toggle mobile menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-80 border-none shadow-2xl">
+                  <SheetHeader className="sr-only">
+                    <SheetTitle>WaterDrop Navigation</SheetTitle>
+                    <SheetDescription>Access driver management sections</SheetDescription>
+                  </SheetHeader>
+                  <SidebarContent />
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            <div className="flex flex-col">
+              <h1 className="text-lg font-bold font-headline hidden lg:block">Welcome back, {firstName}</h1>
+              <div className="lg:hidden flex items-center gap-2">
+                <Truck className="h-5 w-5 text-primary" />
+                <span className="font-bold text-lg tracking-tight font-headline">WaterDrop</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-2 bg-green-50 px-4 py-1.5 rounded-full border border-green-100 mr-2">
+              <span className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></span>
+              <span className="text-[10px] font-bold uppercase tracking-tight text-green-700">Online</span>
+            </div>
+
+            <Link href="/dashboard/driver/notifications">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-2xl h-11 w-11 bg-muted/20 relative hover:bg-muted/40 transition-all"
+              >
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-2.5 right-2.5 h-2 w-2 bg-destructive rounded-full border-2 border-white shadow-sm ring-2 ring-destructive/10 animate-pulse"></span>
+              </Button>
+            </Link>
+          </div>
+        </header>
+
+        <main className="flex-1 bg-muted/10 p-4 sm:p-6 lg:p-8">{children}</main>
+      </div>
+    </div>
+  );
+}

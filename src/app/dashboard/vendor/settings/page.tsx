@@ -3,7 +3,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Store, User, Shield, Bell, CreditCard, HelpCircle, MapPin, Clock, Camera, ArrowLeft, Percent } from 'lucide-react';
+import { Store, User, Shield, Bell, CreditCard, HelpCircle, Camera, ArrowLeft, Percent } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

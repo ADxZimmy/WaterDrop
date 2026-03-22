@@ -1,48 +1,98 @@
-
 "use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { 
-  ArrowLeft, 
-  Store, 
-  User, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  ShieldCheck, 
-  Building2,
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  ArrowLeft,
   CheckCircle2,
-  FileText
-} from 'lucide-react';
+  FileText,
+  ShieldCheck,
+  Store,
+  Users,
+} from "lucide-react";
+import type { AdminSystemSnapshot } from "@/lib/admin/system-types";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+type AdminSystemResponse = {
+  system: AdminSystemSnapshot;
+};
 
 export default function AdminNewVendorPage() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [system, setSystem] = useState<AdminSystemSnapshot | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleCreateVendor = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Vendor Created Successfully",
-        description: "The new vendor has been added and their account is now active.",
-      });
-      setIsSubmitting(false);
-      router.push('/admin/vendors');
-    }, 1500);
-  };
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSystem = async () => {
+      try {
+        const response = await fetch("/api/admin/system", { method: "GET" });
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          throw new Error(payload?.error ?? "Unable to load vendor onboarding workflow.");
+        }
+
+        const payload: AdminSystemResponse = await response.json();
+        if (isMounted) {
+          setSystem(payload.system ?? null);
+          setError(null);
+        }
+      } catch (fetchError) {
+        if (isMounted) {
+          setSystem(null);
+          setError(
+            fetchError instanceof Error
+              ? fetchError.message
+              : "Unable to load vendor onboarding workflow."
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadSystem();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto p-8 text-sm text-muted-foreground">
+        Loading vendor onboarding workflow...
+      </div>
+    );
+  }
+
+  if (!system || error) {
+    return (
+      <div className="max-w-4xl mx-auto p-8">
+        <Card className="border-none shadow-sm rounded-3xl">
+          <CardContent className="p-8 space-y-4">
+            <h1 className="text-2xl font-bold text-slate-900">
+              Vendor bootstrap workflow unavailable
+            </h1>
+            <p className="text-sm text-slate-500">
+              {error ?? "Unable to load vendor onboarding workflow."}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
@@ -53,124 +103,138 @@ export default function AdminNewVendorPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold font-headline text-slate-900">Add New Vendor</h1>
-          <p className="text-slate-500">Register and verify a new business partner manually.</p>
+          <h1 className="text-3xl font-bold font-headline text-slate-900">
+            Add New Vendor
+          </h1>
+          <p className="text-slate-500">
+            Manual vendor creation is not implemented in the MVP yet.
+          </p>
         </div>
       </div>
 
-      <form onSubmit={handleCreateVendor}>
-        <div className="grid grid-cols-1 gap-8">
-          <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white">
-            <CardHeader className="bg-slate-50 border-b p-8">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Store className="h-6 w-6 text-primary" /> Business Identity
-              </CardTitle>
-              <CardDescription>Core information about the water factory or distributor.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-8 space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="businessName">Business Name</Label>
-                  <Input id="businessName" placeholder="e.g. Pure Oasis Water" className="rounded-xl h-11" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="vendorType">Vendor Type</Label>
-                  <Select required>
-                    <SelectTrigger className="rounded-xl h-11">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="factory">Water Factory</SelectItem>
-                      <SelectItem value="distributor">Distributor</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+      <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white">
+        <CardHeader className="bg-slate-50 border-b p-8">
+          <CardTitle className="text-xl flex items-center gap-2">
+            <Store className="h-6 w-6 text-primary" />
+            Current Supported Workflow
+          </CardTitle>
+          <CardDescription>
+            Vendors currently enter the system through self-registration and admin review.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5 space-y-2">
+              <Badge className="bg-primary/10 text-primary border-none">Step 1</Badge>
+              <h3 className="font-bold text-slate-900">Vendor self-registers</h3>
+              <p className="text-sm text-slate-600">
+                Public vendor registration is enabled and routes the business into onboarding.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5 space-y-2">
+              <Badge className="bg-primary/10 text-primary border-none">Step 2</Badge>
+              <h3 className="font-bold text-slate-900">Admin reviews application</h3>
+              <p className="text-sm text-slate-600">
+                Compliance details are checked inside the vendor applications queue.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5 space-y-2">
+              <Badge className="bg-primary/10 text-primary border-none">Step 3</Badge>
+              <h3 className="font-bold text-slate-900">Approved vendor goes live</h3>
+              <p className="text-sm text-slate-600">
+                Only approved vendors with active products appear in the storefront.
+              </p>
+            </div>
+          </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="ownerName">Owner/Manager Name</Label>
-                  <Input id="ownerName" placeholder="Full name" className="rounded-xl h-11" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Primary Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-                    <Input id="email" type="email" placeholder="contact@business.com" className="pl-10 rounded-xl h-11" required />
-                  </div>
-                </div>
-              </div>
+          <div className="rounded-2xl border border-amber-100 bg-amber-50 p-5 space-y-2">
+            <div className="flex items-center gap-2 text-amber-800">
+              <ShieldCheck className="h-5 w-5" />
+              <h3 className="font-bold">Why this page is read-only</h3>
+            </div>
+            <p className="text-sm text-amber-900/80">
+              Direct admin-side vendor bootstrap would need a real user account creation flow,
+              secure invite handling, and persisted compliance assets. Those are not implemented yet,
+              so this page now reflects the actual supported process instead of simulating a save.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-                    <Input id="phone" placeholder="+1 (555) 000-0000" className="pl-10 rounded-xl h-11" required />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Physical Address</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-                    <Input id="address" placeholder="123 Industrial Rd" className="pl-10 rounded-xl h-11" required />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border-none shadow-sm rounded-3xl bg-slate-900 text-white">
+          <CardContent className="p-6">
+            <p className="text-xs uppercase tracking-widest text-slate-400 font-bold">
+              Pending Reviews
+            </p>
+            <h3 className="text-3xl font-bold mt-3">
+              {system.summary.pendingVendorApplications}
+            </h3>
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm rounded-3xl bg-white">
+          <CardContent className="p-6">
+            <p className="text-xs uppercase tracking-widest text-slate-400 font-bold">
+              Approved Vendors
+            </p>
+            <h3 className="text-3xl font-bold mt-3 text-slate-900">
+              {system.summary.approvedVendors}
+            </h3>
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm rounded-3xl bg-white">
+          <CardContent className="p-6">
+            <p className="text-xs uppercase tracking-widest text-slate-400 font-bold">
+              Active Marketplace Footprint
+            </p>
+            <h3 className="text-3xl font-bold mt-3 text-slate-900">
+              {system.summary.totalVendors}
+            </h3>
+            <p className="text-xs text-slate-500 mt-2">Total vendor profiles</p>
+          </CardContent>
+        </Card>
+      </div>
 
-          <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white">
-            <CardHeader className="bg-slate-50 border-b p-8">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <ShieldCheck className="h-6 w-6 text-primary" /> Regulatory Compliance
-              </CardTitle>
-              <CardDescription>Verified government documentation and tax IDs.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-8 space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="nafdac">NAFDAC Number</Label>
-                  <Input id="nafdac" placeholder="01-XXXXL" className="rounded-xl h-11 font-mono" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tin">TIN Number</Label>
-                  <Input id="tin" placeholder="12345678-0001" className="rounded-xl h-11 font-mono" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cac">CAC Number</Label>
-                  <Input id="cac" placeholder="RC-XXXXXX" className="rounded-xl h-11 font-mono" required />
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 flex gap-3 text-sm text-primary">
-                <CheckCircle2 className="h-5 w-5 shrink-0" />
-                <p>
-                  By creating this vendor, they will be automatically marked as <strong>Verified</strong> and will receive an email to set up their dashboard credentials.
-                </p>
-              </div>
-            </CardContent>
-            <CardFooter className="bg-slate-50 p-8 border-t flex justify-end gap-3">
-              <Link href="/admin/vendors">
-                <Button variant="ghost" className="rounded-xl h-12 px-8">Cancel</Button>
-              </Link>
-              <Button 
-                type="submit" 
-                className="rounded-xl h-12 px-10 shadow-lg shadow-primary/20 gap-2"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Creating Vendor..." : (
-                  <>
-                    <CheckCircle2 className="h-5 w-5" /> Confirm & Register Vendor
-                  </>
-                )}
+      <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white">
+        <CardHeader className="bg-slate-50 border-b p-8">
+          <CardTitle className="text-xl flex items-center gap-2">
+            <Users className="h-6 w-6 text-primary" />
+            Next Best Actions
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-8 space-y-4">
+          <div className="rounded-2xl border border-slate-100 bg-white p-4 flex items-start gap-3">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold text-slate-900">Review pending applications</p>
+              <p className="text-sm text-slate-600">
+                Use the live admin review queue to approve businesses that have already self-registered.
+              </p>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-100 bg-white p-4 flex items-start gap-3">
+            <FileText className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold text-slate-900">Track onboarding gaps</p>
+              <p className="text-sm text-slate-600">
+                Document storage and direct admin invites still need backend support before manual creation can be added safely.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3 pt-2">
+            <Link href="/admin/applications">
+              <Button className="rounded-xl h-11 px-6 shadow-lg shadow-primary/20">
+                Open Review Queue
               </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      </form>
+            </Link>
+            <Link href="/admin/vendors">
+              <Button variant="outline" className="rounded-xl h-11 px-6 border-slate-200">
+                View Vendor Directory
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

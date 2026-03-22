@@ -1,64 +1,351 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { ArrowLeft, User, Phone, MapPin, Package, Truck, CheckCircle, Clock, MessageSquare, ExternalLink, ChevronDown, XCircle } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { formatDistanceToNow } from "date-fns";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Clock3,
+  Mail,
+  MapPin,
+  Package,
+  Phone,
+  Receipt,
+  Truck,
+  User,
+  XCircle,
+} from "lucide-react";
+import type {
+  DeliveryProof,
+  DriverAssignment,
+  OrderExecutionEvent,
+  OrderDriverPayout,
+  OrderItem,
+  OrderStatus,
+  PaymentMethod,
+} from "@/lib/domain/schemas";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { getOrderExecutionEventDescription, getOrderExecutionEventLabel } from "@/lib/orders/execution";
+import {
+  ORDER_STATUS_STEPS,
+  canCancelOrder,
+  getNextProgressStatus,
+  getOrderStatusLabel,
+  getPaymentMethodLabel,
+} from "@/lib/orders/status";
 import { cn } from "@/lib/utils";
 
-const drivers = [
-  { id: 1, name: "John Driver", status: "Active" },
-  { id: 2, name: "Sarah Delivery", status: "Busy" },
-  { id: 4, name: "Dave Logistics", status: "Active" },
-];
+type VendorOrderRecord = {
+  id: string;
+  customerUid: string;
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  vendorName?: string;
+  items: OrderItem[];
+  subtotalNaira: number;
+  deliveryFeeNaira: number;
+  totalNaira: number;
+  paymentMethod: PaymentMethod;
+  status: OrderStatus;
+  deliveryAddress?: string;
+  driverAssignment?: DriverAssignment;
+  driverPayout?: OrderDriverPayout;
+  executionEvents: OrderExecutionEvent[];
+  deliveryProof?: DeliveryProof;
+  deliveredAt?: number;
+  createdAt: number;
+  updatedAt: number;
+};
+
+type VendorDriverRecord = {
+  uid: string;
+  name: string;
+  status: "pending" | "active" | "inactive";
+  vehicleType?: string;
+  licensePlate?: string;
+  activeOrdersCount: number;
+};
+
+function getStatusBadgeClass(status: OrderStatus) {
+  switch (status) {
+    case "pending":
+      return "bg-yellow-100 text-yellow-700";
+    case "accepted":
+      return "bg-blue-100 text-blue-700";
+    case "preparing":
+      return "bg-indigo-100 text-indigo-700";
+    case "out_for_delivery":
+      return "bg-purple-100 text-purple-700";
+    case "delivered":
+      return "bg-emerald-100 text-emerald-700";
+    case "cancelled":
+      return "bg-red-100 text-red-700";
+    default:
+      return "bg-muted text-muted-foreground";
+  }
+}
+
+function getPrimaryAction(status: OrderStatus) {
+  const nextStatus = getNextProgressStatus(status);
+  if (!nextStatus) {
+    return null;
+  }
+
+  const labels: Record<OrderStatus, string> = {
+    pending: "Review",
+    accepted: "Accept order",
+    preparing: "Start preparing",
+    out_for_delivery: "Dispatch order",
+    delivered: "Mark delivered",
+    cancelled: "Cancel order",
+  };
+
+  return {
+    nextStatus,
+    label: labels[nextStatus],
+  };
+}
 
 export default function OrderDetailPage() {
-  const params = useParams();
-  const [assignedDriver, setAssignedDriver] = useState<string | null>(null);
-  const [status, setStatus] = useState<'Pending' | 'Accepted' | 'Declined' | 'Delivering' | 'Completed'>('Accepted');
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const { toast } = useToast();
+  const orderId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const [order, setOrder] = useState<VendorOrderRecord | null>(null);
+  const [drivers, setDrivers] = useState<VendorDriverRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // Simulation of driver picking up the order
-  useEffect(() => {
-    if (status === 'Accepted') {
-      const timer = setTimeout(() => {
-        setStatus('Delivering');
-      }, 5000);
-      return () => clearTimeout(timer);
+  const loadOrder = useCallback(async () => {
+    if (!orderId) {
+      return null;
     }
-  }, [status]);
+
+    const response = await fetch(`/api/vendor/orders/${orderId}`, { method: "GET" });
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new Error(payload?.error ?? "Unable to load order.");
+    }
+
+    const payload = await response.json();
+    return (payload.order ?? null) as VendorOrderRecord | null;
+  }, [orderId]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const syncOrder = async () => {
+      try {
+        const nextOrder = await loadOrder();
+        if (isMounted) {
+          setOrder(nextOrder);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setOrder(null);
+          toast({
+            title: "Order unavailable",
+            description: error instanceof Error ? error.message : "Unable to load order.",
+            variant: "destructive",
+          });
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void syncOrder();
+    return () => {
+      isMounted = false;
+    };
+  }, [loadOrder, toast]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadDrivers = async () => {
+      try {
+        const response = await fetch("/api/vendor/drivers", { method: "GET" });
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(payload?.error ?? "Unable to load drivers.");
+        }
+
+        if (isMounted) {
+          setDrivers((payload?.drivers ?? []) as VendorDriverRecord[]);
+        }
+      } catch {
+        if (isMounted) {
+          setDrivers([]);
+        }
+      }
+    };
+
+    void loadDrivers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const activeIndex = useMemo(() => {
+    if (!order || order.status === "cancelled") {
+      return -1;
+    }
+
+    return ORDER_STATUS_STEPS.findIndex((step) => step.key === order.status);
+  }, [order]);
+
+  const primaryAction = order ? getPrimaryAction(order.status) : null;
+  const selectableDrivers = drivers.filter(
+    (driverRecord) =>
+      driverRecord.status === "active" || driverRecord.uid === order?.driverAssignment?.driverUid
+  );
+
+  const handleStatusUpdate = async (nextStatus: OrderStatus) => {
+    if (!orderId) {
+      return;
+    }
+
+    setIsUpdating(true);
+
+    try {
+      const response = await fetch(`/api/vendor/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? "Unable to update order.");
+      }
+
+      const payload = await response.json();
+      setOrder(payload.order ?? null);
+      toast({
+        title: "Order updated",
+        description: `Order ${orderId.slice(0, 8)} is now ${getOrderStatusLabel(nextStatus).toLowerCase()}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Update failed",
+        description: error instanceof Error ? error.message : "Unable to update order.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleAssignDriver = async (value: string) => {
+    if (!orderId) {
+      return;
+    }
+
+    setIsUpdating(true);
+
+    try {
+      const response = await fetch(`/api/vendor/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assignedDriverUid: value === "unassigned" ? null : value,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Unable to assign driver.");
+      }
+
+      setOrder(payload.order ?? null);
+      toast({
+        title: "Driver assignment updated",
+        description:
+          value === "unassigned"
+            ? "The order is no longer assigned to a driver."
+            : "The selected driver is now responsible for this order.",
+      });
+    } catch (error) {
+      toast({
+        title: "Assignment failed",
+        description:
+          error instanceof Error ? error.message : "Unable to assign driver.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-8 max-w-5xl mx-auto">
+        <p className="text-sm text-muted-foreground">Loading order details...</p>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="p-8 max-w-5xl mx-auto">
+        <Card className="border-none shadow-sm p-8 text-center">
+          <CardContent className="p-0 space-y-3">
+            <h2 className="text-xl font-bold">Order not found</h2>
+            <p className="text-muted-foreground">This order is no longer available in your vendor queue.</p>
+            <Button className="rounded-xl" onClick={() => router.push("/dashboard/vendor/orders")}>
+              Back to Orders
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8 text-foreground">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div>
-          <h1 className="text-3xl font-bold font-headline">Order {params.id || "#AQ-5521"}</h1>
-          <p className="text-muted-foreground">Placed on Oct 24, 2024 at 14:20 PM</p>
+        <div className="min-w-0">
+          <h1 className="text-3xl font-bold font-headline">Order {order.id.slice(0, 8)}</h1>
+          <p className="text-muted-foreground">
+            Placed{" "}
+            {new Date(order.createdAt).toLocaleString("en-NG", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })}
+          </p>
         </div>
-        <Badge 
-          className={`ml-auto px-4 py-1 text-sm font-bold border-none ${
-            status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-            status === 'Accepted' ? 'bg-blue-100 text-blue-700' :
-            status === 'Delivering' ? 'bg-purple-100 text-purple-700' :
-            status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
-            'bg-red-100 text-red-700'
-          }`}
+        <Badge
+          className={cn(
+            "sm:ml-auto px-4 py-1 text-sm font-bold border-none w-fit",
+            getStatusBadgeClass(order.status)
+          )}
         >
-          {status}
+          {getOrderStatusLabel(order.status)}
         </Badge>
       </div>
 
@@ -72,21 +359,22 @@ export default function OrderDetailPage() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-6">
-                {[
-                  { name: "Premium Bottled Water (Box of 12)", qty: 2, price: 12.50, subtotal: 25.00 },
-                  { name: "Bulk Dispenser (19L)", qty: 1, price: 20.00, subtotal: 20.00 },
-                ].map((item, i) => (
-                  <div key={i} className="flex justify-between items-center group">
+                {order.items.map((item) => (
+                  <div key={item.productId} className="flex justify-between items-center gap-4">
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 bg-muted rounded-xl flex items-center justify-center text-primary font-bold">
-                        {item.qty}x
+                        {item.quantity}x
                       </div>
                       <div>
                         <p className="font-bold text-sm">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">₦{item.price.toLocaleString()} per unit</p>
+                        <p className="text-xs text-muted-foreground">
+                          ₦{item.unitPriceNaira.toLocaleString()} per unit
+                        </p>
                       </div>
                     </div>
-                    <p className="font-bold text-sm">₦{item.subtotal.toLocaleString()}</p>
+                    <p className="font-bold text-sm">
+                      ₦{(item.unitPriceNaira * item.quantity).toLocaleString()}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -94,70 +382,102 @@ export default function OrderDetailPage() {
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">₦45.00</span>
+                  <span className="font-medium">₦{order.subtotalNaira.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Delivery Fee</span>
-                  <span className="font-medium">₦0.00</span>
+                  <span className="font-medium">₦{order.deliveryFeeNaira.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span className="text-primary">₦45.00</span>
+                  <span className="text-primary">₦{order.totalNaira.toLocaleString()}</span>
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="bg-muted/10 p-4 border-t flex gap-3">
-              <div className="flex w-full gap-3">
-                <Button 
-                  className={cn(
-                    "flex-1 h-12 rounded-xl gap-2",
-                    status === 'Accepted' ? "bg-green-600" : "bg-green-600 hover:bg-green-700",
-                    status !== 'Pending' && "opacity-50 cursor-not-allowed"
-                  )}
-                  disabled={status !== 'Pending'}
-                  onClick={() => setStatus('Accepted')}
-                >
-                  <CheckCircle className="h-4 w-4" /> Accept Order
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className={cn(
-                    "flex-1 h-12 rounded-xl gap-2",
-                    status === 'Declined' ? "text-red-600 border-red-200" : "text-red-600 border-red-200 hover:bg-red-50",
-                    status !== 'Pending' && "opacity-50 cursor-not-allowed"
-                  )}
-                  disabled={status !== 'Pending'}
-                  onClick={() => setStatus('Declined')}
-                >
-                  <XCircle className="h-4 w-4" /> Decline
-                </Button>
-              </div>
-            </CardFooter>
           </Card>
 
           <Card className="border-none shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg">Order Timeline</CardTitle>
+              <CardTitle className="text-lg">Fulfillment Timeline</CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-6 space-y-6">
+              {order.status === "cancelled" ? (
+                <div className="rounded-2xl border border-red-100 bg-red-50 p-5 text-red-700">
+                  <p className="font-bold">This order has been cancelled.</p>
+                  <p className="text-sm mt-1">
+                    The order will no longer progress through the delivery workflow.
+                  </p>
+                </div>
+              ) : null}
+
               <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:h-full before:w-0.5 before:bg-muted-foreground/20">
-                {[
-                  { title: "Order Placed", time: "14:20 PM", desc: "Customer Alice Johnson placed the order", active: false },
-                  { title: "Decision", time: status === 'Pending' ? "--:--" : "14:22 PM", desc: status === 'Declined' ? "Order was declined" : "Order accepted by Aqua Pure", active: status === 'Accepted' },
-                  { title: "Delivering", time: status === 'Delivering' ? "14:25 PM" : "--:--", desc: "Driver is on the way to customer", active: status === 'Delivering' },
-                ].map((event, i) => (
-                  <div key={i} className="relative flex items-start gap-8 pl-10">
-                    <div className={`absolute left-[-2px] h-4 w-4 rounded-full border-4 border-white shadow-sm ${event.active ? 'bg-primary ring-4 ring-primary/20' : 'bg-muted-foreground'}`} />
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <h4 className={`font-bold text-sm ${event.active ? 'text-primary' : ''}`}>{event.title}</h4>
-                        <span className="text-xs text-muted-foreground">{event.time}</span>
+                {ORDER_STATUS_STEPS.map((step, index) => {
+                  const done = activeIndex >= 0 && index <= activeIndex;
+                  const active = index === activeIndex;
+
+                  return (
+                    <div key={step.key} className="relative flex items-start gap-8 pl-10">
+                      <div
+                        className={cn(
+                          "absolute left-[-2px] h-4 w-4 rounded-full border-4 border-white shadow-sm",
+                          done ? "bg-primary ring-4 ring-primary/20" : "bg-muted-foreground"
+                        )}
+                      />
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start gap-4">
+                          <h4 className={cn("font-bold text-sm", active && "text-primary")}>
+                            {step.title}
+                          </h4>
+                          {active ? (
+                            <span className="text-xs text-primary font-medium">Current step</span>
+                          ) : done ? (
+                            <span className="text-xs text-muted-foreground">Completed</span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Pending</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{step.description}</p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">{event.desc}</p>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg">Execution Events</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              {order.executionEvents.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 p-4 text-sm text-muted-foreground">
+                  No execution events have been recorded yet.
+                </div>
+              ) : (
+                order.executionEvents
+                  .slice()
+                  .sort((left, right) => right.occurredAt - left.occurredAt)
+                  .map((event) => (
+                    <div key={event.id} className="flex items-start gap-4 rounded-2xl border border-slate-200 p-4">
+                      <Clock3 className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                      <div className="space-y-1">
+                        <p className="font-semibold text-slate-900">
+                          {getOrderExecutionEventLabel(event.type)}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {getOrderExecutionEventDescription(event)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(event.occurredAt).toLocaleString("en-NG", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+              )}
             </CardContent>
           </Card>
         </div>
@@ -165,16 +485,122 @@ export default function OrderDetailPage() {
         <div className="space-y-8">
           <Card className="border-none shadow-sm">
             <CardHeader>
+              <CardTitle className="text-lg">Order Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              <div className="space-y-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Assigned driver
+                </p>
+                <Select
+                  value={order.driverAssignment?.driverUid ?? "unassigned"}
+                  onValueChange={(value) => void handleAssignDriver(value)}
+                  disabled={isUpdating || order.status === "delivered" || order.status === "cancelled"}
+                >
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder="Select driver" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {selectableDrivers.map((driverRecord) => (
+                      <SelectItem key={driverRecord.uid} value={driverRecord.uid}>
+                        {driverRecord.name} • {driverRecord.activeOrdersCount} active
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {order.driverAssignment
+                    ? `Currently assigned to ${order.driverAssignment.driverName}.`
+                    : "Assign a driver before dispatching this order."}
+                </p>
+              </div>
+
+              {primaryAction ? (
+                <Button
+                  className="w-full h-11 rounded-xl gap-2"
+                  disabled={isUpdating}
+                  onClick={() => void handleStatusUpdate(primaryAction.nextStatus)}
+                >
+                  {primaryAction.nextStatus === "out_for_delivery" ? (
+                    <Truck className="h-4 w-4" />
+                  ) : primaryAction.nextStatus === "delivered" ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : (
+                    <Package className="h-4 w-4" />
+                  )}
+                  {isUpdating ? "Saving..." : primaryAction.label}
+                </Button>
+              ) : (
+                <div className="rounded-xl bg-muted/50 p-4 text-sm text-muted-foreground">
+                  This order has reached a final status and no further actions are available.
+                </div>
+              )}
+
+              {canCancelOrder(order.status) && (
+                <Button
+                  variant="outline"
+                  className="w-full h-11 rounded-xl gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                  disabled={isUpdating}
+                  onClick={() => void handleStatusUpdate("cancelled")}
+                >
+                  <XCircle className="h-4 w-4" />
+                  Cancel order
+                </Button>
+              )}
+
+              <div className="rounded-xl border border-border p-4 text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock3 className="h-4 w-4" />
+                  Last updated {formatDistanceToNow(order.updatedAt, { addSuffix: true })}
+                </div>
+              </div>
+
+              {order.driverPayout ? (
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-900">
+                  Driver payout snapshot: ₦{order.driverPayout.amountNaira.toLocaleString("en-NG")} • {order.driverPayout.status}
+                </div>
+              ) : null}
+              {order.deliveryProof ? (
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-900">
+                  <p className="font-semibold">Proof of delivery</p>
+                  <p className="mt-1">Recipient: {order.deliveryProof.recipientName}</p>
+                  <p>
+                    Confirmed{" "}
+                    {new Date(order.deliveryProof.confirmedAt).toLocaleString("en-NG", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
+                  </p>
+                  {order.deliveryProof.note ? (
+                    <p className="mt-1">{order.deliveryProof.note}</p>
+                  ) : null}
+                </div>
+              ) : order.status === "delivered" ? (
+                <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-900">
+                  This order is delivered, but no driver-side proof-of-delivery record was stored.
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm">
+            <CardHeader>
               <CardTitle className="text-lg">Customer Details</CardTitle>
             </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-full bg-muted overflow-hidden">
-                  <img src="https://picsum.photos/seed/alice/100" alt="Customer" className="h-full w-full object-cover" />
+            <CardContent className="p-6 space-y-5">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                  {order.customerName
+                    .split(" ")
+                    .map((part) => part[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase()}
                 </div>
                 <div>
-                  <h4 className="font-bold">Alice Johnson</h4>
-                  <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10 text-[10px]">Premium Member</Badge>
+                  <p className="font-bold">{order.customerName}</p>
+                  <p className="text-xs text-muted-foreground">Customer UID: {order.customerUid.slice(0, 8)}</p>
                 </div>
               </div>
               <Separator />
@@ -182,75 +608,50 @@ export default function OrderDetailPage() {
                 <div className="flex items-start gap-3">
                   <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase font-bold">Contact</p>
-                    <p className="text-sm">+1 (555) 000-8888</p>
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Phone</p>
+                    <p className="text-sm">{order.customerPhone ?? "No phone number saved"}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase font-bold">Delivery Address</p>
-                    <p className="text-sm">123 Ocean View Dr, Blue City, 90210</p>
-                    <Button variant="link" size="sm" className="h-auto p-0 gap-1 text-primary text-xs mt-1">
-                      <ExternalLink className="h-3 w-3" /> View on Map
-                    </Button>
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Email</p>
+                    <p className="text-sm">{order.customerEmail ?? "No email saved"}</p>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm bg-primary/5 border border-primary/10">
+          <Card className="border-none shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Truck className="h-5 w-5 text-primary" /> Logistics Allocation
+                <Receipt className="h-5 w-5 text-primary" /> Delivery Details
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <div className="p-4 bg-white rounded-xl border border-border">
-                {assignedDriver ? (
-                  <div className="space-y-3">
-                    <p className="text-xs text-muted-foreground uppercase font-bold text-center">Assigned Driver</p>
-                    <div className="flex items-center gap-3 justify-center">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                        {assignedDriver[0]}
-                      </div>
-                      <p className="font-bold text-sm">{assignedDriver}</p>
-                    </div>
-                    <Button variant="outline" size="sm" className="w-full text-xs h-8" disabled={status !== 'Accepted'} onClick={() => setAssignedDriver(null)}>Change Driver</Button>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground mb-3">No driver assigned yet</p>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button className="w-full rounded-xl gap-2 h-11" disabled={status !== 'Accepted'}>
-                          Assign Driver <ChevronDown className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-56">
-                        <DropdownMenuLabel>Available Drivers</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {drivers.map((driver) => (
-                          <DropdownMenuItem key={driver.id} onClick={() => setAssignedDriver(driver.name)} className="flex items-center justify-between">
-                            <span>{driver.name}</span>
-                            <Badge variant="outline" className={driver.status === 'Active' ? 'text-green-600 bg-green-50 border-green-100' : 'text-blue-600 bg-blue-50 border-blue-100'}>
-                              {driver.status}
-                            </Badge>
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                )}
+            <CardContent className="p-6 space-y-5">
+              <div className="flex items-start gap-3">
+                <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase font-bold">Address</p>
+                  <p className="text-sm">{order.deliveryAddress ?? "Delivery address unavailable"}</p>
+                </div>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Distance:</span>
-                <span className="font-bold">1.2 km</span>
+              <div className="flex items-start gap-3">
+                <User className="h-4 w-4 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase font-bold">Driver</p>
+                  <p className="text-sm">
+                    {order.driverAssignment?.driverName ?? "No driver assigned"}
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Est. Travel:</span>
-                <span className="font-bold">8 mins</span>
+              <div className="flex items-start gap-3">
+                <Receipt className="h-4 w-4 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase font-bold">Payment Method</p>
+                  <p className="text-sm">{getPaymentMethodLabel(order.paymentMethod)}</p>
+                </div>
               </div>
             </CardContent>
           </Card>

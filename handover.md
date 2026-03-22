@@ -1,0 +1,386 @@
+# WaterDrop MVP Handover
+
+Last updated: 2026-03-15 12:06 (+01:00)  
+Agent: GPT-5 Codex
+
+## Current Phase and Milestone
+- Phase: **5 - Post-MVP productization kickoff**
+- Milestone: MVP hardening is complete. Post-MVP work has started with customer-visible per-order history and delivery exception tracking on top of the live assignment/proof-of-delivery flow; next focus is deeper delivery exceptions, finance/settlement foundations, and production readiness.
+
+## Decisions and Constraints
+- Follow plan sequence strictly: **Phase 0 -> Phase 4**.
+- Preserve current UI system (existing components, fonts, spacing, color tokens).
+- Currency across MVP flows remains **Nigerian Naira (`₦`)**.
+- Driver scope now includes assignment and payout fundamentals; proof-of-delivery, route telemetry, and bank transfer automation remain deferred.
+- COD/manual transfer is the MVP payment mode.
+- Firebase is the backend foundation for MVP.
+- The remaining 8 low `npm audit` findings in the `firebase-admin` transitive tree are an explicitly accepted MVP dependency risk unless a safe upstream fix appears.
+- Any new agent must read and continue from this file before coding.
+- If any file changes are made in a turn, this file must be updated in the same turn.
+
+## Completed
+- [x] Added homepage suspense boundary wrapper to address prerender CSR bailout requirement in [`src/app/page.tsx`](src/app/page.tsx).
+- [x] Added suspense boundary wrappers for all `useSearchParams` route pages:
+  - [`src/app/auth/login/page.tsx`](src/app/auth/login/page.tsx)
+  - [`src/app/auth/verify/page.tsx`](src/app/auth/verify/page.tsx)
+  - [`src/app/vendors/[id]/page.tsx`](src/app/vendors/[id]/page.tsx)
+- [x] Removed incompatible `react-day-picker` icon override causing TypeScript failure in [`src/components/ui/calendar.tsx`](src/components/ui/calendar.tsx).
+- [x] Made build script Windows-safe by changing `build` to `next build` in [`package.json`](package.json).
+- [x] Re-enabled build safety by removing ignored type/lint build bypass settings in [`next.config.ts`](next.config.ts).
+- [x] Added explicit ESLint config for non-interactive lint setup in [`.eslintrc.json`](.eslintrc.json).
+- [x] Switched lint to deterministic CLI mode and installed ESLint dependencies.
+- [x] Stabilized typecheck for clean environments by updating `typecheck` script to `next typegen && tsc --noEmit`.
+- [x] Created initial handover tracking file.
+- [x] Added Firebase env template in [`.env.example`](.env.example).
+- [x] Added base domain schemas in [`src/lib/domain/schemas.ts`](src/lib/domain/schemas.ts).
+- [x] Added Firebase client and admin setup:
+  - [`src/lib/firebase/client.ts`](src/lib/firebase/client.ts)
+  - [`src/lib/firebase/admin.ts`](src/lib/firebase/admin.ts)
+- [x] Added session/auth constants and server helper:
+  - [`src/lib/auth/constants.ts`](src/lib/auth/constants.ts)
+  - [`src/lib/auth/server.ts`](src/lib/auth/server.ts)
+- [x] Added auth API routes:
+  - [`src/app/api/auth/session/route.ts`](src/app/api/auth/session/route.ts)
+  - [`src/app/api/auth/me/route.ts`](src/app/api/auth/me/route.ts)
+  - [`src/app/api/auth/register-profile/route.ts`](src/app/api/auth/register-profile/route.ts)
+  - [`src/app/api/auth/logout/route.ts`](src/app/api/auth/logout/route.ts)
+- [x] Added route protection middleware for `/dashboard/*` and `/admin/*` in [`middleware.ts`](middleware.ts).
+- [x] Replaced simulated login flow with Firebase sign-in + secure session in [`src/app/auth/login/page.tsx`](src/app/auth/login/page.tsx).
+- [x] Replaced simulated registration flow with Firebase account creation + profile registration in [`src/app/auth/register/page.tsx`](src/app/auth/register/page.tsx).
+- [x] Added server-side role enforcement at layout boundaries:
+  - [`src/app/admin/layout.tsx`](src/app/admin/layout.tsx)
+  - [`src/app/dashboard/customer/layout.tsx`](src/app/dashboard/customer/layout.tsx)
+  - [`src/app/dashboard/driver/layout.tsx`](src/app/dashboard/driver/layout.tsx)
+  - [`src/app/dashboard/vendor/layout.tsx`](src/app/dashboard/vendor/layout.tsx)
+- [x] Extracted client dashboard/admin shells to reusable components so server layouts can gate access:
+  - [`src/components/layouts/admin-shell.tsx`](src/components/layouts/admin-shell.tsx)
+  - [`src/components/layouts/driver-shell.tsx`](src/components/layouts/driver-shell.tsx)
+  - [`src/components/layouts/vendor-shell.tsx`](src/components/layouts/vendor-shell.tsx)
+- [x] Hardened authenticated-user lookup to tolerate invalid sessions and expose lightweight profile fields in [`src/lib/auth/server.ts`](src/lib/auth/server.ts).
+- [x] Replaced customer storefront query-param auth simulation with real session detection via `/api/auth/me` and removed stale `?loggedin=true` navigation from:
+  - [`src/app/page.tsx`](src/app/page.tsx)
+  - [`src/app/vendors/[id]/page.tsx`](src/app/vendors/[id]/page.tsx)
+  - [`src/app/cart/page.tsx`](src/app/cart/page.tsx)
+  - [`src/app/dashboard/customer/page.tsx`](src/app/dashboard/customer/page.tsx)
+  - [`src/app/dashboard/customer/orders/page.tsx`](src/app/dashboard/customer/orders/page.tsx)
+- [x] Added persistent vendor/driver domain schemas and Firebase-backed profile APIs:
+  - [`src/lib/domain/schemas.ts`](src/lib/domain/schemas.ts)
+  - [`src/app/api/vendor/profile/route.ts`](src/app/api/vendor/profile/route.ts)
+  - [`src/app/api/driver/profile/route.ts`](src/app/api/driver/profile/route.ts)
+- [x] Replaced vendor/driver onboarding simulation with API-backed submissions:
+  - [`src/app/auth/onboarding/vendor/page.tsx`](src/app/auth/onboarding/vendor/page.tsx)
+  - [`src/app/auth/onboarding/driver/page.tsx`](src/app/auth/onboarding/driver/page.tsx)
+- [x] Replaced vendor/driver dashboard and inventory localStorage setup simulation with backend-backed state:
+  - [`src/app/dashboard/vendor/page.tsx`](src/app/dashboard/vendor/page.tsx)
+  - [`src/app/dashboard/driver/page.tsx`](src/app/dashboard/driver/page.tsx)
+  - [`src/app/dashboard/driver/inventory/page.tsx`](src/app/dashboard/driver/inventory/page.tsx)
+- [x] Started Phase 2 browse/catalog persistence by adding public vendor/product APIs and wiring them into browse pages:
+  - [`src/app/api/vendors/route.ts`](src/app/api/vendors/route.ts)
+  - [`src/app/api/vendors/[id]/products/route.ts`](src/app/api/vendors/[id]/products/route.ts)
+  - [`src/app/page.tsx`](src/app/page.tsx)
+  - [`src/app/vendors/[id]/page.tsx`](src/app/vendors/[id]/page.tsx)
+- [x] Started persistent vendor product catalog creation/listing:
+  - [`src/app/api/vendor/products/route.ts`](src/app/api/vendor/products/route.ts)
+  - [`src/app/dashboard/vendor/products/page.tsx`](src/app/dashboard/vendor/products/page.tsx)
+- [x] Added persistent customer cart and checkout/order APIs:
+  - [`src/app/api/cart/route.ts`](src/app/api/cart/route.ts)
+  - [`src/app/api/orders/route.ts`](src/app/api/orders/route.ts)
+  - [`src/app/api/orders/latest/route.ts`](src/app/api/orders/latest/route.ts)
+- [x] Replaced customer cart/order simulation with API-backed flows:
+  - [`src/app/cart/page.tsx`](src/app/cart/page.tsx)
+  - [`src/app/dashboard/customer/orders/page.tsx`](src/app/dashboard/customer/orders/page.tsx)
+  - [`src/app/dashboard/customer/track-order/page.tsx`](src/app/dashboard/customer/track-order/page.tsx)
+  - [`src/app/vendors/[id]/page.tsx`](src/app/vendors/[id]/page.tsx)
+- [x] Extended shared schemas for persistent cart/order metadata in [`src/lib/domain/schemas.ts`](src/lib/domain/schemas.ts).
+- [x] Added vendor order queue/status management APIs and shared order lifecycle helpers:
+  - [`src/app/api/vendor/orders/route.ts`](src/app/api/vendor/orders/route.ts)
+  - [`src/app/api/vendor/orders/[id]/route.ts`](src/app/api/vendor/orders/[id]/route.ts)
+  - [`src/lib/orders/status.ts`](src/lib/orders/status.ts)
+  - [`src/lib/orders/vendor-order.ts`](src/lib/orders/vendor-order.ts)
+- [x] Replaced vendor order queue/detail simulation with Firestore-backed order management:
+  - [`src/app/dashboard/vendor/orders/page.tsx`](src/app/dashboard/vendor/orders/page.tsx)
+  - [`src/app/dashboard/vendor/orders/[id]/page.tsx`](src/app/dashboard/vendor/orders/[id]/page.tsx)
+- [x] Synced customer order status UIs to live vendor updates and removed fake tracking placeholders:
+  - [`src/app/dashboard/customer/orders/page.tsx`](src/app/dashboard/customer/orders/page.tsx)
+  - [`src/app/dashboard/customer/track-order/page.tsx`](src/app/dashboard/customer/track-order/page.tsx)
+  - [`src/app/api/orders/latest/route.ts`](src/app/api/orders/latest/route.ts)
+- [x] Extended shared schema type exports for order/payment helpers in [`src/lib/domain/schemas.ts`](src/lib/domain/schemas.ts).
+- [x] Added persistent customer checkout preferences schema/helpers and customer preferences API:
+  - [`src/lib/domain/schemas.ts`](src/lib/domain/schemas.ts)
+  - [`src/lib/customer/preferences.ts`](src/lib/customer/preferences.ts)
+  - [`src/app/api/customer/preferences/route.ts`](src/app/api/customer/preferences/route.ts)
+- [x] Replaced checkout defaults with persisted customer address/payment preferences:
+  - [`src/app/cart/page.tsx`](src/app/cart/page.tsx)
+  - [`src/app/dashboard/customer/settings/addresses/page.tsx`](src/app/dashboard/customer/settings/addresses/page.tsx)
+  - [`src/app/dashboard/customer/settings/payments/page.tsx`](src/app/dashboard/customer/settings/payments/page.tsx)
+  - [`src/app/page.tsx`](src/app/page.tsx)
+- [x] Removed public homepage/vendor-detail seeded vendor fallback and switched browse metadata to Firestore-backed vendor/product data:
+  - [`src/app/api/vendors/route.ts`](src/app/api/vendors/route.ts)
+  - [`src/app/api/vendors/[id]/route.ts`](src/app/api/vendors/[id]/route.ts)
+  - [`src/app/api/vendors/[id]/products/route.ts`](src/app/api/vendors/[id]/products/route.ts)
+  - [`src/app/page.tsx`](src/app/page.tsx)
+  - [`src/app/vendors/[id]/page.tsx`](src/app/vendors/[id]/page.tsx)
+- [x] Added shared vendor operational summary types/helper and vendor summary API:
+  - [`src/lib/vendor/summary-types.ts`](src/lib/vendor/summary-types.ts)
+  - [`src/lib/vendor/summary.ts`](src/lib/vendor/summary.ts)
+  - [`src/app/api/vendor/summary/route.ts`](src/app/api/vendor/summary/route.ts)
+- [x] Replaced vendor overview and analytics placeholder cards/charts with Firestore-backed order/product summaries:
+  - [`src/app/dashboard/vendor/page.tsx`](src/app/dashboard/vendor/page.tsx)
+  - [`src/app/dashboard/vendor/analytics/page.tsx`](src/app/dashboard/vendor/analytics/page.tsx)
+- [x] Surfaced live homepage customer cart count and active-order banner state:
+  - [`src/app/page.tsx`](src/app/page.tsx)
+- [x] Added shared customer account summary types/helper and customer account API:
+  - [`src/lib/customer/account-types.ts`](src/lib/customer/account-types.ts)
+  - [`src/lib/customer/account.ts`](src/lib/customer/account.ts)
+  - [`src/app/api/customer/account/route.ts`](src/app/api/customer/account/route.ts)
+- [x] Replaced remaining customer dashboard/profile mock data with live account, preference, and order aggregates:
+  - [`src/app/dashboard/customer/page.tsx`](src/app/dashboard/customer/page.tsx)
+  - [`src/app/dashboard/customer/settings/profile/page.tsx`](src/app/dashboard/customer/settings/profile/page.tsx)
+  - [`src/app/dashboard/customer/settings/page.tsx`](src/app/dashboard/customer/settings/page.tsx)
+- [x] Added vendor product update/delete API for Firestore-backed catalog management:
+  - [`src/app/api/vendor/products/[id]/route.ts`](src/app/api/vendor/products/[id]/route.ts)
+- [x] Replaced vendor product page placeholder actions with live edit/delete/inventory operations:
+  - [`src/app/dashboard/vendor/products/page.tsx`](src/app/dashboard/vendor/products/page.tsx)
+- [x] Extended vendor profile schema and workflow metadata for admin review persistence:
+  - [`src/lib/domain/schemas.ts`](src/lib/domain/schemas.ts)
+- [x] Added admin vendor review types/helper and admin review APIs:
+  - [`src/lib/admin/vendor-review-types.ts`](src/lib/admin/vendor-review-types.ts)
+  - [`src/lib/admin/vendor-review.ts`](src/lib/admin/vendor-review.ts)
+  - [`src/app/api/admin/vendors/route.ts`](src/app/api/admin/vendors/route.ts)
+  - [`src/app/api/admin/vendors/[id]/route.ts`](src/app/api/admin/vendors/[id]/route.ts)
+- [x] Replaced admin vendor applications placeholder queue with live Firestore-backed review actions and notes:
+  - [`src/app/admin/applications/page.tsx`](src/app/admin/applications/page.tsx)
+  - [`src/app/admin/page.tsx`](src/app/admin/page.tsx)
+- [x] Fixed vendor resubmission loop by prefilling onboarding, resetting rejected submissions to pending, and surfacing admin feedback on the vendor dashboard:
+  - [`src/app/auth/onboarding/vendor/page.tsx`](src/app/auth/onboarding/vendor/page.tsx)
+  - [`src/app/api/vendor/profile/route.ts`](src/app/api/vendor/profile/route.ts)
+  - [`src/lib/vendor/summary-types.ts`](src/lib/vendor/summary-types.ts)
+  - [`src/lib/vendor/summary.ts`](src/lib/vendor/summary.ts)
+  - [`src/app/dashboard/vendor/page.tsx`](src/app/dashboard/vendor/page.tsx)
+- [x] Added admin vendor order-history API and replaced remaining vendor/admin placeholder vendor ops surfaces with live Firestore-backed data:
+  - [`src/app/api/admin/vendors/[id]/orders/route.ts`](src/app/api/admin/vendors/[id]/orders/route.ts)
+  - [`src/app/admin/vendors/page.tsx`](src/app/admin/vendors/page.tsx)
+  - [`src/app/admin/vendors/[id]/page.tsx`](src/app/admin/vendors/[id]/page.tsx)
+  - [`src/app/admin/vendors/[id]/orders/page.tsx`](src/app/admin/vendors/[id]/orders/page.tsx)
+  - [`src/app/dashboard/vendor/revenue/page.tsx`](src/app/dashboard/vendor/revenue/page.tsx)
+- [x] Added shared admin operations types/helper and new admin analytics/customers/drivers/orders APIs:
+  - [`src/lib/admin/ops-types.ts`](src/lib/admin/ops-types.ts)
+  - [`src/lib/admin/ops.ts`](src/lib/admin/ops.ts)
+  - [`src/app/api/admin/analytics/route.ts`](src/app/api/admin/analytics/route.ts)
+  - [`src/app/api/admin/orders/route.ts`](src/app/api/admin/orders/route.ts)
+  - [`src/app/api/admin/customers/route.ts`](src/app/api/admin/customers/route.ts)
+  - [`src/app/api/admin/drivers/route.ts`](src/app/api/admin/drivers/route.ts)
+- [x] Replaced the remaining listed admin-lite placeholder pages with live Firestore-backed platform data:
+  - [`src/app/admin/analytics/page.tsx`](src/app/admin/analytics/page.tsx)
+  - [`src/app/admin/analytics/vendors/page.tsx`](src/app/admin/analytics/vendors/page.tsx)
+  - [`src/app/admin/orders/page.tsx`](src/app/admin/orders/page.tsx)
+  - [`src/app/admin/customers/page.tsx`](src/app/admin/customers/page.tsx)
+  - [`src/app/admin/drivers/page.tsx`](src/app/admin/drivers/page.tsx)
+- [x] Added shared admin system snapshot typing/API and rewired the remaining admin placeholder flows to honest live/read-only operational data:
+  - [`src/lib/admin/system-types.ts`](src/lib/admin/system-types.ts)
+  - [`src/app/api/admin/system/route.ts`](src/app/api/admin/system/route.ts)
+  - [`src/app/admin/page.tsx`](src/app/admin/page.tsx)
+  - [`src/app/admin/settings/page.tsx`](src/app/admin/settings/page.tsx)
+  - [`src/app/admin/vendors/new/page.tsx`](src/app/admin/vendors/new/page.tsx)
+- [x] Started dependency remediation by patching Next.js and applying non-breaking `npm audit fix` updates:
+  - [`package.json`](package.json)
+  - [`package-lock.json`](package-lock.json)
+- [x] Fixed role-selection/login redirect leakage and shell sign-out bugs so protected areas route to the correct account type instead of reusing the last session:
+  - [`src/lib/auth/routing.ts`](src/lib/auth/routing.ts)
+  - [`middleware.ts`](middleware.ts)
+  - [`src/app/api/auth/session/route.ts`](src/app/api/auth/session/route.ts)
+  - [`src/app/auth/login/page.tsx`](src/app/auth/login/page.tsx)
+  - [`src/app/admin/layout.tsx`](src/app/admin/layout.tsx)
+  - [`src/app/dashboard/customer/layout.tsx`](src/app/dashboard/customer/layout.tsx)
+  - [`src/app/dashboard/driver/layout.tsx`](src/app/dashboard/driver/layout.tsx)
+  - [`src/app/dashboard/vendor/layout.tsx`](src/app/dashboard/vendor/layout.tsx)
+  - [`src/hooks/use-auth-sign-out.ts`](src/hooks/use-auth-sign-out.ts)
+  - [`src/components/layouts/admin-shell.tsx`](src/components/layouts/admin-shell.tsx)
+  - [`src/components/layouts/driver-shell.tsx`](src/components/layouts/driver-shell.tsx)
+  - [`src/components/layouts/vendor-shell.tsx`](src/components/layouts/vendor-shell.tsx)
+  - [`src/app/dashboard/customer/page.tsx`](src/app/dashboard/customer/page.tsx)
+- [x] Reduced warning-heavy placeholder imports across customer/vendor settings surfaces:
+  - [`src/app/auth/verify/page.tsx`](src/app/auth/verify/page.tsx)
+  - [`src/app/dashboard/customer/settings/page.tsx`](src/app/dashboard/customer/settings/page.tsx)
+  - [`src/app/dashboard/customer/settings/notifications/page.tsx`](src/app/dashboard/customer/settings/notifications/page.tsx)
+  - [`src/app/dashboard/customer/settings/security/page.tsx`](src/app/dashboard/customer/settings/security/page.tsx)
+  - [`src/app/dashboard/vendor/settings/page.tsx`](src/app/dashboard/vendor/settings/page.tsx)
+  - [`src/app/dashboard/vendor/settings/account/page.tsx`](src/app/dashboard/vendor/settings/account/page.tsx)
+  - [`src/app/dashboard/vendor/settings/billing/page.tsx`](src/app/dashboard/vendor/settings/billing/page.tsx)
+  - [`src/app/dashboard/vendor/settings/commissions/page.tsx`](src/app/dashboard/vendor/settings/commissions/page.tsx)
+  - [`src/app/dashboard/vendor/settings/help/page.tsx`](src/app/dashboard/vendor/settings/help/page.tsx)
+  - [`src/app/dashboard/vendor/settings/notifications/page.tsx`](src/app/dashboard/vendor/settings/notifications/page.tsx)
+  - [`src/app/dashboard/vendor/settings/security/page.tsx`](src/app/dashboard/vendor/settings/security/page.tsx)
+- [x] Split admin auth out of the public sign-in/register experience and hardened public role registration against admin escalation:
+  - [`src/components/auth/sign-in-panel.tsx`](src/components/auth/sign-in-panel.tsx)
+  - [`src/app/auth/login/page.tsx`](src/app/auth/login/page.tsx)
+  - [`src/app/auth/admin/page.tsx`](src/app/auth/admin/page.tsx)
+  - [`src/app/auth/register/page.tsx`](src/app/auth/register/page.tsx)
+  - [`src/app/api/auth/register-profile/route.ts`](src/app/api/auth/register-profile/route.ts)
+  - [`src/lib/auth/routing.ts`](src/lib/auth/routing.ts)
+  - [`middleware.ts`](middleware.ts)
+  - [`src/app/admin/layout.tsx`](src/app/admin/layout.tsx)
+  - [`src/app/dashboard/customer/layout.tsx`](src/app/dashboard/customer/layout.tsx)
+  - [`src/app/dashboard/driver/layout.tsx`](src/app/dashboard/driver/layout.tsx)
+  - [`src/app/dashboard/vendor/layout.tsx`](src/app/dashboard/vendor/layout.tsx)
+  - [`src/hooks/use-auth-sign-out.ts`](src/hooks/use-auth-sign-out.ts)
+  - [`src/components/layouts/admin-shell.tsx`](src/components/layouts/admin-shell.tsx)
+  - [`src/app/page.tsx`](src/app/page.tsx)
+- [x] Added shared driver workspace/order-reference types, helpers, and APIs so driver surfaces can consume honest live backend state:
+  - [`src/lib/driver/workspace-types.ts`](src/lib/driver/workspace-types.ts)
+  - [`src/lib/driver/workspace.ts`](src/lib/driver/workspace.ts)
+  - [`src/app/api/driver/workspace/route.ts`](src/app/api/driver/workspace/route.ts)
+  - [`src/app/api/driver/orders/[id]/route.ts`](src/app/api/driver/orders/[id]/route.ts)
+- [x] Replaced the biggest remaining driver placeholder flows with live profile/vendor/order reference data and explicit unsupported states where the backend still has no truth:
+  - [`src/hooks/use-driver-workspace.ts`](src/hooks/use-driver-workspace.ts)
+  - [`src/app/dashboard/driver/page.tsx`](src/app/dashboard/driver/page.tsx)
+  - [`src/app/dashboard/driver/earnings/page.tsx`](src/app/dashboard/driver/earnings/page.tsx)
+  - [`src/app/dashboard/driver/history/page.tsx`](src/app/dashboard/driver/history/page.tsx)
+  - [`src/app/dashboard/driver/profile/page.tsx`](src/app/dashboard/driver/profile/page.tsx)
+  - [`src/app/dashboard/driver/profile/security/page.tsx`](src/app/dashboard/driver/profile/security/page.tsx)
+  - [`src/app/dashboard/driver/orders/[id]/page.tsx`](src/app/dashboard/driver/orders/[id]/page.tsx)
+  - [`src/app/dashboard/driver/navigate/[id]/page.tsx`](src/app/dashboard/driver/navigate/[id]/page.tsx)
+- [x] Reduced auth/navigation latency by removing the extra post-login profile fetch, dropping post-redirect refreshes, and adding route loading skeletons:
+  - [`src/components/auth/sign-in-panel.tsx`](src/components/auth/sign-in-panel.tsx)
+  - [`src/hooks/use-auth-sign-out.ts`](src/hooks/use-auth-sign-out.ts)
+  - [`src/app/dashboard/driver/loading.tsx`](src/app/dashboard/driver/loading.tsx)
+  - [`src/app/admin/loading.tsx`](src/app/admin/loading.tsx)
+- [x] Trimmed additional warning-heavy unused imports across deferred driver placeholder pages:
+  - [`src/app/dashboard/driver/activity/[date]/page.tsx`](src/app/dashboard/driver/activity/[date]/page.tsx)
+  - [`src/app/dashboard/driver/notifications/page.tsx`](src/app/dashboard/driver/notifications/page.tsx)
+  - [`src/app/dashboard/driver/withdraw/page.tsx`](src/app/dashboard/driver/withdraw/page.tsx)
+- [x] Added real driver assignment, commission, and payout persistence so orders can accrue driver balances and vendors can review withdrawals:
+  - [`src/lib/domain/schemas.ts`](src/lib/domain/schemas.ts)
+  - [`src/lib/driver/compensation.ts`](src/lib/driver/compensation.ts)
+  - [`src/lib/driver/workspace-types.ts`](src/lib/driver/workspace-types.ts)
+  - [`src/lib/driver/workspace.ts`](src/lib/driver/workspace.ts)
+  - [`src/app/api/cart/route.ts`](src/app/api/cart/route.ts)
+  - [`src/app/api/vendor/orders/[id]/route.ts`](src/app/api/vendor/orders/[id]/route.ts)
+  - [`src/app/api/vendor/commissions/route.ts`](src/app/api/vendor/commissions/route.ts)
+  - [`src/app/api/vendor/drivers/route.ts`](src/app/api/vendor/drivers/route.ts)
+  - [`src/app/api/vendor/drivers/[id]/route.ts`](src/app/api/vendor/drivers/[id]/route.ts)
+  - [`src/app/api/vendor/drivers/[id]/commission/route.ts`](src/app/api/vendor/drivers/[id]/commission/route.ts)
+  - [`src/app/api/vendor/payout-requests/route.ts`](src/app/api/vendor/payout-requests/route.ts)
+  - [`src/app/api/vendor/payout-requests/[id]/route.ts`](src/app/api/vendor/payout-requests/[id]/route.ts)
+  - [`src/app/api/driver/orders/route.ts`](src/app/api/driver/orders/route.ts)
+  - [`src/app/api/driver/payout-summary/route.ts`](src/app/api/driver/payout-summary/route.ts)
+  - [`src/app/api/driver/payout-requests/route.ts`](src/app/api/driver/payout-requests/route.ts)
+  - [`src/app/api/driver/payout-requests/[id]/route.ts`](src/app/api/driver/payout-requests/[id]/route.ts)
+- [x] Replaced the key remaining driver payout/vendor driver-management mock surfaces with live assignment and payout data:
+  - [`src/app/dashboard/driver/page.tsx`](src/app/dashboard/driver/page.tsx)
+  - [`src/app/dashboard/driver/earnings/page.tsx`](src/app/dashboard/driver/earnings/page.tsx)
+  - [`src/app/dashboard/driver/history/page.tsx`](src/app/dashboard/driver/history/page.tsx)
+  - [`src/app/dashboard/driver/profile/page.tsx`](src/app/dashboard/driver/profile/page.tsx)
+  - [`src/app/dashboard/driver/orders/[id]/page.tsx`](src/app/dashboard/driver/orders/[id]/page.tsx)
+  - [`src/app/dashboard/driver/navigate/[id]/page.tsx`](src/app/dashboard/driver/navigate/[id]/page.tsx)
+  - [`src/app/dashboard/driver/withdraw/page.tsx`](src/app/dashboard/driver/withdraw/page.tsx)
+  - [`src/app/dashboard/driver/withdrawals/page.tsx`](src/app/dashboard/driver/withdrawals/page.tsx)
+  - [`src/app/dashboard/driver/withdrawals/[id]/receipt/page.tsx`](src/app/dashboard/driver/withdrawals/[id]/receipt/page.tsx)
+  - [`src/app/dashboard/vendor/orders/[id]/page.tsx`](src/app/dashboard/vendor/orders/[id]/page.tsx)
+  - [`src/app/dashboard/vendor/drivers/page.tsx`](src/app/dashboard/vendor/drivers/page.tsx)
+  - [`src/app/dashboard/vendor/drivers/[id]/page.tsx`](src/app/dashboard/vendor/drivers/[id]/page.tsx)
+  - [`src/app/dashboard/vendor/drivers/[id]/commission/page.tsx`](src/app/dashboard/vendor/drivers/[id]/commission/page.tsx)
+  - [`src/app/dashboard/vendor/drivers/withdrawals/page.tsx`](src/app/dashboard/vendor/drivers/withdrawals/page.tsx)
+  - [`src/app/dashboard/vendor/settings/commissions/page.tsx`](src/app/dashboard/vendor/settings/commissions/page.tsx)
+- [x] Added live vendor-side driver status mutation so vendors can activate or suspend fleet members from real backend state:
+  - [`src/lib/driver/compensation.ts`](src/lib/driver/compensation.ts)
+  - [`src/app/api/vendor/drivers/[id]/route.ts`](src/app/api/vendor/drivers/[id]/route.ts)
+  - [`src/app/dashboard/vendor/drivers/page.tsx`](src/app/dashboard/vendor/drivers/page.tsx)
+- [x] Replaced the last listed driver placeholder pages with live assignment/payout-derived data and honest unsupported messaging for telemetry that still does not exist:
+  - [`src/app/dashboard/driver/activity/[date]/page.tsx`](src/app/dashboard/driver/activity/[date]/page.tsx)
+  - [`src/app/dashboard/driver/notifications/page.tsx`](src/app/dashboard/driver/notifications/page.tsx)
+- [x] Cleared the remaining listed lint-warning surfaces and moved root font loading to `next/font/google` so the previous warning backlog is gone:
+  - [`src/app/dashboard/vendor/customers/page.tsx`](src/app/dashboard/vendor/customers/page.tsx)
+  - [`src/app/dashboard/vendor/drivers/new/page.tsx`](src/app/dashboard/vendor/drivers/new/page.tsx)
+  - [`src/app/dashboard/vendor/drivers/[id]/page.tsx`](src/app/dashboard/vendor/drivers/[id]/page.tsx)
+  - [`src/app/dashboard/vendor/notifications/page.tsx`](src/app/dashboard/vendor/notifications/page.tsx)
+  - [`src/app/layout.tsx`](src/app/layout.tsx)
+  - [`src/components/mobile-nav.tsx`](src/components/mobile-nav.tsx)
+  - [`src/hooks/use-toast.ts`](src/hooks/use-toast.ts)
+  - [`src/app/api/admin/vendors/[id]/route.ts`](src/app/api/admin/vendors/[id]/route.ts)
+  - [`tailwind.config.ts`](tailwind.config.ts)
+- [x] Added a minimal live proof-of-delivery / execution-event model so delivery arrival and recipient confirmation are now persisted instead of deferred:
+  - [`src/lib/domain/schemas.ts`](src/lib/domain/schemas.ts)
+  - [`src/lib/orders/execution.ts`](src/lib/orders/execution.ts)
+  - [`src/lib/driver/compensation.ts`](src/lib/driver/compensation.ts)
+  - [`src/app/api/vendor/orders/[id]/route.ts`](src/app/api/vendor/orders/[id]/route.ts)
+  - [`src/app/api/driver/orders/[id]/route.ts`](src/app/api/driver/orders/[id]/route.ts)
+  - [`src/app/dashboard/driver/orders/[id]/page.tsx`](src/app/dashboard/driver/orders/[id]/page.tsx)
+  - [`src/app/dashboard/driver/navigate/[id]/page.tsx`](src/app/dashboard/driver/navigate/[id]/page.tsx)
+  - [`src/app/dashboard/vendor/orders/[id]/page.tsx`](src/app/dashboard/vendor/orders/[id]/page.tsx)
+  - [`src/app/dashboard/customer/track-order/page.tsx`](src/app/dashboard/customer/track-order/page.tsx)
+- [x] Removed the unused Genkit AI dependency chain and replaced the vendor product description helper with a local deterministic draft generator:
+  - [`package.json`](package.json)
+  - [`package-lock.json`](package-lock.json)
+  - [`src/app/dashboard/vendor/products/page.tsx`](src/app/dashboard/vendor/products/page.tsx)
+  - Deleted unused AI files:
+    - [`src/ai/dev.ts`](src/ai/dev.ts)
+    - [`src/ai/genkit.ts`](src/ai/genkit.ts)
+    - [`src/ai/flows/generate-product-description-flow.ts`](src/ai/flows/generate-product-description-flow.ts)
+- [x] Documented the accepted remaining dependency risk and removed stale Genkit references from project docs:
+  - [`README.md`](README.md)
+  - [`handover.md`](handover.md)
+- [x] Started Phase 5 by adding customer-visible per-order history and driver-reported failed delivery attempts:
+  - [`src/lib/domain/schemas.ts`](src/lib/domain/schemas.ts)
+  - [`src/lib/orders/execution.ts`](src/lib/orders/execution.ts)
+  - [`src/lib/driver/compensation.ts`](src/lib/driver/compensation.ts)
+  - [`src/app/api/driver/orders/[id]/route.ts`](src/app/api/driver/orders/[id]/route.ts)
+  - [`src/app/api/orders/[id]/route.ts`](src/app/api/orders/[id]/route.ts)
+  - [`src/app/dashboard/customer/orders/page.tsx`](src/app/dashboard/customer/orders/page.tsx)
+  - [`src/app/dashboard/customer/orders/[id]/page.tsx`](src/app/dashboard/customer/orders/[id]/page.tsx)
+  - [`src/app/dashboard/customer/track-order/page.tsx`](src/app/dashboard/customer/track-order/page.tsx)
+  - [`src/app/dashboard/driver/orders/[id]/page.tsx`](src/app/dashboard/driver/orders/[id]/page.tsx)
+- [x] Current gate results:
+  - [x] `npm run typecheck` passes.
+  - [x] `npm run lint` passes.
+  - [x] `npm run build` passes in this environment.
+
+## In Progress
+- [ ] Phase 5 continuation: extend the new order-history/exceptions foundation into richer delivery exception handling, settlement/ledger work, and production-operability improvements.
+
+## Next Up
+- [ ] Extend delivery exceptions beyond the new failed-attempt event into vendor resolution flows such as reschedule, return-to-vendor, and explicit customer-visible exception states.
+- [ ] Decide whether the execution-event model should grow further into photo evidence, OTP confirmation, and richer customer-visible event history across more surfaces.
+- [ ] Start the post-MVP finance foundation: settlement ledger design, vendor payout accounting, and immutable payout/audit records separate from mutable order documents.
+- [ ] Revisit the accepted 8 low `firebase-admin` audit findings only if a non-breaking upstream remediation appears or production/compliance requirements change.
+
+## Known Blockers / Risks
+- Open risk:
+  - Warning cleanup is now complete for the previously listed surfaces and `npm run lint` is clean in this environment; future warnings will likely come from new work rather than the old backlog.
+- Product/browse empty-state risk:
+  - Homepage and vendor detail are now fully Firestore-driven, so empty catalogs depend entirely on approved vendors having active products in Firestore.
+- Order lifecycle risk:
+  - Vendor/customer/admin order feeds are live, driver assignment and payout accrual are stored on orders, and the backend now persists vendor/driver execution events plus recipient-confirmed delivery proof. A basic failed-attempt event is now live too; however, the lifecycle still lacks structured exception resolution, photo evidence, OTP verification, and richer driver telemetry.
+- Vendor compliance asset risk:
+  - Vendor approval status and admin notes are now persisted, but the onboarding document-upload step and admin-side document inspection are still placeholder UI rather than stored assets.
+- Driver telemetry risk:
+  - Admin drivers now reflect real driver profiles and loaded stock, driver-facing workspace/earnings/withdrawal pages now consume assigned-order and payout-request truth, and vendor driver-management surfaces are live for dispatch/payout review; however, delivery performance scores, ratings, navigation telemetry, confirmation codes, and bank-transfer settlement automation are still not captured in the backend.
+- Customer account risk:
+  - Core customer dashboard/profile data is now live, but several notifications/security/help surfaces still remain mostly placeholder-level UX even though their warning-heavy imports were cleaned up this turn.
+- Security risk:
+  - `npm audit` is down to 8 low-severity vulnerabilities after removing the unused Genkit stack; the remaining findings now sit only in the `firebase-admin` tree, and the audit tool still suggests a semver-major move to `firebase-admin@10.3.0`, which needs deliberate review rather than blind application.
+- Admin account provisioning risk:
+  - Admin sign-in is now separated at [`/auth/admin`](/auth/admin) and public role registration no longer accepts `admin`, but there is still no dedicated internal admin invitation/provisioning workflow beyond creating/administering those accounts outside the public registration flow.
+
+## Latest Verification
+- `npm run typecheck`:
+  - Passes on 2026-03-15 after a rerun. As in prior turns, the first `typecheck` attempt immediately after `next typegen` still hit transient missing `.next/types/*` files, but the rerun after a successful build passed cleanly.
+- `npm run lint`:
+  - Passes clean on 2026-03-15 after the Phase 5 customer-history / failed-attempt work.
+- `npm run build`:
+  - Passes on 2026-03-15 in this runtime after adding the customer order-detail route, customer-visible event history, and failed-attempt reporting.
+- `npm audit --json`:
+  - Reports 8 low vulnerabilities, 0 moderate, 0 high, and 0 critical on 2026-03-15. The remaining findings all trace back to `firebase-admin` transitive dependencies.
+
+## Notes for Successor Agent
+- The targeted admin-lite analytics/orders/customers/drivers surfaces are now live, and the remaining admin placeholder flows (`/admin`, `/admin/settings`, `/admin/vendors/new`) now show honest live/read-only operational data instead of fake save flows.
+- The auth flow now keeps admin off the public sign-in/register pages, routes unauthenticated `/admin` access to the dedicated [`/auth/admin`](/auth/admin) page, prevents public profile registration from setting/admin-mutating roles, and keeps shell sign-out buttons clearing the session cookie.
+- Driver dashboard/earnings/history/profile/order-reference/navigation/withdrawal surfaces no longer use fake data. They now consume the shared driver workspace, assigned-order, and payout-request APIs, and vendors can assign drivers plus approve/reject payout requests from live pages.
+- A small auth/perf win landed by using the role returned from `/api/auth/session` directly instead of fetching `/api/auth/me` immediately after login, and by removing post-redirect `router.refresh()` calls in shared sign-in/sign-out helpers.
+- The newest backend slice adds `driverAssignment` and `driverPayout` onto orders, persists vendor/default and per-driver commission configs, stores driver payout requests, and gates `out_for_delivery` behind an assigned active driver. This is wired through new vendor/driver APIs plus the fleet/profile/commission/withdrawal pages.
+- Continue with Phase 4 by deciding whether to add proof-of-delivery/driver execution events and handling the low-severity Genkit/Firebase Admin audit issues without forcing risky downgrades.
+- Continue with Phase 4 by deciding whether the new proof-of-delivery / execution-event slice is enough for MVP or needs one more pass for failed-attempt/photo/OTP support, then handle the low-severity Genkit/Firebase Admin audit issues without forcing risky downgrades.
+- Continue with Phase 4 by deciding whether the new proof-of-delivery / execution-event slice is enough for MVP or needs one more pass for failed-attempt/photo/OTP support, then handle or explicitly accept the remaining low-severity `firebase-admin` audit issues without forcing risky downgrades.
+- The remaining `firebase-admin` audit findings are now explicitly documented as accepted MVP risk in [`README.md`](README.md) and this handoff; do not churn dependency versions further unless the risk posture changes or a safe upstream fix appears.
+- Phase 5 has now begun. The first post-MVP slice added a customer-owned `/api/orders/[id]` route, a new [`/dashboard/customer/orders/[id]`](src/app/dashboard/customer/orders/[id]/page.tsx) detail page, customer-visible execution-event history on the tracking surfaces, and a driver-side failed delivery attempt mutation that records exception notes without inventing fake telemetry or resolution states.
+- Keep this file updated with `Completed`, `In Progress`, `Next Up`, exact command failures, timestamp, and agent name every time files change.

@@ -1,16 +1,14 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowLeft, Percent, Save, Info, DollarSign, User } from 'lucide-react';
+import { ArrowLeft, Percent, Save, Info, DollarSign } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -20,8 +18,7 @@ export default function DriverIndividualCommissionPage() {
   const router = useRouter();
   const { toast } = useToast();
   
-  // Mock driver data
-  const driverName = "John Driver";
+  const [driverName, setDriverName] = useState("Driver");
   
   // State for Bags
   const [bagType, setBagType] = useState<'percentage' | 'fixed'>('percentage');
@@ -30,20 +27,106 @@ export default function DriverIndividualCommissionPage() {
   // State for Packs
   const [packType, setPackType] = useState<'percentage' | 'fixed'>('percentage');
   const [packValue, setPackValue] = useState(15);
+  const [priorityFeeToDriver, setPriorityFeeToDriver] = useState(false);
   
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleSave = () => {
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadConfig = async () => {
+      try {
+        const response = await fetch(`/api/vendor/drivers/${params.id}/commission`, {
+          method: "GET",
+        });
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(payload?.error ?? "Unable to load driver commission settings.");
+        }
+
+        if (isMounted) {
+          setDriverName(payload?.driver?.name ?? "Driver");
+          const config = payload?.override ?? payload?.effectiveConfig;
+          setBagType(config?.bagsRule?.mode ?? 'percentage');
+          setBagValue(config?.bagsRule?.value ?? 15);
+          setPackType(config?.bottledRule?.mode ?? 'percentage');
+          setPackValue(config?.bottledRule?.value ?? 15);
+          setPriorityFeeToDriver(Boolean(config?.priorityFeeToDriver));
+        }
+      } catch (error) {
+        if (isMounted) {
+          toast({
+            title: "Commission settings unavailable",
+            description:
+              error instanceof Error
+                ? error.message
+                : "Unable to load driver commission settings.",
+            variant: "destructive",
+          });
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadConfig();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [params.id, toast]);
+
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
+
+    try {
+      const response = await fetch(`/api/vendor/drivers/${params.id}/commission`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bagsRule: { mode: bagType, value: bagValue },
+          bottledRule: { mode: packType, value: packValue },
+          bulkRule: { mode: packType, value: packValue },
+          otherRule: { mode: packType, value: packValue },
+          priorityFeeToDriver,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Unable to save driver commission settings.");
+      }
+
       setIsSaving(false);
       toast({
         title: "Commission Rates Updated",
         description: `Individual rates for ${driverName} have been successfully saved.`,
       });
       router.push(`/dashboard/vendor/drivers/${params.id}`);
-    }, 1000);
+    } catch (error) {
+      setIsSaving(false);
+      toast({
+        title: "Save failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Unable to save driver commission settings.",
+        variant: "destructive",
+      });
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto text-sm text-muted-foreground">
+        Loading driver commission settings...
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8 text-foreground">

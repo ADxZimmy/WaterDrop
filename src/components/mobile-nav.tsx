@@ -4,7 +4,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, ShoppingBag, User, LayoutDashboard, Truck } from 'lucide-react';
+import { Home, ShoppingBag, User, Truck } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 const mobileItems = [

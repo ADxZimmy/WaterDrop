@@ -1,181 +1,413 @@
 "use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { 
-  Store, 
-  Search, 
-  Filter, 
-  MoreHorizontal, 
-  Star, 
-  MapPin, 
-  ShoppingBag, 
-  ArrowUpRight,
-  User,
-  ShieldAlert,
-  XCircle,
+import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  CheckCircle2,
+  Clock3,
+  Eye,
   History,
-  ExternalLink,
-  Plus,
-  CheckCircle2
-} from 'lucide-react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+  MoreHorizontal,
+  Search,
+  Store,
+  TrendingUp,
+  XCircle,
+} from "lucide-react";
+import type { AdminVendorReviewRecord } from "@/lib/admin/vendor-review-types";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-const initialVendors = [
-  { id: 1, name: "Aqua Pure Factory", owner: "John Doe", status: "Active", orders: 1204, rating: 4.8, revenue: "₦4,250,000", joined: "May 2024" },
-  { id: 2, name: "Blue Wave Distro", owner: "Sarah Smith", status: "Active", orders: 890, rating: 4.5, revenue: "₦2,820,000", joined: "Jun 2024" },
-  { id: 3, name: "Crystal Spring", owner: "Michael Scott", status: "Warning", orders: 450, rating: 3.9, revenue: "₦1,240,000", joined: "Jul 2024" },
-  { id: 4, name: "Oasis Flow", owner: "Janice Miller", status: "Active", orders: 670, rating: 4.7, revenue: "₦1,980,000", joined: "Aug 2024" },
-];
+type AdminVendorsResponse = {
+  vendors: AdminVendorReviewRecord[];
+};
+
+type StatusFilter = "all" | AdminVendorReviewRecord["status"];
+
+function getStatusLabel(status: AdminVendorReviewRecord["status"]) {
+  if (status === "approved") {
+    return "Approved";
+  }
+
+  if (status === "rejected") {
+    return "Rejected";
+  }
+
+  return "Pending";
+}
+
+function getStatusClassName(status: AdminVendorReviewRecord["status"]) {
+  if (status === "approved") {
+    return "bg-emerald-100 text-emerald-700";
+  }
+
+  if (status === "rejected") {
+    return "bg-rose-100 text-rose-700";
+  }
+
+  return "bg-amber-100 text-amber-700";
+}
+
+function formatNaira(value: number) {
+  return `₦${value.toLocaleString("en-NG")}`;
+}
+
+function formatDate(timestamp: number | null) {
+  if (!timestamp) {
+    return "Unknown";
+  }
+
+  return new Date(timestamp).toLocaleDateString("en-NG", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function getInitials(name: string) {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2);
+
+  if (parts.length === 0) {
+    return "VD";
+  }
+
+  return parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
+}
 
 export default function AdminVendorsPage() {
-  const [vendors, setVendors] = useState(initialVendors);
-  const { toast } = useToast();
+  const [vendors, setVendors] = useState<AdminVendorReviewRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
-  const handleUpdateStatus = (id: number, newStatus: string) => {
-    setVendors(prev => prev.map(v => v.id === id ? { ...v, status: newStatus } : v));
-    toast({
-      title: "Vendor Status Updated",
-      description: `Vendor has been set to ${newStatus}.`,
-      variant: newStatus === 'Suspended' ? 'destructive' : 'default',
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadVendors = async () => {
+      try {
+        const response = await fetch("/api/admin/vendors", { method: "GET" });
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          throw new Error(payload?.error ?? "Unable to load vendors.");
+        }
+
+        const payload: AdminVendorsResponse = await response.json();
+        if (isMounted) {
+          setVendors(payload.vendors ?? []);
+          setError(null);
+        }
+      } catch (fetchError) {
+        if (isMounted) {
+          setVendors([]);
+          setError(
+            fetchError instanceof Error
+              ? fetchError.message
+              : "Unable to load vendors."
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadVendors();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const stats = useMemo(
+    () => ({
+      total: vendors.length,
+      approved: vendors.filter((vendor) => vendor.status === "approved").length,
+      pending: vendors.filter((vendor) => vendor.status === "pending").length,
+      rejected: vendors.filter((vendor) => vendor.status === "rejected").length,
+      revenueNaira: vendors.reduce(
+        (sum, vendor) => sum + vendor.revenueNaira,
+        0
+      ),
+    }),
+    [vendors]
+  );
+
+  const filteredVendors = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return vendors.filter((vendor) => {
+      const matchesSearch =
+        query.length === 0 ||
+        vendor.businessName.toLowerCase().includes(query) ||
+        vendor.ownerName.toLowerCase().includes(query) ||
+        vendor.ownerEmail.toLowerCase().includes(query) ||
+        vendor.vendorId.toLowerCase().includes(query);
+
+      const matchesStatus =
+        statusFilter === "all" || vendor.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
     });
-  };
+  }, [search, statusFilter, vendors]);
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-slate-900">Partner Vendors</h1>
-          <p className="text-slate-500">Managing all verified water suppliers on the platform.</p>
+          <h1 className="text-3xl font-bold font-headline text-slate-900">
+            Partner Vendors
+          </h1>
+          <p className="text-slate-500">
+            Live directory of vendor applications, approvals, and operating
+            stores.
+          </p>
         </div>
-        <Link href="/admin/vendors/new">
-          <Button className="rounded-xl h-11 px-6 shadow-lg shadow-primary/20 gap-2">
-            <Plus className="h-4 w-4" /> Add New Vendor
+        <Link href="/admin/applications">
+          <Button className="rounded-xl h-11 px-6 shadow-lg shadow-primary/20">
+            Open Review Queue
           </Button>
         </Link>
       </div>
 
-      <div className="flex gap-4 items-center">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <Card className="border-none shadow-sm rounded-3xl bg-white">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase font-bold tracking-widest text-slate-400">
+                  Total Vendors
+                </p>
+                <h3 className="text-3xl font-bold text-slate-900 mt-2">
+                  {stats.total}
+                </h3>
+              </div>
+              <div className="h-11 w-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                <Store className="h-5 w-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm rounded-3xl bg-white">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase font-bold tracking-widest text-slate-400">
+                  Approved
+                </p>
+                <h3 className="text-3xl font-bold text-emerald-600 mt-2">
+                  {stats.approved}
+                </h3>
+              </div>
+              <div className="h-11 w-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm rounded-3xl bg-white">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase font-bold tracking-widest text-slate-400">
+                  Awaiting Review
+                </p>
+                <h3 className="text-3xl font-bold text-amber-600 mt-2">
+                  {stats.pending}
+                </h3>
+                <p className="text-xs text-slate-500 mt-2">
+                  {stats.rejected} previously rejected
+                </p>
+              </div>
+              <div className="h-11 w-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <Clock3 className="h-5 w-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm rounded-3xl bg-slate-900 text-white">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase font-bold tracking-widest text-slate-400">
+                  Gross Vendor Revenue
+                </p>
+                <h3 className="text-3xl font-bold mt-2">
+                  {formatNaira(stats.revenueNaira)}
+                </h3>
+              </div>
+              <div className="h-11 w-11 rounded-2xl bg-white/10 text-primary flex items-center justify-center">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input placeholder="Search vendors by name, ID or owner..." className="pl-10 h-11 rounded-xl bg-white border-slate-200" />
+          <Input
+            placeholder="Search by business name, owner, email, or vendor ID..."
+            className="pl-10 h-11 rounded-xl bg-white border-slate-200"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
         </div>
-        <Button variant="outline" className="h-11 px-6 rounded-xl bg-white border-slate-200 gap-2">
-          <Filter className="h-4 w-4" /> Filters
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {(["all", "approved", "pending", "rejected"] as const).map(
+            (filterValue) => (
+              <Button
+                key={filterValue}
+                type="button"
+                variant={statusFilter === filterValue ? "default" : "outline"}
+                className="rounded-xl h-10 px-4 capitalize"
+                onClick={() => setStatusFilter(filterValue)}
+              >
+                {filterValue === "all" ? "All statuses" : getStatusLabel(filterValue)}
+              </Button>
+            )
+          )}
+        </div>
       </div>
 
       <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white">
-        <Table>
-          <TableHeader className="bg-slate-50">
-            <TableRow>
-              <TableHead className="pl-8">Vendor</TableHead>
-              <TableHead>Performance</TableHead>
-              <TableHead>Total Orders</TableHead>
-              <TableHead>Revenue Share</TableHead>
-              <TableHead>Joined</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right pr-8">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {vendors.map((vendor) => (
-              <TableRow key={vendor.id} className="group hover:bg-slate-50/50">
-                <TableCell className="pl-8">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 border border-slate-100">
-                      <AvatarImage src={`https://picsum.photos/seed/${vendor.id}/100`} />
-                      <AvatarFallback>{vendor.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-bold text-sm text-slate-900">{vendor.name}</p>
-                      <p className="text-xs text-slate-500">{vendor.owner}</p>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1 text-yellow-500 font-bold text-sm">
-                    <Star className="h-3 w-3 fill-current" /> {vendor.rating}
-                  </div>
-                </TableCell>
-                <TableCell className="font-medium text-slate-700">{vendor.orders.toLocaleString()}</TableCell>
-                <TableCell className="font-bold text-primary">{vendor.revenue}</TableCell>
-                <TableCell className="text-sm text-slate-500">{vendor.joined}</TableCell>
-                <TableCell>
-                  <Badge 
-                    className={`rounded-full px-3 border-none ${
-                      vendor.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 
-                      vendor.status === 'Warning' ? 'bg-amber-100 text-amber-700' : 
-                      'bg-rose-100 text-rose-700'
-                    }`}
-                  >
-                    {vendor.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right pr-8">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl border-slate-100">
-                      <DropdownMenuItem className="gap-2 cursor-pointer" asChild>
-                        <Link href={`/admin/vendors/${vendor.id}`}>
-                          <User className="h-4 w-4" /> View Profile
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2 cursor-pointer" asChild>
-                        <Link href={`/admin/vendors/${vendor.id}/orders`}>
-                          <History className="h-4 w-4" /> Order History
-                        </Link>
-                      </DropdownMenuItem>
-                      
-                      {vendor.status === 'Warning' ? (
-                        <DropdownMenuItem 
-                          className="gap-2 text-emerald-600 cursor-pointer"
-                          onClick={() => handleUpdateStatus(vendor.id, 'Active')}
-                        >
-                          <CheckCircle2 className="h-4 w-4" /> Remove Warning
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem 
-                          className="gap-2 text-amber-600 cursor-pointer"
-                          onClick={() => handleUpdateStatus(vendor.id, 'Warning')}
-                        >
-                          <ShieldAlert className="h-4 w-4" /> Issue Warning
-                        </DropdownMenuItem>
-                      )}
-
-                      {vendor.status === 'Suspended' ? (
-                        <DropdownMenuItem 
-                          className="gap-2 text-emerald-600 cursor-pointer"
-                          onClick={() => handleUpdateStatus(vendor.id, 'Active')}
-                        >
-                          <CheckCircle2 className="h-4 w-4" /> Unsuspend Vendor
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem 
-                          className="gap-2 text-rose-600 cursor-pointer"
-                          onClick={() => handleUpdateStatus(vendor.id, 'Suspended')}
-                        >
-                          <XCircle className="h-4 w-4" /> Suspend Vendor
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+        {isLoading ? (
+          <div className="p-8 text-sm text-slate-500">Loading vendor directory...</div>
+        ) : error ? (
+          <div className="p-10 text-center space-y-3">
+            <h2 className="text-xl font-bold text-slate-900">
+              Vendor directory unavailable
+            </h2>
+            <p className="text-sm text-slate-500">{error}</p>
+          </div>
+        ) : filteredVendors.length === 0 ? (
+          <div className="p-10 text-center space-y-3">
+            <h2 className="text-xl font-bold text-slate-900">No vendors match this view</h2>
+            <p className="text-sm text-slate-500">
+              Try another search term or switch to a different status filter.
+            </p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader className="bg-slate-50">
+              <TableRow>
+                <TableHead className="pl-8">Vendor</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Total Orders</TableHead>
+                <TableHead>Gross Revenue</TableHead>
+                <TableHead>Catalog</TableHead>
+                <TableHead>Submitted</TableHead>
+                <TableHead className="text-right pr-8">Action</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filteredVendors.map((vendor) => (
+                <TableRow key={vendor.vendorId} className="group hover:bg-slate-50/50">
+                  <TableCell className="pl-8">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar className="h-10 w-10 border border-slate-100">
+                        <AvatarFallback className="bg-slate-100 text-slate-700 font-semibold">
+                          {getInitials(vendor.businessName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm text-slate-900 truncate">
+                          {vendor.businessName}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate">
+                          {vendor.ownerName}
+                          {vendor.ownerEmail ? ` • ${vendor.ownerEmail}` : ""}
+                        </p>
+                        {vendor.businessType ? (
+                          <p className="text-[10px] uppercase tracking-widest text-slate-400 mt-1">
+                            {vendor.businessType}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={`rounded-full px-3 border-none ${getStatusClassName(vendor.status)}`}>
+                      {getStatusLabel(vendor.status)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-medium text-slate-700">
+                    {vendor.totalOrders.toLocaleString("en-NG")}
+                  </TableCell>
+                  <TableCell className="font-bold text-primary">
+                    {formatNaira(vendor.revenueNaira)}
+                  </TableCell>
+                  <TableCell className="text-sm text-slate-500">
+                    {vendor.activeProductCount} active / {vendor.productCount} total
+                  </TableCell>
+                  <TableCell className="text-sm text-slate-500">
+                    {formatDate(vendor.submittedAt)}
+                  </TableCell>
+                  <TableCell className="text-right pr-8">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl border-slate-100">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/vendors/${vendor.vendorId}`}>
+                            <Eye className="h-4 w-4" />
+                            View Profile
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/vendors/${vendor.vendorId}/orders`}>
+                            <History className="h-4 w-4" />
+                            Order History
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin/applications">
+                            {vendor.status === "rejected" ? (
+                              <XCircle className="h-4 w-4 text-rose-600" />
+                            ) : (
+                              <Clock3 className="h-4 w-4 text-amber-600" />
+                            )}
+                            Open Review Queue
+                          </Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </Card>
     </div>
   );

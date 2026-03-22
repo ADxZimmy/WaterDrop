@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Building2, 
@@ -21,6 +21,23 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+
+type VendorProfileResponse = {
+  profile: null | {
+    businessName: string;
+    businessType?: string;
+    establishmentYear?: number;
+    address?: string;
+    nafdacNumber?: string;
+    cacNumber?: string;
+    taxId?: string;
+    description?: string;
+    deliveryRadiusKm?: number;
+    status: 'pending' | 'approved' | 'rejected';
+    reviewNotes?: string;
+  };
+};
 
 const steps = [
   { id: 1, name: 'Business Info', icon: Building2 },
@@ -31,13 +48,108 @@ const steps = [
 
 export default function VendorOnboarding() {
   const [currentStep, setCurrentStep] = useState(1);
+  const [form, setForm] = useState({
+    businessName: '',
+    businessType: '',
+    establishmentYear: '',
+    address: '',
+    nafdacNumber: '',
+    cacNumber: '',
+    taxId: '',
+    description: '',
+    deliveryRadiusKm: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const router = useRouter();
+  const { toast } = useToast();
 
-  const handleNext = () => {
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadExistingProfile = async () => {
+      try {
+        const response = await fetch('/api/vendor/profile', { method: 'GET' });
+        if (!response.ok) {
+          throw new Error('Unable to load existing vendor profile.');
+        }
+
+        const payload: VendorProfileResponse = await response.json();
+        if (isMounted && payload.profile) {
+          setForm({
+            businessName: payload.profile.businessName ?? '',
+            businessType: payload.profile.businessType ?? '',
+            establishmentYear:
+              typeof payload.profile.establishmentYear === 'number'
+                ? String(payload.profile.establishmentYear)
+                : '',
+            address: payload.profile.address ?? '',
+            nafdacNumber: payload.profile.nafdacNumber ?? '',
+            cacNumber: payload.profile.cacNumber ?? '',
+            taxId: payload.profile.taxId ?? '',
+            description: payload.profile.description ?? '',
+            deliveryRadiusKm:
+              typeof payload.profile.deliveryRadiusKm === 'number'
+                ? String(payload.profile.deliveryRadiusKm)
+                : '',
+          });
+        }
+      } catch {
+        // Ignore profile bootstrap failures and allow a fresh submission.
+      } finally {
+        if (isMounted) {
+          setIsLoadingProfile(false);
+        }
+      }
+    };
+
+    void loadExistingProfile();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleNext = async () => {
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     } else {
-      router.push('/dashboard/vendor');
+      try {
+        setIsSubmitting(true);
+        const response = await fetch('/api/vendor/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessName: form.businessName,
+            businessType: form.businessType,
+            establishmentYear: Number(form.establishmentYear),
+            address: form.address,
+            nafdacNumber: form.nafdacNumber,
+            cacNumber: form.cacNumber,
+            taxId: form.taxId,
+            description: form.description,
+            deliveryRadiusKm: Number(form.deliveryRadiusKm),
+          }),
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          throw new Error(payload?.error ?? 'Unable to submit vendor onboarding.');
+        }
+
+        toast({
+          title: 'Application Submitted',
+          description: 'Your vendor profile is now in review.',
+        });
+        router.push('/dashboard/vendor');
+      } catch (error) {
+        toast({
+          title: 'Submission Failed',
+          description: error instanceof Error ? error.message : 'Unable to submit vendor onboarding.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -48,6 +160,14 @@ export default function VendorOnboarding() {
   };
 
   const progress = (currentStep / steps.length) * 100;
+
+  if (isLoadingProfile) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <p className="text-sm text-muted-foreground">Loading your vendor application...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
@@ -94,23 +214,23 @@ export default function VendorOnboarding() {
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="space-y-2">
                   <Label htmlFor="businessName">Registered Business Name</Label>
-                  <Input id="businessName" placeholder="e.g. Blue Crystal Water Ltd" />
+                  <Input id="businessName" placeholder="e.g. Blue Crystal Water Ltd" value={form.businessName} onChange={(e) => setForm((prev) => ({ ...prev, businessName: e.target.value }))} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="businessType">Business Type</Label>
-                    <Input id="businessType" placeholder="e.g. Factory / Distributor" />
+                    <Input id="businessType" placeholder="e.g. Factory / Distributor" value={form.businessType} onChange={(e) => setForm((prev) => ({ ...prev, businessType: e.target.value }))} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="regYear">Year of Establishment</Label>
-                    <Input id="regYear" type="number" placeholder="2024" />
+                    <Input id="regYear" type="number" placeholder="2024" value={form.establishmentYear} onChange={(e) => setForm((prev) => ({ ...prev, establishmentYear: e.target.value }))} />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="address">Physical Address (Factory/Store)</Label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="address" className="pl-10" placeholder="123 Production Way, Industrial Estate" />
+                    <Input id="address" className="pl-10" placeholder="123 Production Way, Industrial Estate" value={form.address} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} />
                   </div>
                 </div>
               </div>
@@ -124,15 +244,15 @@ export default function VendorOnboarding() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="nafdac">NAFDAC Registration Number</Label>
-                  <Input id="nafdac" placeholder="e.g. 01-1234L" />
+                  <Input id="nafdac" placeholder="e.g. 01-1234L" value={form.nafdacNumber} onChange={(e) => setForm((prev) => ({ ...prev, nafdacNumber: e.target.value }))} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cac">CAC / Business Registration Number</Label>
-                  <Input id="cac" placeholder="e.g. RC-000000" />
+                  <Input id="cac" placeholder="e.g. RC-000000" value={form.cacNumber} onChange={(e) => setForm((prev) => ({ ...prev, cacNumber: e.target.value }))} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="taxId">Tax Identification Number (TIN)</Label>
-                  <Input id="taxId" placeholder="e.g. 12345678-0001" />
+                  <Input id="taxId" placeholder="e.g. 12345678-0001" value={form.taxId} onChange={(e) => setForm((prev) => ({ ...prev, taxId: e.target.value }))} />
                 </div>
               </div>
             )}
@@ -161,11 +281,11 @@ export default function VendorOnboarding() {
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="space-y-2">
                   <Label htmlFor="storeDescription">Store Description</Label>
-                  <Textarea id="storeDescription" placeholder="Tell customers about your water source, purification process, and values..." className="min-h-[120px]" />
+                  <Textarea id="storeDescription" placeholder="Tell customers about your water source, purification process, and values..." className="min-h-[120px]" value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="deliveryRadius">Delivery Radius (km)</Label>
-                  <Input id="deliveryRadius" type="number" placeholder="10" />
+                  <Input id="deliveryRadius" type="number" placeholder="10" value={form.deliveryRadiusKm} onChange={(e) => setForm((prev) => ({ ...prev, deliveryRadiusKm: e.target.value }))} />
                 </div>
                 <div className="p-4 bg-primary/5 border border-primary/10 rounded-2xl">
                   <p className="text-xs font-bold text-primary uppercase tracking-wider mb-2">Terms of Service</p>
@@ -188,9 +308,10 @@ export default function VendorOnboarding() {
             </Button>
             <Button 
               onClick={handleNext} 
+              disabled={isSubmitting}
               className="gap-2 rounded-xl px-8 shadow-lg shadow-primary/20"
             >
-              {currentStep === steps.length ? 'Finish & Submit' : 'Continue'} 
+              {currentStep === steps.length ? (isSubmitting ? 'Submitting...' : 'Finish & Submit') : 'Continue'} 
               <ChevronRight className="h-4 w-4" />
             </Button>
           </CardFooter>

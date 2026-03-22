@@ -1,202 +1,355 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  PieChart, 
-  Users, 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  Info,
+import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  Calendar,
+  Clock3,
   DollarSign,
   ShoppingBag,
   Store,
-  Calendar,
-  Star,
-  Clock
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+  Truck,
+  Users,
+} from "lucide-react";
+import type { AdminAnalyticsPayload } from "@/lib/admin/ops-types";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  PieChart as RePieChart, Pie, Cell 
-} from 'recharts';
-import { cn } from "@/lib/utils";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart as RePieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { cn } from "@/lib/utils";
 
-const dataSets: Record<string, any[]> = {
-  'D': [
-    { name: '08:00', rev: 45000, orders: 120 },
-    { name: '10:00', rev: 52000, orders: 145 },
-    { name: '12:00', rev: 88000, orders: 230 },
-    { name: '14:00', rev: 61000, orders: 180 },
-    { name: '16:00', rev: 59000, orders: 175 },
-    { name: '18:00', rev: 82000, orders: 240 },
-  ],
-  'W': [
-    { name: 'Mon', rev: 120000, orders: 350 },
-    { name: 'Tue', rev: 145000, orders: 410 },
-    { name: 'Wed', rev: 110000, orders: 320 },
-    { name: 'Thu', rev: 165000, orders: 480 },
-    { name: 'Fri', rev: 190000, orders: 550 },
-    { name: 'Sat', rev: 245000, orders: 720 },
-    { name: 'Sun', rev: 210000, orders: 610 },
-  ],
-  '1m': [
-    { name: 'Wk 1', rev: 350000, orders: 900 },
-    { name: 'Wk 2', rev: 420000, orders: 1150 },
-    { name: 'Wk 3', rev: 380000, orders: 1050 },
-    { name: 'Wk 4', rev: 550000, orders: 1400 },
-  ],
-  '3m': [
-    { name: 'Oct', rev: 1450000, orders: 4200 },
-    { name: 'Nov', rev: 1520000, orders: 4450 },
-    { name: 'Dec', rev: 1880000, orders: 5300 },
-  ],
-  '6m': [
-    { name: 'Jul', rev: 450000, orders: 1200 },
-    { name: 'Aug', rev: 520000, orders: 1450 },
-    { name: 'Sep', rev: 480000, orders: 1300 },
-    { name: 'Oct', rev: 610000, orders: 1800 },
-    { name: 'Nov', rev: 590000, orders: 1750 },
-    { name: 'Dec', rev: 820000, orders: 2400 },
-  ],
-  '1y': [
-    { name: 'H1', rev: 6450000, orders: 18200 },
-    { name: 'H2', rev: 7800000, orders: 22450 },
-  ],
+const COLORS = ["#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#14b8a6"];
+
+type Period = "days" | "weeks" | "months";
+type AdminAnalyticsResponse = {
+  analytics: AdminAnalyticsPayload;
 };
 
-const categoryData = [
-  { name: 'Bottled Water', value: 45 },
-  { name: 'Sachet Bags', value: 35 },
-  { name: 'Bulk Dispenser', value: 15 },
-  { name: 'Accessories', value: 5 },
-];
+function formatNaira(value: number) {
+  return `₦${value.toLocaleString("en-NG")}`;
+}
 
-const topVendors = [
-  { name: "Aqua Pure Factory", revenue: "₦1,245,000", orders: 420, rating: 4.9 },
-  { name: "Blue Wave Distro", revenue: "₦920,000", orders: 310, rating: 4.8 },
-  { name: "Crystal Spring", revenue: "₦880,000", orders: 280, rating: 4.7 },
-  { name: "Oasis Flow", revenue: "₦750,000", orders: 240, rating: 4.5 },
-];
+function formatMinutes(value: number | null) {
+  if (value === null) {
+    return "N/A";
+  }
 
-const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444'];
+  if (value < 60) {
+    return `${value}m`;
+  }
+
+  const hours = value / 60;
+  return `${hours.toFixed(hours >= 10 ? 0 : 1)}h`;
+}
+
+function getVendorStatusClassName(status: "pending" | "approved" | "rejected") {
+  if (status === "approved") {
+    return "bg-emerald-100 text-emerald-700";
+  }
+
+  if (status === "rejected") {
+    return "bg-rose-100 text-rose-700";
+  }
+
+  return "bg-amber-100 text-amber-700";
+}
 
 export default function AdminAnalyticsPage() {
-  const [timeRange, setTimeRange] = useState('6m');
+  const [analytics, setAnalytics] = useState<AdminAnalyticsPayload | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [period, setPeriod] = useState<Period>("months");
 
-  const revenueData = useMemo(() => dataSets[timeRange] || dataSets['6m'], [timeRange]);
+  useEffect(() => {
+    let isMounted = true;
 
-  const totalRev = useMemo(() => {
-    const sum = revenueData.reduce((acc, curr) => acc + curr.rev, 0);
-    return sum.toLocaleString();
-  }, [revenueData]);
+    const loadAnalytics = async () => {
+      try {
+        const response = await fetch("/api/admin/analytics", { method: "GET" });
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          throw new Error(payload?.error ?? "Unable to load admin analytics.");
+        }
+
+        const payload: AdminAnalyticsResponse = await response.json();
+        if (isMounted) {
+          setAnalytics(payload.analytics ?? null);
+          setError(null);
+        }
+      } catch (fetchError) {
+        if (isMounted) {
+          setAnalytics(null);
+          setError(
+            fetchError instanceof Error
+              ? fetchError.message
+              : "Unable to load admin analytics."
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadAnalytics();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const chartData = analytics?.charts[period] ?? [];
+  const topVendors = useMemo(
+    () => (analytics?.vendorRankings ?? []).slice(0, 5),
+    [analytics]
+  );
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto p-8 text-sm text-muted-foreground">
+        Loading platform analytics...
+      </div>
+    );
+  }
+
+  if (!analytics || error) {
+    return (
+      <div className="max-w-4xl mx-auto p-8">
+        <Card className="border-none shadow-sm rounded-3xl">
+          <CardContent className="p-8 space-y-4">
+            <h1 className="text-2xl font-bold text-slate-900">
+              Platform analytics unavailable
+            </h1>
+            <p className="text-sm text-slate-500">
+              {error ?? "Unable to load platform analytics."}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-slate-900">Platform Insights</h1>
-          <p className="text-slate-500">Visualizing global marketplace growth and metrics.</p>
+          <h1 className="text-3xl font-bold font-headline text-slate-900">
+            Platform Insights
+          </h1>
+          <p className="text-slate-500">
+            Live marketplace revenue, catalog mix, and operational health.
+          </p>
         </div>
-        
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="w-[140px] rounded-xl h-11 border-slate-200 bg-white shadow-sm font-bold text-slate-700">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-primary" />
-              <SelectValue placeholder="Range" />
-            </div>
-          </SelectTrigger>
-          <SelectContent className="rounded-xl shadow-xl border-slate-100">
-            <SelectItem value="D" className="font-bold">D (Day)</SelectItem>
-            <SelectItem value="W" className="font-bold">W (Week)</SelectItem>
-            <SelectItem value="1m" className="font-bold">1M</SelectItem>
-            <SelectItem value="3m" className="font-bold">3M</SelectItem>
-            <SelectItem value="6m" className="font-bold">6M</SelectItem>
-            <SelectItem value="1y" className="font-bold">1Y</SelectItem>
-          </SelectContent>
-        </Select>
+
+        <div className="flex gap-1 bg-muted/50 p-1 rounded-xl">
+          {(["days", "weeks", "months"] as const).map((value) => (
+            <Button
+              key={value}
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "rounded-lg h-8 px-4 capitalize",
+                period === value && "bg-white shadow-sm text-primary font-bold"
+              )}
+              onClick={() => setPeriod(value)}
+            >
+              {value}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        {[
+          {
+            title: "Gross Revenue",
+            value: formatNaira(analytics.summary.grossRevenueNaira),
+            subtitle: `${analytics.summary.totalOrders} total orders`,
+            icon: DollarSign,
+          },
+          {
+            title: "This Month",
+            value: formatNaira(analytics.summary.monthlyRevenueNaira),
+            subtitle: `${analytics.summary.approvedVendors} approved vendors`,
+            icon: Calendar,
+          },
+          {
+            title: "Open Orders",
+            value: analytics.summary.activeOrders.toLocaleString("en-NG"),
+            subtitle: `${analytics.summary.deliveredOrders} delivered`,
+            icon: ShoppingBag,
+          },
+          {
+            title: "Avg. Fulfillment",
+            value: formatMinutes(analytics.summary.averageFulfillmentMinutes),
+            subtitle: `${analytics.summary.totalDrivers} driver profiles`,
+            icon: Clock3,
+          },
+        ].map((stat) => (
+          <Card key={stat.title} className="border-none shadow-sm rounded-3xl bg-white">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    {stat.title}
+                  </p>
+                  <h3 className="text-3xl font-bold text-slate-900 mt-2">
+                    {stat.value}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-2">{stat.subtitle}</p>
+                </div>
+                <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <stat.icon className="h-5 w-5" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="lg:col-span-2 border-none shadow-sm rounded-3xl p-6 bg-white">
           <CardHeader className="px-0 pt-0 flex flex-row items-center justify-between mb-6">
             <div>
-              <CardTitle>Global Revenue</CardTitle>
-              <CardDescription>Consolidated earnings across all vendors ({timeRange.toUpperCase()})</CardDescription>
+              <CardTitle>Marketplace Revenue</CardTitle>
+              <CardDescription>
+                Combined revenue from non-cancelled orders for the selected window
+              </CardDescription>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-slate-900">₦{totalRev}</p>
-              <p className="text-xs text-emerald-600 flex items-center justify-end gap-1">
-                <ArrowUpRight className="h-3 w-3" /> +12.5%
+              <p className="text-2xl font-bold text-slate-900">
+                {formatNaira(
+                  chartData.reduce((sum, point) => sum + point.revenueNaira, 0)
+                )}
+              </p>
+              <p className="text-xs text-slate-500">
+                {chartData.reduce((sum, point) => sum + point.orders, 0)} orders
               </p>
             </div>
           </CardHeader>
-          <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={revenueData}>
-                <defs>
-                  <linearGradient id="colorGlobalRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} tickFormatter={(v) => `₦${v >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
-                  formatter={(value: any) => [`₦${value.toLocaleString()}`, 'Revenue']}
-                />
-                <Area type="monotone" dataKey="rev" stroke="#0ea5e9" strokeWidth={4} fillOpacity={1} fill="url(#colorGlobalRev)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {analytics.summary.totalOrders > 0 ? (
+            <div className="h-[350px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorGlobalRevenue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.12} />
+                      <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "#64748b" }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "#64748b" }}
+                    tickFormatter={(value: number) => `₦${Math.round(value / 1000)}k`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "16px",
+                      border: "none",
+                      boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)",
+                    }}
+                    formatter={(value: number) => [formatNaira(value), "Revenue"]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="revenueNaira"
+                    stroke="#0ea5e9"
+                    strokeWidth={4}
+                    fillOpacity={1}
+                    fill="url(#colorGlobalRevenue)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-[350px] w-full flex items-center justify-center text-center text-sm text-muted-foreground">
+              Revenue analytics will appear once vendors start receiving orders.
+            </div>
+          )}
         </Card>
 
         <Card className="border-none shadow-sm rounded-3xl p-6 bg-white">
           <CardHeader className="px-0 pt-0 mb-6">
-            <CardTitle>Product Distribution</CardTitle>
-            <CardDescription>Sales volume by category</CardDescription>
+            <CardTitle>Active Catalog Mix</CardTitle>
+            <CardDescription>
+              Share of active products by category
+            </CardDescription>
           </CardHeader>
-          <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <RePieChart>
-                <Pie
-                  data={categoryData}
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </RePieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="space-y-4 mt-6">
-            {categoryData.map((cat, i) => (
-              <div key={cat.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[i] }} />
-                  <span className="text-sm font-medium text-slate-600">{cat.name}</span>
-                </div>
-                <span className="text-sm font-bold text-slate-900">{cat.value}%</span>
+          {analytics.categoryDistribution.length > 0 ? (
+            <>
+              <div className="h-[250px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RePieChart>
+                    <Pie
+                      data={analytics.categoryDistribution}
+                      innerRadius={60}
+                      outerRadius={82}
+                      paddingAngle={4}
+                      dataKey="count"
+                    >
+                      {analytics.categoryDistribution.map((entry, index) => (
+                        <Cell
+                          key={entry.name}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => [value, "Active products"]}
+                    />
+                  </RePieChart>
+                </ResponsiveContainer>
               </div>
-            ))}
-          </div>
+              <div className="space-y-4 mt-6">
+                {analytics.categoryDistribution.map((category, index) => (
+                  <div key={category.name} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                      />
+                      <span className="text-sm font-medium text-slate-600">
+                        {category.name}
+                      </span>
+                    </div>
+                    <span className="text-sm font-bold text-slate-900">
+                      {category.value}% ({category.count})
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="h-[250px] w-full flex items-center justify-center text-center text-sm text-muted-foreground">
+              Product categories will populate after vendors add active items.
+            </div>
+          )}
         </Card>
       </div>
 
@@ -205,68 +358,139 @@ export default function AdminAnalyticsPage() {
           <CardHeader className="p-6 border-b border-slate-50 flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-lg">Top Performing Vendors</CardTitle>
-              <CardDescription>Ranked by monthly gross revenue</CardDescription>
+              <CardDescription>Ranked by current month revenue</CardDescription>
             </div>
             <Link href="/admin/analytics/vendors">
-              <Button variant="ghost" size="sm" className="text-primary rounded-lg">View Detailed</Button>
+              <Button variant="ghost" size="sm" className="text-primary rounded-lg">
+                View Detailed
+              </Button>
             </Link>
           </CardHeader>
-          <div className="p-0">
-            {topVendors.map((vendor, i) => (
-              <div key={i} className="flex items-center justify-between p-4 px-6 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 bg-slate-100 rounded-xl flex items-center justify-center text-primary font-bold">
-                    {vendor.name[0]}
+          {topVendors.length === 0 ? (
+            <div className="p-8 text-sm text-slate-500">
+              Vendor rankings will appear once approved vendors start taking orders.
+            </div>
+          ) : (
+            <div className="p-0">
+              {topVendors.map((vendor) => (
+                <div
+                  key={vendor.vendorId}
+                  className="flex items-center justify-between p-4 px-6 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors"
+                >
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="h-10 w-10 bg-slate-100 rounded-xl flex items-center justify-center text-primary font-bold shrink-0">
+                      {vendor.businessName[0]}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-slate-900 truncate">
+                        {vendor.businessName}
+                      </p>
+                      <p className="text-xs text-slate-500 truncate">
+                        {vendor.ownerName} • {vendor.totalOrders} orders
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-bold text-sm text-slate-900">{vendor.name}</p>
-                    <p className="text-xs text-slate-500">{vendor.orders} Orders this month</p>
+                  <div className="text-right shrink-0">
+                    <p className="font-bold text-sm text-primary">
+                      {formatNaira(vendor.monthlyRevenueNaira)}
+                    </p>
+                    <Badge
+                      className={`mt-1 border-none text-[10px] ${getVendorStatusClassName(vendor.status)}`}
+                    >
+                      {vendor.status}
+                    </Badge>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-sm text-primary">{vendor.revenue}</p>
-                  <div className="flex items-center justify-end gap-1 text-yellow-500 text-[10px] font-bold mt-0.5">
-                    <Star className="h-2.5 w-2.5 fill-current" /> {vendor.rating}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </Card>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 h-fit">
           <Card className="border-none shadow-sm p-6 rounded-3xl bg-slate-900 text-white">
-            <p className="text-xs font-bold opacity-60 uppercase tracking-widest">Active Orders</p>
-            <h3 className="text-4xl font-bold mt-2">1,204</h3>
-            <div className="mt-4 flex items-center gap-2 text-emerald-400 text-xs font-bold">
-              <ArrowUpRight className="h-4 w-4" /> 18.5% growth
+            <p className="text-xs font-bold opacity-60 uppercase tracking-widest">
+              Platform Footprint
+            </p>
+            <div className="mt-5 space-y-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Customers</span>
+                <span className="font-bold">{analytics.summary.totalCustomers}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Drivers</span>
+                <span className="font-bold">{analytics.summary.totalDrivers}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Vendors</span>
+                <span className="font-bold">{analytics.summary.totalVendors}</span>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center gap-2 text-slate-300 text-xs font-bold">
+              <Users className="h-4 w-4 text-primary" />
+              {analytics.summary.activeCustomers} customers have placed orders
             </div>
           </Card>
+
           <Card className="border-none shadow-sm p-6 rounded-3xl bg-primary text-white">
-            <p className="text-xs font-bold opacity-60 uppercase tracking-widest">Avg. Completion</p>
-            <h3 className="text-4xl font-bold mt-2">18m</h3>
+            <p className="text-xs font-bold opacity-70 uppercase tracking-widest">
+              Fulfillment Readiness
+            </p>
+            <div className="mt-5 space-y-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-primary-foreground/70">Approved vendors</span>
+                <span className="font-bold">{analytics.summary.approvedVendors}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-primary-foreground/70">Active drivers</span>
+                <span className="font-bold">{analytics.summary.activeDrivers}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-primary-foreground/70">Cancelled orders</span>
+                <span className="font-bold">{analytics.summary.cancelledOrders}</span>
+              </div>
+            </div>
             <div className="mt-4 flex items-center gap-2 text-white/80 text-xs font-bold">
-              <Clock className="h-4 w-4" /> Optimal Load
+              <Truck className="h-4 w-4" />
+              Avg. order value {formatNaira(analytics.summary.averageOrderValueNaira)}
             </div>
           </Card>
+
           <Card className="border-none shadow-sm p-6 rounded-3xl bg-white sm:col-span-2">
-            <CardTitle className="text-sm mb-4">Regional Order Density</CardTitle>
+            <CardTitle className="text-sm mb-4">Order Status Mix</CardTitle>
             <div className="space-y-4">
-              {[
-                { city: 'Lagos Island', count: 420, percent: 85 },
-                { city: 'Ikeja', count: 310, percent: 62 },
-                { city: 'Lekki Phase 1', count: 120, percent: 24 },
-              ].map((region) => (
-                <div key={region.city} className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-bold text-slate-600">
-                    <span>{region.city}</span>
-                    <span>{region.count} orders</span>
+              {analytics.statusDistribution.map((entry) => {
+                const maxCount = Math.max(
+                  ...analytics.statusDistribution.map((status) => status.count),
+                  1
+                );
+                const percent = Math.round((entry.count / maxCount) * 100);
+
+                return (
+                  <div key={entry.status} className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-bold text-slate-600">
+                      <span>{entry.label}</span>
+                      <span>{entry.count} orders</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-primary rounded-full" style={{ width: `${region.percent}%` }} />
-                  </div>
-                </div>
+                );
+              })}
+            </div>
+            <div className="flex flex-wrap gap-2 mt-6">
+              {analytics.paymentDistribution.map((entry) => (
+                <Badge key={entry.method} variant="outline" className="rounded-full">
+                  {entry.label}: {entry.count}
+                </Badge>
               ))}
+              <Badge variant="outline" className="rounded-full">
+                <Store className="h-3 w-3 mr-1" />
+                {analytics.categoryDistribution.length} active categories
+              </Badge>
             </div>
           </Card>
         </div>

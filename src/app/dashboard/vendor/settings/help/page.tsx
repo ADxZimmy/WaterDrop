@@ -2,8 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { HelpCircle, MessageSquare, BookOpen, ExternalLink, Mail, Phone, ArrowLeft } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { MessageSquare, Mail, Phone, ArrowLeft } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 

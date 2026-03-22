@@ -4,23 +4,84 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Droplets, Mail, Lock, User, ArrowLeft, Phone } from 'lucide-react';
+import { Droplets, Mail, Lock, ArrowLeft, Phone } from 'lucide-react';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import type { PublicUserRole } from "@/lib/auth/routing";
+import { formatRoleLabel, normalizePublicRole, publicAuthRoles } from "@/lib/auth/routing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { getFirebaseClientAuth } from "@/lib/firebase/client";
 
 export default function RegisterPage() {
-  const [role, setRole] = useState<string>('customer');
+  const [role, setRole] = useState<PublicUserRole>('customer');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Redirect to verification page with context
-    router.push(`/auth/verify?role=${role}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`);
+    setIsSubmitting(true);
+
+    try {
+      const credential = await createUserWithEmailAndPassword(
+        getFirebaseClientAuth(),
+        email,
+        password
+      );
+      const idToken = await credential.user.getIdToken();
+
+      const sessionResponse = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      if (!sessionResponse.ok) {
+        throw new Error('Unable to establish secure session.');
+      }
+
+      const profileResponse = await fetch('/api/auth/register-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role,
+          email,
+          firstName,
+          lastName,
+          phone,
+        }),
+      });
+
+      if (!profileResponse.ok) {
+        throw new Error('Unable to store profile.');
+      }
+
+      if (role === 'vendor') {
+        router.push('/auth/onboarding/vendor');
+      } else if (role === 'driver') {
+        router.push('/auth/onboarding/driver');
+      } else {
+        router.push('/dashboard/customer');
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Registration failed. Please try again.';
+      toast({
+        title: 'Registration Failed',
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -48,22 +109,45 @@ export default function RegisterPage() {
             <CardDescription className="text-primary-foreground/80">Select your account type</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            <Tabs defaultValue="customer" onValueChange={setRole} className="w-full">
+            <Tabs
+              defaultValue="customer"
+              onValueChange={(value) => {
+                const nextRole = normalizePublicRole(value);
+                if (nextRole) {
+                  setRole(nextRole);
+                }
+              }}
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-3 mb-8">
-                <TabsTrigger value="customer">Customer</TabsTrigger>
-                <TabsTrigger value="vendor">Vendor</TabsTrigger>
-                <TabsTrigger value="driver">Driver</TabsTrigger>
+                {publicAuthRoles.map((accountRole) => (
+                  <TabsTrigger key={accountRole} value={accountRole}>
+                    {formatRoleLabel(accountRole)}
+                  </TabsTrigger>
+                ))}
               </TabsList>
               
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" placeholder="John" required />
+                    <Input
+                      id="firstName"
+                      placeholder="John"
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" placeholder="Doe" required />
+                    <Input
+                      id="lastName"
+                      placeholder="Doe"
+                      required
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                    />
                   </div>
                 </div>
 
@@ -103,12 +187,24 @@ export default function RegisterPage() {
                   <Label htmlFor="password">Password</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="password" type="password" placeholder="••••••••" className="pl-10" required />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      className="pl-10"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full h-11 rounded-xl shadow-lg shadow-primary/20 mt-2">
-                  Create Account
+                <Button
+                  type="submit"
+                  className="w-full h-11 rounded-xl shadow-lg shadow-primary/20 mt-2"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Creating Account...' : 'Create Account'}
                 </Button>
               </form>
             </Tabs>
