@@ -1,8 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Building2, Clock3, Truck, Wallet } from "lucide-react";
+import { Building2, Clock3, ScrollText, Truck, Wallet } from "lucide-react";
+import type { PayoutLedgerEntry } from "@/lib/domain/schemas";
+import { getPayoutLedgerKindLabel } from "@/lib/finance/payout-ledger-labels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useDriverWorkspace } from "@/hooks/use-driver-workspace";
 
 function formatDateTime(timestamp: number | null) {
@@ -37,6 +40,43 @@ function formatCurrency(amount: number) {
 
 export default function DriverEarningsPage() {
   const { workspace, isLoading, error } = useDriverWorkspace();
+  const [ledgerEntries, setLedgerEntries] = useState<PayoutLedgerEntry[]>([]);
+  const [ledgerError, setLedgerError] = useState<string | null>(null);
+  const [ledgerLoading, setLedgerLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadLedger = async () => {
+      try {
+        const response = await fetch("/api/driver/payout-ledger?limit=30", { method: "GET" });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(payload?.error ?? "Unable to load payout ledger.");
+        }
+        if (isMounted) {
+          setLedgerEntries((payload?.entries ?? []) as PayoutLedgerEntry[]);
+          setLedgerError(null);
+        }
+      } catch (fetchError) {
+        if (isMounted) {
+          setLedgerEntries([]);
+          setLedgerError(
+            fetchError instanceof Error ? fetchError.message : "Unable to load payout ledger."
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setLedgerLoading(false);
+        }
+      }
+    };
+
+    void loadLedger();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -230,6 +270,64 @@ export default function DriverEarningsPage() {
               ? " Driver navigation telemetry is live."
               : " Turn-by-turn telemetry is still handled outside WaterDrop."}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-none shadow-sm rounded-[32px] overflow-hidden bg-white">
+        <CardHeader className="bg-slate-50 border-b flex flex-row items-center gap-2">
+          <ScrollText className="h-5 w-5 text-primary" />
+          <div>
+            <CardTitle>Payout audit log</CardTitle>
+            <p className="text-sm font-normal text-muted-foreground mt-1">
+              Append-only history of accruals and payout actions (NGN).
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          {ledgerLoading ? (
+            <p className="text-sm text-muted-foreground">Loading ledger…</p>
+          ) : ledgerError ? (
+            <p className="text-sm text-destructive">{ledgerError}</p>
+          ) : ledgerEntries.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No ledger entries yet. Deliver orders to accrue commission; withdrawal actions appear here.
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border border-slate-200">
+              <Table>
+                <TableHeader className="bg-muted/30">
+                  <TableRow>
+                    <TableHead className="pl-4">When</TableHead>
+                    <TableHead>Event</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead className="pr-4">Reference</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ledgerEntries.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell className="pl-4 text-sm text-muted-foreground whitespace-nowrap">
+                        {formatDateTime(entry.createdAt)}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium">
+                        {getPayoutLedgerKindLabel(entry.kind)}
+                      </TableCell>
+                      <TableCell className="text-sm font-semibold">
+                        {formatCurrency(entry.amountNaira)}
+                      </TableCell>
+                      <TableCell className="pr-4 text-xs text-muted-foreground max-w-[180px] truncate">
+                        {entry.orderId
+                          ? `Order ${entry.orderId.slice(0, 8)}`
+                          : entry.payoutRequestId
+                            ? `Payout ${entry.payoutRequestId.slice(0, 8)}`
+                            : "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

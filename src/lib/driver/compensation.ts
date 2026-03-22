@@ -14,6 +14,11 @@ import {
   type OrderDriverPayout,
   type UserProfile,
 } from "@/lib/domain/schemas";
+import {
+  tryRecordCommissionAccrued,
+  tryRecordPayoutRequested,
+  tryRecordPayoutReviewed,
+} from "@/lib/finance/payout-ledger";
 import { getFirebaseAdminDb } from "@/lib/firebase/admin";
 import { appendOrderExecutionEvent, hasOrderExecutionEvent, setOrderDeliveryProof } from "@/lib/orders/execution";
 import { ORDER_ACTIVE_STATUSES } from "@/lib/orders/status";
@@ -603,6 +608,7 @@ export async function confirmDriverDelivery(
   updatedOrder = await applyDriverPayoutSnapshot(updatedOrder);
 
   await orderRef.set(updatedOrder);
+  await tryRecordCommissionAccrued(order, updatedOrder);
   return updatedOrder;
 }
 
@@ -795,6 +801,7 @@ export async function createDriverPayoutRequest(
   }
 
   await batch.commit();
+  await tryRecordPayoutRequested(request);
   return request;
 }
 
@@ -891,5 +898,6 @@ export async function reviewVendorPayoutRequest(
   }
 
   await batch.commit();
+  await tryRecordPayoutReviewed(nextRequest);
   return nextRequest;
 }

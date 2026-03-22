@@ -235,6 +235,28 @@ export const driverPayoutRequestSchema = z.object({
   reviewNote: z.string().min(1).optional(),
 });
 
+/** Append-only audit rows for driver commission / payout lifecycle (separate from mutable order docs). */
+export const payoutLedgerEntryKindSchema = z.enum([
+  "commission_accrued",
+  "payout_requested",
+  "payout_paid",
+  "payout_rejected",
+]);
+
+export const payoutLedgerEntrySchema = z.object({
+  id: z.string().min(1),
+  kind: payoutLedgerEntryKindSchema,
+  createdAt: z.number().int(),
+  currency: z.literal("NGN"),
+  amountNaira: z.number().nonnegative(),
+  vendorId: z.string().min(1),
+  driverUid: z.string().min(1),
+  orderId: z.string().min(1).optional(),
+  orderIds: z.array(z.string().min(1)).optional(),
+  payoutRequestId: z.string().min(1).optional(),
+  note: z.string().max(280).optional(),
+});
+
 export type UserRole = z.infer<typeof userRoleSchema>;
 export type UserProfile = z.infer<typeof userProfileSchema>;
 export type VendorProfile = z.infer<typeof vendorProfileSchema>;
@@ -261,3 +283,5 @@ export type DriverPayoutRequestStatus = z.infer<typeof driverPayoutRequestStatus
 export type DriverCompensationRule = z.infer<typeof driverCompensationRuleSchema>;
 export type DriverCompensationConfig = z.infer<typeof driverCompensationConfigSchema>;
 export type DriverPayoutRequest = z.infer<typeof driverPayoutRequestSchema>;
+export type PayoutLedgerEntryKind = z.infer<typeof payoutLedgerEntryKindSchema>;
+export type PayoutLedgerEntry = z.infer<typeof payoutLedgerEntrySchema>;

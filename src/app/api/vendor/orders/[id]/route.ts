@@ -6,6 +6,7 @@ import {
   applyDriverPayoutSnapshot,
   assignDriverToVendorOrder,
 } from "@/lib/driver/compensation";
+import { tryRecordCommissionAccrued } from "@/lib/finance/payout-ledger";
 import { getFirebaseAdminDb } from "@/lib/firebase/admin";
 import {
   markDeliveryExceptionClosed,
@@ -211,6 +212,7 @@ export async function PATCH(
         : baseOrder;
 
     await orderRef.set(updatedOrder);
+    await tryRecordCommissionAccrued(existingOrder, updatedOrder);
 
     const hydratedOrder = await getVendorOrder(user.uid, id);
     return NextResponse.json({ order: hydratedOrder ?? updatedOrder }, { status: 200 });

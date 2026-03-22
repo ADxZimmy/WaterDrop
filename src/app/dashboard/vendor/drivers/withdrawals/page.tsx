@@ -6,10 +6,13 @@ import {
   ArrowLeft,
   CheckCircle2,
   Clock,
+  ScrollText,
   Search,
   Wallet,
   XCircle,
 } from "lucide-react";
+import type { PayoutLedgerEntry } from "@/lib/domain/schemas";
+import { getPayoutLedgerKindLabel } from "@/lib/finance/payout-ledger-labels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -52,6 +55,9 @@ export default function VendorWithdrawalsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [ledgerEntries, setLedgerEntries] = useState<PayoutLedgerEntry[]>([]);
+  const [ledgerError, setLedgerError] = useState<string | null>(null);
+  const [ledgerLoading, setLedgerLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -87,6 +93,40 @@ export default function VendorWithdrawalsPage() {
 
     void loadRequests();
 
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadLedger = async () => {
+      try {
+        const response = await fetch("/api/vendor/payout-ledger?limit=40", { method: "GET" });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(payload?.error ?? "Unable to load settlement ledger.");
+        }
+        if (isMounted) {
+          setLedgerEntries((payload?.entries ?? []) as PayoutLedgerEntry[]);
+          setLedgerError(null);
+        }
+      } catch (fetchError) {
+        if (isMounted) {
+          setLedgerEntries([]);
+          setLedgerError(
+            fetchError instanceof Error ? fetchError.message : "Unable to load settlement ledger."
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setLedgerLoading(false);
+        }
+      }
+    };
+
+    void loadLedger();
     return () => {
       isMounted = false;
     };
@@ -132,6 +172,16 @@ export default function VendorWithdrawalsPage() {
           request.id === requestId ? { ...request, ...payload.payoutRequest } : request
         )
       );
+
+      try {
+        const ledgerResponse = await fetch("/api/vendor/payout-ledger?limit=40", { method: "GET" });
+        const ledgerPayload = await ledgerResponse.json().catch(() => null);
+        if (ledgerResponse.ok && ledgerPayload?.entries) {
+          setLedgerEntries(ledgerPayload.entries as PayoutLedgerEntry[]);
+        }
+      } catch {
+        /* ignore ledger refresh */
+      }
 
       toast({
         title: action === "paid" ? "Payout marked paid" : "Payout request rejected",
@@ -295,6 +345,67 @@ export default function VendorWithdrawalsPage() {
           </Table>
         )}
       </div>
+
+      <Card className="border-none shadow-sm p-6 rounded-3xl bg-white">
+        <div className="flex items-center gap-2 mb-4">
+          <ScrollText className="h-5 w-5 text-primary" />
+          <div>
+            <h2 className="text-lg font-bold font-headline">Settlement audit log</h2>
+            <p className="text-sm text-muted-foreground">
+              Append-only record of commission accruals and payout actions (NGN).
+            </p>
+          </div>
+        </div>
+        {ledgerLoading ? (
+          <p className="text-sm text-muted-foreground">Loading ledger…</p>
+        ) : ledgerError ? (
+          <p className="text-sm text-destructive">{ledgerError}</p>
+        ) : ledgerEntries.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No ledger entries yet. Entries appear when orders deliver with accrual and when payout requests
+            move.
+          </p>
+        ) : (
+          <div className="overflow-x-auto rounded-2xl border border-border">
+            <Table>
+              <TableHeader className="bg-muted/30">
+                <TableRow>
+                  <TableHead className="pl-4">When</TableHead>
+                  <TableHead>Event</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Driver</TableHead>
+                  <TableHead className="pr-4">Reference</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ledgerEntries.map((entry) => (
+                  <TableRow key={entry.id}>
+                    <TableCell className="pl-4 text-sm text-muted-foreground whitespace-nowrap">
+                      {formatDateTime(entry.createdAt)}
+                    </TableCell>
+                    <TableCell className="text-sm font-medium">
+                      {getPayoutLedgerKindLabel(entry.kind)}
+                    </TableCell>
+                    <TableCell className="text-sm font-semibold">
+                      {formatCurrency(entry.amountNaira)}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground font-mono">
+                      {entry.driverUid.slice(0, 8)}…
+                    </TableCell>
+                    <TableCell className="pr-4 text-xs text-muted-foreground max-w-[200px] truncate">
+                      {entry.orderId
+                        ? `Order ${entry.orderId.slice(0, 8)}`
+                        : entry.payoutRequestId
+                          ? `Payout ${entry.payoutRequestId.slice(0, 8)}`
+                          : "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
