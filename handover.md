@@ -4,7 +4,7 @@ Last updated: 2026-03-22 (rollback snapshot recorded)
 Agent: Cursor (Composer)
 
 ## Rollback snapshot
-- **Tag:** `snapshot/2026-03-22-mvp` → commit `79682a4`
+- **Tag:** `snapshot/2026-03-22-mvp` (resolve SHA with `git rev-parse snapshot/2026-03-22-mvp` or `git show snapshot/2026-03-22-mvp`)
 - **Restore:** `git checkout snapshot/2026-03-22-mvp` (detached) or `git switch -c recovery/snapshot-2026-03-22 snapshot/2026-03-22-mvp` for a branch
 - Captures full MVP + Phase 5 kickoff state (Firebase-backed flows, driver payouts, execution events, customer order history) before continuing Phase 5 work
 
@@ -24,7 +24,7 @@ Agent: Cursor (Composer)
 - If any file changes are made in a turn, this file must be updated in the same turn.
 
 ## Completed
-- [x] Recorded git rollback snapshot tag `snapshot/2026-03-22-mvp` at commit `79682a4` (see Rollback snapshot above).
+- [x] Recorded git rollback snapshot tag `snapshot/2026-03-22-mvp` (see Rollback snapshot above).
 - [x] Added homepage suspense boundary wrapper to address prerender CSR bailout requirement in [`src/app/page.tsx`](src/app/page.tsx).
 - [x] Added suspense boundary wrappers for all `useSearchParams` route pages:
   - [`src/app/auth/login/page.tsx`](src/app/auth/login/page.tsx)
