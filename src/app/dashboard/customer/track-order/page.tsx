@@ -12,7 +12,13 @@ import {
   Package,
   Truck,
 } from "lucide-react";
-import type { DeliveryProof, OrderExecutionEvent, OrderStatus } from "@/lib/domain/schemas";
+import type {
+  DeliveryProof,
+  OrderDeliveryException,
+  OrderExecutionEvent,
+  OrderStatus,
+} from "@/lib/domain/schemas";
+import { getCustomerDeliveryExceptionBanner } from "@/lib/orders/delivery-exception";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +32,7 @@ type LatestOrder = null | {
   deliveryAddress?: string;
   executionEvents?: OrderExecutionEvent[];
   deliveryProof?: DeliveryProof;
+  deliveryException?: OrderDeliveryException;
   updatedAt: number;
 };
 
@@ -88,6 +95,7 @@ export default function TrackOrderPage() {
   const latestFailedAttempt = recentEvents.find(
     (event) => event.type === "delivery_failed_attempt"
   );
+  const exceptionBanner = order ? getCustomerDeliveryExceptionBanner(order) : null;
 
   return (
     <div className="min-h-screen bg-background pb-10">
@@ -175,6 +183,47 @@ export default function TrackOrderPage() {
               </div>
             </Card>
 
+            {exceptionBanner ? (
+              <Card
+                className={`border-none shadow-sm p-6 ${
+                  exceptionBanner.tone === "amber"
+                    ? "bg-amber-50 border border-amber-100"
+                    : "bg-sky-50 border border-sky-100"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      exceptionBanner.tone === "amber" ? "bg-amber-100 text-amber-800" : "bg-sky-100 text-sky-800"
+                    }`}
+                  >
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+                  <div className="space-y-2">
+                    <h4
+                      className={`font-bold text-sm ${
+                        exceptionBanner.tone === "amber" ? "text-amber-950" : "text-sky-950"
+                      }`}
+                    >
+                      {exceptionBanner.title}
+                    </h4>
+                    <p
+                      className={`text-sm ${
+                        exceptionBanner.tone === "amber" ? "text-amber-900" : "text-sky-900"
+                      }`}
+                    >
+                      {exceptionBanner.description}
+                    </p>
+                    {order?.deliveryException?.state === "open" && latestFailedAttempt?.note ? (
+                      <p className="text-xs text-amber-800 pt-1 border-t border-amber-200/80 mt-2">
+                        Driver note: {latestFailedAttempt.note}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </Card>
+            ) : null}
+
             <Card className="border-none shadow-sm p-6">
               <div className="flex items-start gap-3">
                 <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
@@ -192,7 +241,7 @@ export default function TrackOrderPage() {
               </div>
             </Card>
 
-            {latestFailedAttempt ? (
+            {latestFailedAttempt && !order.deliveryException ? (
               <Card className="border-none shadow-sm p-6 bg-amber-50 border border-amber-100">
                 <div className="flex items-start gap-3">
                   <div className="h-10 w-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-700 shrink-0">

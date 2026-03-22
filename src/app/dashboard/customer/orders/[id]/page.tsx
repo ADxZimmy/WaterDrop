@@ -12,7 +12,13 @@ import {
   Package,
   Truck,
 } from "lucide-react";
-import type { DeliveryProof, OrderExecutionEvent, OrderStatus } from "@/lib/domain/schemas";
+import type {
+  DeliveryProof,
+  OrderDeliveryException,
+  OrderExecutionEvent,
+  OrderStatus,
+} from "@/lib/domain/schemas";
+import { getCustomerDeliveryExceptionBanner } from "@/lib/orders/delivery-exception";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +36,7 @@ type CustomerOrderRecord = {
   items: Array<{ productId: string; name: string; quantity: number; unitPriceNaira: number }>;
   executionEvents: OrderExecutionEvent[];
   deliveryProof?: DeliveryProof;
+  deliveryException?: OrderDeliveryException;
 };
 
 function formatCurrency(amount: number) {
@@ -126,6 +133,7 @@ export default function CustomerOrderDetailPage() {
   const failedAttemptEvents = order.executionEvents.filter(
     (event) => event.type === "delivery_failed_attempt"
   );
+  const exceptionBanner = getCustomerDeliveryExceptionBanner(order);
 
   return (
     <div className="min-h-screen bg-background pb-10">
@@ -165,7 +173,38 @@ export default function CustomerOrderDetailPage() {
           </CardContent>
         </Card>
 
-        {failedAttemptEvents.length > 0 ? (
+        {exceptionBanner ? (
+          <Card
+            className={`border-none shadow-sm rounded-3xl ${
+              exceptionBanner.tone === "amber"
+                ? "bg-amber-50 border border-amber-100"
+                : "bg-sky-50 border border-sky-100"
+            }`}
+          >
+            <CardContent className="p-6 space-y-3">
+              <div
+                className={`flex items-center gap-2 ${
+                  exceptionBanner.tone === "amber" ? "text-amber-900" : "text-sky-900"
+                }`}
+              >
+                <AlertTriangle className="h-5 w-5 shrink-0" />
+                <p className="font-semibold">{exceptionBanner.title}</p>
+              </div>
+              <p
+                className={`text-sm ${
+                  exceptionBanner.tone === "amber" ? "text-amber-900" : "text-sky-900"
+                }`}
+              >
+                {exceptionBanner.description}
+              </p>
+              {order.deliveryException?.state === "open" && failedAttemptEvents[0]?.note ? (
+                <p className="text-xs text-amber-800 pt-2 border-t border-amber-200/80">
+                  Driver note: {failedAttemptEvents[0].note}
+                </p>
+              ) : null}
+            </CardContent>
+          </Card>
+        ) : failedAttemptEvents.length > 0 ? (
           <Card className="border-none shadow-sm rounded-3xl bg-amber-50 border border-amber-100">
             <CardContent className="p-6 space-y-3">
               <div className="flex items-center gap-2 text-amber-900">

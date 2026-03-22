@@ -7,6 +7,10 @@ import {
   assignDriverToVendorOrder,
 } from "@/lib/driver/compensation";
 import { getFirebaseAdminDb } from "@/lib/firebase/admin";
+import {
+  markDeliveryExceptionClosed,
+  resolveVendorDeliveryException,
+} from "@/lib/orders/delivery-exception";
 import { appendOrderExecutionEvent } from "@/lib/orders/execution";
 import { ORDER_STATUS_TRANSITIONS, getOrderStatusLabel } from "@/lib/orders/status";
 import { getVendorOrder } from "@/lib/orders/vendor-order";
@@ -19,17 +23,25 @@ const ORDER_STATUS_EVENT_MAP = {
   cancelled: "cancelled",
 } as const;
 
+const deliveryExceptionResolutionSchema = z.enum(["reschedule", "return_to_vendor"]);
+
 const updateVendorOrderMutationSchema = z
   .object({
     status: orderStatusSchema.optional(),
     assignedDriverUid: z.string().min(1).nullable().optional(),
+    deliveryExceptionResolution: deliveryExceptionResolutionSchema.optional(),
+    customerMessage: z.string().trim().max(280).optional(),
+  })
+  .refine((input) => !(input.deliveryExceptionResolution && typeof input.status !== "undefined"), {
+    message: "Do not send status together with deliveryExceptionResolution; status is applied automatically.",
   })
   .refine(
     (input) =>
+      typeof input.deliveryExceptionResolution !== "undefined" ||
       typeof input.status !== "undefined" ||
       Object.prototype.hasOwnProperty.call(input, "assignedDriverUid"),
     {
-      message: "Provide a status update or driver assignment.",
+      message: "Provide a status update, driver assignment, or delivery exception resolution.",
     }
   );
 
@@ -73,6 +85,31 @@ export async function PATCH(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
+    if (input.deliveryExceptionResolution) {
+      if (existingOrder.status !== "out_for_delivery") {
+        return NextResponse.json(
+          { error: "Delivery exceptions can only be resolved while the order is out for delivery." },
+          { status: 400 }
+        );
+      }
+      if (existingOrder.deliveryException?.state !== "open") {
+        return NextResponse.json(
+          { error: "This order does not have an open delivery exception to resolve." },
+          { status: 400 }
+        );
+      }
+
+      const resolved = resolveVendorDeliveryException(
+        existingOrder,
+        user.uid,
+        input.deliveryExceptionResolution,
+        input.customerMessage
+      );
+      await orderRef.set(resolved);
+      const hydratedOrder = await getVendorOrder(user.uid, id);
+      return NextResponse.json({ order: hydratedOrder ?? resolved }, { status: 200 });
+    }
+
     if (Object.prototype.hasOwnProperty.call(input, "assignedDriverUid")) {
       const hydratedOrder = await assignDriverToVendorOrder(
         user.uid,
@@ -104,6 +141,29 @@ export async function PATCH(
       );
     }
 
+    if (
+      existingOrder.status === "out_for_delivery" &&
+      input.status === "preparing"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Use deliveryExceptionResolution (reschedule or return_to_vendor) to move this order back to preparing after a failed delivery attempt.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (input.status === "delivered" && existingOrder.deliveryException?.state === "open") {
+      return NextResponse.json(
+        {
+          error:
+            "Resolve the open delivery exception before marking this order delivered.",
+        },
+        { status: 400 }
+      );
+    }
+
     if (input.status === "out_for_delivery" && !existingOrder.driverAssignment) {
       return NextResponse.json(
         {
@@ -113,15 +173,25 @@ export async function PATCH(
       );
     }
 
+    const now = Date.now();
     let baseOrder = orderSchema.parse({
       ...existingOrder,
       status: input.status,
       deliveredAt:
         input.status === "delivered"
-          ? existingOrder.deliveredAt ?? Date.now()
+          ? existingOrder.deliveredAt ?? now
           : existingOrder.deliveredAt,
-      updatedAt: Date.now(),
+      updatedAt: now,
     });
+
+    if (input.status === "cancelled" && existingOrder.deliveryException) {
+      baseOrder = markDeliveryExceptionClosed(baseOrder, now);
+    }
+
+    if (input.status === "delivered" && baseOrder.deliveryException?.state !== "closed") {
+      baseOrder = markDeliveryExceptionClosed(baseOrder, now);
+    }
+
     const executionEventType =
       input.status in ORDER_STATUS_EVENT_MAP
         ? ORDER_STATUS_EVENT_MAP[

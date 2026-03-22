@@ -132,6 +132,8 @@ export const orderExecutionEventTypeSchema = z.enum([
   "out_for_delivery",
   "driver_arrived",
   "delivery_failed_attempt",
+  "delivery_exception_rescheduled",
+  "delivery_exception_return_to_vendor",
   "delivered",
   "cancelled",
 ]);
@@ -163,6 +165,20 @@ export const orderDriverPayoutSchema = z.object({
   paidAt: z.number().int().optional(),
 });
 
+export const deliveryExceptionStateSchema = z.enum([
+  "open",
+  "rescheduled",
+  "return_to_vendor",
+  "closed",
+]);
+
+export const orderDeliveryExceptionSchema = z.object({
+  state: deliveryExceptionStateSchema,
+  openedAt: z.number().int(),
+  updatedAt: z.number().int(),
+  customerMessage: z.string().max(280).optional(),
+});
+
 export const orderSchema = z.object({
   id: z.string().min(1),
   customerUid: z.string().min(1),
@@ -179,6 +195,7 @@ export const orderSchema = z.object({
   driverPayout: orderDriverPayoutSchema.optional(),
   executionEvents: z.array(orderExecutionEventSchema).default([]),
   deliveryProof: deliveryProofSchema.optional(),
+  deliveryException: orderDeliveryExceptionSchema.optional(),
   deliveredAt: z.number().int().optional(),
   createdAt: z.number().int(),
   updatedAt: z.number().int(),
@@ -234,6 +251,8 @@ export type OrderExecutionEventType = z.infer<typeof orderExecutionEventTypeSche
 export type OrderExecutionEvent = z.infer<typeof orderExecutionEventSchema>;
 export type DeliveryProof = z.infer<typeof deliveryProofSchema>;
 export type OrderDriverPayout = z.infer<typeof orderDriverPayoutSchema>;
+export type DeliveryExceptionState = z.infer<typeof deliveryExceptionStateSchema>;
+export type OrderDeliveryException = z.infer<typeof orderDeliveryExceptionSchema>;
 export type Order = z.infer<typeof orderSchema>;
 export type DriverCompensationMode = z.infer<typeof driverCompensationModeSchema>;
 export type DriverCompensationCategory = z.infer<typeof driverCompensationCategorySchema>;

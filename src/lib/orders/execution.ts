@@ -85,6 +85,8 @@ export function getOrderExecutionEventLabel(type: OrderExecutionEventType) {
     out_for_delivery: "Out for delivery",
     driver_arrived: "Driver arrived",
     delivery_failed_attempt: "Delivery attempt failed",
+    delivery_exception_rescheduled: "Delivery rescheduled",
+    delivery_exception_return_to_vendor: "Return to vendor",
     delivered: "Delivered",
     cancelled: "Cancelled",
   };
@@ -109,6 +111,18 @@ export function getOrderExecutionEventDescription(event: OrderExecutionEvent) {
     return event.note
       ? `Delivery attempt failed: ${event.note}`
       : "The driver reported that delivery could not be completed.";
+  }
+
+  if (event.type === "delivery_exception_rescheduled") {
+    return event.note
+      ? `The vendor scheduled another delivery attempt. ${event.note}`
+      : "The vendor scheduled another delivery attempt after a failed attempt.";
+  }
+
+  if (event.type === "delivery_exception_return_to_vendor") {
+    return event.note
+      ? `Items are returning to the vendor. ${event.note}`
+      : "The vendor is bringing this order back from the route.";
   }
 
   if (event.type === "delivered") {

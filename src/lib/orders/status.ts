@@ -54,7 +54,7 @@ export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending: ["accepted", "cancelled"],
   accepted: ["preparing", "cancelled"],
   preparing: ["out_for_delivery", "cancelled"],
-  out_for_delivery: ["delivered"],
+  out_for_delivery: ["delivered", "preparing", "cancelled"],
   delivered: [],
   cancelled: [],
 };

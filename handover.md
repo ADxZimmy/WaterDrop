@@ -1,6 +1,6 @@
 # WaterDrop MVP Handover
 
-Last updated: 2026-03-22 (rollback snapshot recorded)  
+Last updated: 2026-03-22 (vendor delivery exception resolution)  
 Agent: Cursor (Composer)
 
 ## Rollback snapshot
@@ -24,6 +24,7 @@ Agent: Cursor (Composer)
 - If any file changes are made in a turn, this file must be updated in the same turn.
 
 ## Completed
+- [x] Added vendor delivery exception resolution after driver failed attempts: `deliveryException` on orders, execution events `delivery_exception_rescheduled` / `delivery_exception_return_to_vendor`, vendor PATCH `deliveryExceptionResolution`, customer-visible banners, and lifecycle rules (block naked OFD→preparing, block mark-delivered while exception open). Key files: [`src/lib/domain/schemas.ts`](src/lib/domain/schemas.ts), [`src/lib/orders/delivery-exception.ts`](src/lib/orders/delivery-exception.ts), [`src/lib/orders/status.ts`](src/lib/orders/status.ts), [`src/lib/driver/compensation.ts`](src/lib/driver/compensation.ts), [`src/app/api/vendor/orders/[id]/route.ts`](src/app/api/vendor/orders/[id]/route.ts), [`src/app/dashboard/vendor/orders/[id]/page.tsx`](src/app/dashboard/vendor/orders/[id]/page.tsx), [`src/app/dashboard/customer/track-order/page.tsx`](src/app/dashboard/customer/track-order/page.tsx), [`src/app/dashboard/customer/orders/[id]/page.tsx`](src/app/dashboard/customer/orders/[id]/page.tsx).
 - [x] Recorded git rollback snapshot tag `snapshot/2026-03-22-mvp` (see Rollback snapshot above).
 - [x] Added homepage suspense boundary wrapper to address prerender CSR bailout requirement in [`src/app/page.tsx`](src/app/page.tsx).
 - [x] Added suspense boundary wrappers for all `useSearchParams` route pages:
@@ -342,10 +343,10 @@ Agent: Cursor (Composer)
   - [x] `npm run build` passes in this environment.
 
 ## In Progress
-- [ ] Phase 5 continuation: extend the new order-history/exceptions foundation into richer delivery exception handling, settlement/ledger work, and production-operability improvements.
+- [ ] Phase 5 continuation: settlement/ledger work, optional photo/OTP-richer execution history, and production-operability improvements.
 
 ## Next Up
-- [ ] Extend delivery exceptions beyond the new failed-attempt event into vendor resolution flows such as reschedule, return-to-vendor, and explicit customer-visible exception states.
+- [x] ~~Extend delivery exceptions into vendor reschedule / return-to-vendor flows and customer-visible exception states.~~ (Shipped 2026-03-22.)
 - [ ] Decide whether the execution-event model should grow further into photo evidence, OTP confirmation, and richer customer-visible event history across more surfaces.
 - [ ] Start the post-MVP finance foundation: settlement ledger design, vendor payout accounting, and immutable payout/audit records separate from mutable order documents.
 - [ ] Revisit the accepted 8 low `firebase-admin` audit findings only if a non-breaking upstream remediation appears or production/compliance requirements change.
@@ -356,7 +357,7 @@ Agent: Cursor (Composer)
 - Product/browse empty-state risk:
   - Homepage and vendor detail are now fully Firestore-driven, so empty catalogs depend entirely on approved vendors having active products in Firestore.
 - Order lifecycle risk:
-  - Vendor/customer/admin order feeds are live, driver assignment and payout accrual are stored on orders, and the backend now persists vendor/driver execution events plus recipient-confirmed delivery proof. A basic failed-attempt event is now live too; however, the lifecycle still lacks structured exception resolution, photo evidence, OTP verification, and richer driver telemetry.
+  - Vendor/customer/admin order feeds are live, driver assignment and payout accrual are stored on orders, and the backend persists vendor/driver execution events plus recipient-confirmed delivery proof. Failed attempts open a `deliveryException`, and vendors can reschedule or return-to-vendor (moving back to preparing) with customer-visible messaging; photo evidence, OTP verification, and richer driver telemetry remain out of scope.
 - Vendor compliance asset risk:
   - Vendor approval status and admin notes are now persisted, but the onboarding document-upload step and admin-side document inspection are still placeholder UI rather than stored assets.
 - Driver telemetry risk:
@@ -370,11 +371,11 @@ Agent: Cursor (Composer)
 
 ## Latest Verification
 - `npm run typecheck`:
-  - Passes on 2026-03-15 after a rerun. As in prior turns, the first `typecheck` attempt immediately after `next typegen` still hit transient missing `.next/types/*` files, but the rerun after a successful build passed cleanly.
+  - Passes on 2026-03-22 after vendor exception resolution work.
 - `npm run lint`:
-  - Passes clean on 2026-03-15 after the Phase 5 customer-history / failed-attempt work.
+  - Passes clean on 2026-03-22 after vendor exception resolution work.
 - `npm run build`:
-  - Passes on 2026-03-15 in this runtime after adding the customer order-detail route, customer-visible event history, and failed-attempt reporting.
+  - Passes on 2026-03-22 after vendor exception resolution work.
 - `npm audit --json`:
   - Reports 8 low vulnerabilities, 0 moderate, 0 high, and 0 critical on 2026-03-15. The remaining findings all trace back to `firebase-admin` transitive dependencies.
 
@@ -387,4 +388,5 @@ Agent: Cursor (Composer)
 - Continue Phase 5 from the rollback snapshot: richer delivery exception resolution, settlement/ledger foundations, and production readiness; keep accepting the documented low-severity `firebase-admin` audit risk unless a safe upstream fix appears.
 - The remaining `firebase-admin` audit findings are now explicitly documented as accepted MVP risk in [`README.md`](README.md) and this handoff; do not churn dependency versions further unless the risk posture changes or a safe upstream fix appears.
 - Phase 5 has now begun. The first post-MVP slice added a customer-owned `/api/orders/[id]` route, a new [`/dashboard/customer/orders/[id]`](src/app/dashboard/customer/orders/[id]/page.tsx) detail page, customer-visible execution-event history on the tracking surfaces, and a driver-side failed delivery attempt mutation that records exception notes without inventing fake telemetry or resolution states.
+- Failed attempts now set `deliveryException.state` to `open`; vendors resolve via [`PATCH /api/vendor/orders/[id]`](src/app/api/vendor/orders/[id]/route.ts) with `deliveryExceptionResolution: "reschedule" | "return_to_vendor"` and optional `customerMessage`, which moves the order to `preparing` and records the new execution events for customer timelines.
 - Keep this file updated with `Completed`, `In Progress`, `Next Up`, exact command failures, timestamp, and agent name every time files change.

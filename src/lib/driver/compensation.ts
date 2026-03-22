@@ -627,10 +627,22 @@ export async function reportDriverDeliveryFailedAttempt(
     throw new Error("Failed delivery attempts can only be reported while the order is out for delivery.");
   }
 
-  const updatedOrder = appendOrderExecutionEvent(order, {
+  const now = Date.now();
+  const withEvent = appendOrderExecutionEvent(order, {
     type: "delivery_failed_attempt",
     actor: { role: "driver", uid: driverUid },
     note,
+    occurredAt: now,
+  });
+
+  const updatedOrder = orderSchema.parse({
+    ...withEvent,
+    deliveryException: {
+      state: "open",
+      openedAt: order.deliveryException?.openedAt ?? now,
+      updatedAt: now,
+    },
+    updatedAt: now,
   });
 
   await orderRef.set(updatedOrder);

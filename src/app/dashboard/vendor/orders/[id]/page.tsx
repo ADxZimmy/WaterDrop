@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import {
+  AlertTriangle,
   ArrowLeft,
   CheckCircle2,
   Clock3,
@@ -19,6 +20,7 @@ import {
 import type {
   DeliveryProof,
   DriverAssignment,
+  OrderDeliveryException,
   OrderExecutionEvent,
   OrderDriverPayout,
   OrderItem,
@@ -36,6 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { getOrderExecutionEventDescription, getOrderExecutionEventLabel } from "@/lib/orders/execution";
 import {
@@ -65,6 +68,7 @@ type VendorOrderRecord = {
   driverPayout?: OrderDriverPayout;
   executionEvents: OrderExecutionEvent[];
   deliveryProof?: DeliveryProof;
+  deliveryException?: OrderDeliveryException;
   deliveredAt?: number;
   createdAt: number;
   updatedAt: number;
@@ -128,6 +132,7 @@ export default function OrderDetailPage() {
   const [drivers, setDrivers] = useState<VendorDriverRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [exceptionMessage, setExceptionMessage] = useState("");
 
   const loadOrder = useCallback(async () => {
     if (!orderId) {
@@ -216,7 +221,8 @@ export default function OrderDetailPage() {
     return ORDER_STATUS_STEPS.findIndex((step) => step.key === order.status);
   }, [order]);
 
-  const primaryAction = order ? getPrimaryAction(order.status) : null;
+  const primaryAction =
+    order && order.deliveryException?.state !== "open" ? getPrimaryAction(order.status) : null;
   const selectableDrivers = drivers.filter(
     (driverRecord) =>
       driverRecord.status === "active" || driverRecord.uid === order?.driverAssignment?.driverUid
@@ -251,6 +257,51 @@ export default function OrderDetailPage() {
       toast({
         title: "Update failed",
         description: error instanceof Error ? error.message : "Unable to update order.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleResolveDeliveryException = async (
+    resolution: "reschedule" | "return_to_vendor"
+  ) => {
+    if (!orderId) {
+      return;
+    }
+
+    setIsUpdating(true);
+
+    try {
+      const response = await fetch(`/api/vendor/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deliveryExceptionResolution: resolution,
+          customerMessage: exceptionMessage.trim() ? exceptionMessage.trim() : undefined,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Unable to resolve delivery exception.");
+      }
+
+      setOrder(payload.order ?? null);
+      setExceptionMessage("");
+      toast({
+        title: "Exception handled",
+        description:
+          resolution === "reschedule"
+            ? "The order is back in preparing for another delivery attempt."
+            : "The order is back in preparing while items return from the route.",
+      });
+    } catch (error) {
+      toast({
+        title: "Update failed",
+        description:
+          error instanceof Error ? error.message : "Unable to resolve delivery exception.",
         variant: "destructive",
       });
     } finally {
@@ -488,6 +539,45 @@ export default function OrderDetailPage() {
               <CardTitle className="text-lg">Order Actions</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
+              {order.deliveryException?.state === "open" && order.status === "out_for_delivery" ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-amber-950">Open delivery exception</p>
+                      <p className="text-sm text-amber-900 mt-1">
+                        The driver reported a failed attempt. Choose how to continue before marking
+                        delivered or dispatching again.
+                      </p>
+                    </div>
+                  </div>
+                  <Textarea
+                    className="rounded-xl min-h-[88px] bg-white border-amber-200"
+                    placeholder="Optional note to the customer (shown in their order view)"
+                    value={exceptionMessage}
+                    onChange={(event) => setExceptionMessage(event.target.value)}
+                    disabled={isUpdating}
+                  />
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      className="flex-1 rounded-xl"
+                      disabled={isUpdating}
+                      onClick={() => void handleResolveDeliveryException("reschedule")}
+                    >
+                      Reschedule delivery
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 rounded-xl border-amber-300"
+                      disabled={isUpdating}
+                      onClick={() => void handleResolveDeliveryException("return_to_vendor")}
+                    >
+                      Return to vendor
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+
               <div className="space-y-2">
                 <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Assigned driver
