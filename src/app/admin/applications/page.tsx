@@ -18,6 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -219,7 +220,7 @@ export default function AdminApplicationsPage() {
 
       <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white">
         {isLoading ? (
-          <div className="p-8 text-sm text-slate-500">Loading vendor applications...</div>
+          <ListPageSkeleton rows={5} className="max-w-none px-0 py-0" />
         ) : apps.length === 0 ? (
           <div className="p-10 text-center space-y-3">
             <h2 className="text-xl font-bold text-slate-900">No vendor applications yet</h2>

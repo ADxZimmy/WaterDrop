@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -49,6 +50,10 @@ type VendorOrderRecord = {
 };
 
 type StatusFilter = "all" | OrderStatus;
+type OrdersPageInfo = {
+  nextCursor: string | null;
+  limit: number;
+};
 
 function getStatusBadgeClass(status: OrderStatus) {
   switch (status) {
@@ -95,21 +100,40 @@ export default function VendorOrdersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [pageInfo, setPageInfo] = useState<OrdersPageInfo | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const loadOrders = useCallback(async () => {
+  const loadOrders = useCallback(async (cursor?: string | null) => {
+    if (cursor) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+    }
+
     try {
-      const response = await fetch("/api/vendor/orders", { method: "GET" });
+      const params = new URLSearchParams({ limit: "20" });
+      if (cursor) {
+        params.set("cursor", cursor);
+      }
+
+      const response = await fetch(`/api/vendor/orders?${params.toString()}`, { method: "GET" });
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
         throw new Error(payload?.error ?? "Unable to load vendor orders.");
       }
 
       const payload = await response.json();
-      setOrders(payload.orders ?? []);
+      setOrders((currentOrders) =>
+        cursor ? [...currentOrders, ...(payload.orders ?? [])] : payload.orders ?? []
+      );
+      setPageInfo(payload.pageInfo ?? null);
     } catch (error) {
-      setOrders([]);
+      if (!cursor) {
+        setOrders([]);
+        setPageInfo(null);
+      }
       toast({
         title: "Orders unavailable",
         description: error instanceof Error ? error.message : "Unable to load vendor orders.",
@@ -117,11 +141,12 @@ export default function VendorOrdersPage() {
       });
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
   }, [toast]);
 
   useEffect(() => {
-    void loadOrders();
+    void loadOrders(null);
   }, [loadOrders]);
 
   const handleStatusUpdate = async (orderId: string, nextStatus: OrderStatus) => {
@@ -196,7 +221,7 @@ export default function VendorOrdersPage() {
           <p className="text-muted-foreground">Manage incoming orders and keep customer tracking in sync.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="rounded-xl h-11 px-6" onClick={() => void loadOrders()}>
+          <Button variant="outline" className="rounded-xl h-11 px-6" onClick={() => void loadOrders(null)}>
             Refresh Queue
           </Button>
           <Link href="/dashboard/vendor/analytics">
@@ -285,11 +310,17 @@ export default function VendorOrdersPage() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
-                  Loading vendor orders...
-                </TableCell>
-              </TableRow>
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-4 w-24 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-32 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-40 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-28 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="ml-auto h-8 w-24 rounded-lg" /></TableCell>
+                </TableRow>
+              ))
             ) : filteredOrders.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
@@ -389,6 +420,18 @@ export default function VendorOrdersPage() {
             )}
           </TableBody>
         </Table>
+        {pageInfo?.nextCursor && !isLoading ? (
+          <div className="border-t p-4 text-center">
+            <Button
+              variant="outline"
+              className="rounded-xl"
+              disabled={isLoadingMore}
+              onClick={() => void loadOrders(pageInfo.nextCursor)}
+            >
+              {isLoadingMore ? "Loading orders..." : "Load more orders"}
+            </Button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

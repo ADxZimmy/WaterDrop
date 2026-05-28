@@ -14,6 +14,7 @@ import type { AdminAnalyticsPayload } from "@/lib/admin/ops-types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -127,9 +128,7 @@ export default function AdminVendorRankingsPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto p-8 text-sm text-muted-foreground">
-        Loading vendor rankings...
-      </div>
+      <ListPageSkeleton rows={6} className="max-w-7xl p-0" />
     );
   }
 

@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -164,7 +165,7 @@ export default function VendorOnboarding() {
   if (isLoadingProfile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <p className="text-sm text-muted-foreground">Loading your vendor application...</p>
+        <ListPageSkeleton rows={3} className="max-w-2xl" />
       </div>
     );
   }

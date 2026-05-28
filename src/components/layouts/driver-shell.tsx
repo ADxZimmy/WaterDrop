@@ -51,7 +51,7 @@ export function DriverShell({
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-white">
-      <div className="p-6 flex items-center justify-start gap-3 border-b">
+      <Link href="/dashboard/driver/session" className="p-6 flex items-center justify-start gap-3 border-b">
         <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
           <Truck className="h-6 w-6" />
         </div>
@@ -63,7 +63,7 @@ export function DriverShell({
             Driver Portal
           </span>
         </div>
-      </div>
+      </Link>
 
       <nav className="flex-1 p-4 space-y-1">
         {driverNav.map((item) => {
@@ -135,10 +135,10 @@ export function DriverShell({
 
             <div className="flex flex-col">
               <h1 className="text-lg font-bold font-headline hidden lg:block">Welcome back, {firstName}</h1>
-              <div className="lg:hidden flex items-center gap-2">
+              <Link href="/dashboard/driver/session" className="lg:hidden flex items-center gap-2">
                 <Truck className="h-5 w-5 text-primary" />
                 <span className="font-bold text-lg tracking-tight font-headline">WaterDrop</span>
-              </div>
+              </Link>
             </div>
           </div>
 

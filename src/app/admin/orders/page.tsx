@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import {
   Table,
   TableBody,
@@ -29,6 +30,10 @@ import { ORDER_ACTIVE_STATUSES, getOrderStatusLabel } from "@/lib/orders/status"
 type StatusFilter = "all" | "active" | "delivered" | "cancelled";
 type AdminOrdersResponse = {
   orders: AdminOrderRecord[];
+  pageInfo?: {
+    nextCursor: string | null;
+    total: number;
+  };
 };
 
 function formatNaira(value: number) {
@@ -57,13 +62,16 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<StatusFilter>("all");
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
     const loadOrders = async () => {
       try {
-        const response = await fetch("/api/admin/orders", { method: "GET" });
+        const response = await fetch("/api/admin/orders?limit=25", { method: "GET" });
         if (!response.ok) {
           const payload = await response.json().catch(() => null);
           throw new Error(payload?.error ?? "Unable to load platform orders.");
@@ -72,6 +80,8 @@ export default function AdminOrdersPage() {
         const payload: AdminOrdersResponse = await response.json();
         if (isMounted) {
           setOrders(payload.orders ?? []);
+          setNextCursor(payload.pageInfo?.nextCursor ?? null);
+          setTotalOrders(payload.pageInfo?.total ?? payload.orders?.length ?? 0);
           setError(null);
         }
       } catch (fetchError) {
@@ -96,6 +106,42 @@ export default function AdminOrdersPage() {
       isMounted = false;
     };
   }, []);
+
+  const handleLoadMore = async () => {
+    if (!nextCursor) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+
+    try {
+      const response = await fetch(
+        `/api/admin/orders?limit=25&cursor=${encodeURIComponent(nextCursor)}`,
+        { method: "GET" }
+      );
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? "Unable to load platform orders.");
+      }
+
+      const payload: AdminOrdersResponse = await response.json();
+      setOrders((current) => {
+        const existing = new Set(current.map((order) => order.id));
+        const nextOrders = (payload.orders ?? []).filter((order) => !existing.has(order.id));
+        return [...current, ...nextOrders];
+      });
+      setNextCursor(payload.pageInfo?.nextCursor ?? null);
+      setTotalOrders(payload.pageInfo?.total ?? totalOrders);
+    } catch (fetchError) {
+      setError(
+        fetchError instanceof Error
+          ? fetchError.message
+          : "Unable to load platform orders."
+      );
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const openOrders = useMemo(
     () => orders.filter((order) => ORDER_ACTIVE_STATUSES.has(order.status)).length,
@@ -149,11 +195,7 @@ export default function AdminOrdersPage() {
   }, [filter, orders, search]);
 
   if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto p-8 text-sm text-muted-foreground">
-        Loading platform orders...
-      </div>
-    );
+    return <ListPageSkeleton rows={6} className="max-w-7xl p-0" />;
   }
 
   if (error) {
@@ -189,7 +231,7 @@ export default function AdminOrdersPage() {
           {
             title: "Open Orders",
             value: openOrders.toLocaleString("en-NG"),
-            subtitle: `${orders.length} total orders`,
+            subtitle: `${totalOrders} total orders`,
             icon: ShoppingBag,
           },
           {
@@ -336,6 +378,19 @@ export default function AdminOrdersPage() {
           </Table>
         )}
       </Card>
+      {nextCursor ? (
+        <div className="flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-xl"
+            onClick={() => void handleLoadMore()}
+            disabled={isLoadingMore}
+          >
+            {isLoadingMore ? "Loading more..." : `Load more orders (${orders.length}/${totalOrders})`}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import type { DriverOrderReferencePayload } from "@/lib/driver/workspace-types";
 import { getOrderStatusLabel, getPaymentMethodLabel } from "@/lib/orders/status";
 
@@ -89,9 +90,7 @@ export default function DriverNavigatePage() {
 
   if (isLoading) {
     return (
-      <div className="p-4 md:p-8 text-sm text-muted-foreground">
-        Loading delivery guidance...
-      </div>
+      <ListPageSkeleton rows={4} className="max-w-5xl p-0" />
     );
   }
 

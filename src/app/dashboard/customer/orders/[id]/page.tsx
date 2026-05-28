@@ -22,6 +22,7 @@ import { getCustomerDeliveryExceptionBanner } from "@/lib/orders/delivery-except
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { getOrderExecutionEventDescription, getOrderExecutionEventLabel } from "@/lib/orders/execution";
 import { ORDER_ACTIVE_STATUSES, ORDER_STATUS_STEPS, getOrderStatusLabel } from "@/lib/orders/status";
 
@@ -111,7 +112,7 @@ export default function CustomerOrderDetailPage() {
   }, [order]);
 
   if (isLoading) {
-    return <div className="p-4 md:p-8 text-sm text-muted-foreground">Loading order...</div>;
+    return <ListPageSkeleton rows={4} className="max-w-4xl md:px-8" />;
   }
 
   if (error || !order) {

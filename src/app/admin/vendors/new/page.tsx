@@ -20,6 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DashboardSkeleton } from "@/components/ui/loading-skeletons";
 
 type AdminSystemResponse = {
   system: AdminSystemSnapshot;
@@ -70,11 +71,7 @@ export default function AdminNewVendorPage() {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="max-w-4xl mx-auto p-8 text-sm text-muted-foreground">
-        Loading vendor onboarding workflow...
-      </div>
-    );
+    return <DashboardSkeleton className="max-w-4xl p-0" />;
   }
 
   if (!system || error) {

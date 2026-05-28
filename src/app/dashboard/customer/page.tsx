@@ -3,9 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  ArrowLeft,
   ChevronRight,
-  Droplets,
   LogOut,
   MapPin,
   Settings,
@@ -19,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { DashboardSkeleton } from "@/components/ui/loading-skeletons";
 import { useAuthSignOut } from "@/hooks/use-auth-sign-out";
 import { useToast } from "@/hooks/use-toast";
 
@@ -131,19 +130,13 @@ export default function CustomerDashboard() {
   );
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background pb-20">
-        <div className="max-w-2xl mx-auto px-4 py-10 text-sm text-muted-foreground">
-          Loading your account...
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (!account) {
     return (
       <div className="min-h-screen bg-background pb-20">
-        <div className="max-w-2xl mx-auto px-4 py-10">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <Card className="border-none shadow-sm p-8 text-center">
             <CardContent className="p-0 space-y-4">
               <h1 className="text-2xl font-bold font-headline">Account unavailable</h1>
@@ -161,21 +154,9 @@ export default function CustomerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="bg-primary text-primary-foreground p-8 pb-20 rounded-b-[40px] shadow-lg">
-        <div className="max-w-2xl mx-auto flex items-center mb-8">
-          <Link href="/" className="mr-4">
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <Droplets className="h-6 w-6" />
-            <span className="font-bold text-xl tracking-tight font-headline">WaterDrop</span>
-          </Link>
-        </div>
-
-        <div className="max-w-2xl mx-auto flex items-center gap-6">
+    <div className="min-h-screen bg-background pb-10">
+      <header className="bg-primary text-primary-foreground p-6 pb-20 shadow-lg lg:p-10 lg:pb-24">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative">
             <Avatar className="h-24 w-24 border-4 border-white shadow-xl">
               <AvatarFallback>{getInitials(account)}</AvatarFallback>
@@ -184,8 +165,8 @@ export default function CustomerDashboard() {
               {getAccountBadgeLabel(account)}
             </Badge>
           </div>
-          <div className="space-y-1 min-w-0">
-            <h1 className="text-3xl font-bold font-headline truncate">{getDisplayName(account)}</h1>
+          <div className="min-w-0 flex-1 space-y-1">
+            <h1 className="truncate font-headline text-3xl font-bold lg:text-5xl">{getDisplayName(account)}</h1>
             <p className="text-primary-foreground/80 text-sm">
               {account.profile.email} • Member since {getMemberSinceLabel(account.profile.createdAt)}
             </p>
@@ -196,8 +177,8 @@ export default function CustomerDashboard() {
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 -mt-12 space-y-6">
-        <div className="grid grid-cols-2 gap-4">
+      <div className="mx-auto max-w-7xl px-4 -mt-12 space-y-6 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           <Card className="border-none shadow-xl rounded-3xl overflow-hidden">
             <CardContent className="p-6 text-center space-y-1">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Orders</p>
@@ -224,8 +205,9 @@ export default function CustomerDashboard() {
           </Card>
         </div>
 
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.6fr)]">
         <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
-          <CardContent className="p-6 space-y-5">
+          <CardContent className="grid gap-5 p-6 lg:grid-cols-3">
             <div className="flex items-start gap-4">
               <div className="h-12 w-12 rounded-2xl bg-primary/5 flex items-center justify-center text-primary shrink-0">
                 <MapPin className="h-6 w-6" />
@@ -270,7 +252,7 @@ export default function CustomerDashboard() {
           </CardContent>
         </Card>
 
-        <div className="space-y-3">
+        <div className="grid content-start gap-3">
           {menuItems.map((item, index) => (
             <Link key={index} href={item.href}>
               <Card className="border-none shadow-sm hover:shadow-md transition-all group overflow-hidden active:scale-[0.98]">
@@ -287,6 +269,7 @@ export default function CustomerDashboard() {
               </Card>
             </Link>
           ))}
+        </div>
         </div>
 
         <Button

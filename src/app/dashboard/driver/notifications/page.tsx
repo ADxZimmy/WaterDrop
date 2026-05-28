@@ -14,6 +14,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { useDriverWorkspace } from "@/hooks/use-driver-workspace";
 
 type DriverNotification = {
@@ -169,7 +170,7 @@ export default function DriverNotificationsPage() {
   }, [orders, workspace]);
 
   if (isLoading) {
-    return <div className="p-4 md:p-8 text-sm text-muted-foreground">Loading notifications...</div>;
+    return <ListPageSkeleton rows={4} className="max-w-3xl p-0" />;
   }
 
   if (error || !workspace) {

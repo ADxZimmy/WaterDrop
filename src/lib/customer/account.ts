@@ -2,6 +2,8 @@ import {
   customerPreferencesSchema,
   orderSchema,
   userProfileSchema,
+  type CustomerPreferences,
+  type Order,
   type UserProfile,
 } from "@/lib/domain/schemas";
 import { formatCustomerAddress, getDefaultCustomerAddress } from "@/lib/customer/preferences";
@@ -33,27 +35,100 @@ function buildFallbackProfile(user: AuthenticatedCustomer) {
   });
 }
 
+async function loadCustomerPreferences(uid: string): Promise<CustomerPreferences | null> {
+  const snapshot = await getFirebaseAdminDb().collection("customerPreferences").doc(uid).get();
+  if (!snapshot.exists) {
+    return null;
+  }
+
+  const result = customerPreferencesSchema.safeParse(snapshot.data());
+  if (!result.success) {
+    console.warn("[customer.account] Ignoring invalid customer preferences", {
+      uid,
+      issues: result.error.issues.map((issue) => issue.message),
+    });
+    return null;
+  }
+
+  return result.data;
+}
+
+async function loadCustomerOrders(uid: string): Promise<Order[]> {
+  const db = getFirebaseAdminDb();
+
+  try {
+    const orderedSnapshot = await db
+      .collection("orders")
+      .where("customerUid", "==", uid)
+      .orderBy("createdAt", "desc")
+      .limit(50)
+      .get();
+
+    return parseCustomerOrders(uid, orderedSnapshot.docs.map((doc) => doc.data()));
+  } catch (error) {
+    console.warn("[customer.account] Falling back to unordered customer order summary", {
+      uid,
+      error: error instanceof Error ? error.message : "Unknown Firestore error",
+    });
+  }
+
+  try {
+    const unorderedSnapshot = await db
+      .collection("orders")
+      .where("customerUid", "==", uid)
+      .limit(50)
+      .get();
+
+    return parseCustomerOrders(uid, unorderedSnapshot.docs.map((doc) => doc.data()));
+  } catch (error) {
+    console.warn("[customer.account] Unable to load customer order summary", {
+      uid,
+      error: error instanceof Error ? error.message : "Unknown Firestore error",
+    });
+    return [];
+  }
+}
+
+function parseCustomerOrders(uid: string, records: unknown[]): Order[] {
+  return records
+    .map((record) => {
+      const result = orderSchema.safeParse(record);
+      if (!result.success) {
+        console.warn("[customer.account] Ignoring invalid customer order", {
+          uid,
+          issues: result.error.issues.map((issue) => issue.message),
+        });
+        return null;
+      }
+
+      return result.data;
+    })
+    .filter((order): order is Order => Boolean(order))
+    .sort((a, b) => b.createdAt - a.createdAt);
+}
+
 export async function getCustomerAccountPayload(
   user: AuthenticatedCustomer,
   profileOverride?: UserProfile
 ): Promise<CustomerAccountPayload> {
   const db = getFirebaseAdminDb();
-  const [profileSnapshot, preferencesSnapshot, ordersSnapshot] = await Promise.all([
+  const [profileSnapshotResult, preferencesResult, ordersResult] = await Promise.allSettled([
     profileOverride ? null : db.collection("users").doc(user.uid).get(),
-    db.collection("customerPreferences").doc(user.uid).get(),
-    db.collection("orders").where("customerUid", "==", user.uid).get(),
+    loadCustomerPreferences(user.uid),
+    loadCustomerOrders(user.uid),
   ]);
+  const profileSnapshot =
+    profileSnapshotResult.status === "fulfilled" ? profileSnapshotResult.value : null;
+  const profileResult = profileSnapshot?.exists
+    ? userProfileSchema.safeParse(profileSnapshot.data())
+    : null;
 
   const profile =
     profileOverride ??
-    (profileSnapshot?.exists ? userProfileSchema.parse(profileSnapshot.data()) : null) ??
+    (profileResult?.success ? profileResult.data : null) ??
     buildFallbackProfile(user);
-  const preferences = preferencesSnapshot.exists
-    ? customerPreferencesSchema.parse(preferencesSnapshot.data())
-    : null;
-  const orders = ordersSnapshot.docs
-    .map((doc) => orderSchema.parse(doc.data()))
-    .sort((left, right) => right.createdAt - left.createdAt);
+  const preferences = preferencesResult.status === "fulfilled" ? preferencesResult.value : null;
+  const orders = ordersResult.status === "fulfilled" ? ordersResult.value : [];
   const nonCancelledOrders = orders.filter((order) => order.status !== "cancelled");
   const defaultAddress = preferences
     ? getDefaultCustomerAddress(preferences.addresses)

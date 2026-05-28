@@ -23,6 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DashboardSkeleton } from "@/components/ui/loading-skeletons";
 import {
   Area,
   AreaChart,
@@ -132,11 +133,7 @@ export default function AdminOverviewPage() {
   }, [system?.summary.pendingVendorApplications]);
 
   if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto p-8 text-sm text-muted-foreground">
-        Loading admin overview...
-      </div>
-    );
+    return <DashboardSkeleton className="p-0" />;
   }
 
   if (!analytics || !system || error) {
@@ -180,6 +177,27 @@ export default function AdminOverviewPage() {
           </Link>
         </div>
       </div>
+
+      <Card className="border-none shadow-sm rounded-3xl">
+        <CardHeader>
+          <CardTitle>Quick Links</CardTitle>
+          <CardDescription>Operational shortcuts for admin-only review.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-3">
+          {[
+            { label: "All Vendors", href: "/admin/vendors" },
+            { label: "All Orders", href: "/admin/orders" },
+            { label: "Super Admin Portal", href: "/admin" },
+          ].map((link) => (
+            <Link key={link.label} href={link.href}>
+              <Button variant="outline" className="h-11 w-full justify-between rounded-xl bg-white">
+                {link.label}
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          ))}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[

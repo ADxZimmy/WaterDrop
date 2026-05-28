@@ -11,6 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 
 export default function DriverCommissionsSettingsPage() {
   const { toast } = useToast();
@@ -110,11 +111,7 @@ export default function DriverCommissionsSettingsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-8 max-w-5xl mx-auto text-sm text-muted-foreground">
-        Loading commission settings...
-      </div>
-    );
+    return <ListPageSkeleton rows={3} className="max-w-5xl md:px-8" />;
   }
 
   return (

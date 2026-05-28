@@ -32,6 +32,44 @@ type SignInPanelProps = {
   footerNote?: string;
 };
 
+async function getPasswordSignInToken(email: string, password: string) {
+  try {
+    const credential = await signInWithEmailAndPassword(
+      getFirebaseClientAuth(),
+      email,
+      password
+    );
+
+    return credential.user.getIdToken();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (!message.includes("auth/network-request-failed")) {
+      throw error;
+    }
+
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+    if (!apiKey) {
+      throw error;
+    }
+
+    const response = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, returnSecureToken: true }),
+      }
+    );
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok || typeof payload?.idToken !== "string") {
+      throw new Error(payload?.error?.message ?? message ?? "Login failed.");
+    }
+
+    return payload.idToken;
+  }
+}
+
 export function SignInPanel({
   allowedRoles,
   defaultRole,
@@ -87,12 +125,7 @@ export function SignInPanel({
     let sessionEstablished = false;
 
     try {
-      const credential = await signInWithEmailAndPassword(
-        getFirebaseClientAuth(),
-        email,
-        password
-      );
-      const idToken = await credential.user.getIdToken();
+      const idToken = await getPasswordSignInToken(email, password);
 
       const sessionResponse = await fetch("/api/auth/session", {
         method: "POST",

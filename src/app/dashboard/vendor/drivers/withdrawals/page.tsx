@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 
@@ -262,7 +263,7 @@ export default function VendorWithdrawalsPage() {
         </div>
 
         {isLoading ? (
-          <div className="p-8 text-sm text-muted-foreground">Loading payout requests...</div>
+          <ListPageSkeleton rows={5} className="max-w-none px-6 py-6" />
         ) : error ? (
           <div className="p-8 text-sm text-destructive">{error}</div>
         ) : filteredRequests.length === 0 ? (
@@ -366,7 +367,7 @@ export default function VendorWithdrawalsPage() {
           </Button>
         </div>
         {ledgerLoading ? (
-          <p className="text-sm text-muted-foreground">Loading ledger…</p>
+          <ListPageSkeleton rows={3} className="max-w-none px-0 py-0" />
         ) : ledgerError ? (
           <p className="text-sm text-destructive">{ledgerError}</p>
         ) : ledgerEntries.length === 0 ? (
@@ -418,6 +419,5 @@ export default function VendorWithdrawalsPage() {
     </div>
   );
 }
-
 
 

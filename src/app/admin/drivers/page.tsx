@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import {
   Table,
   TableBody,
@@ -21,6 +22,10 @@ import {
 type DriverFilter = "all" | "active" | "pending" | "inactive";
 type AdminDriversResponse = {
   drivers: AdminDriverRecord[];
+  pageInfo?: {
+    nextCursor: string | null;
+    total: number;
+  };
 };
 
 function formatDate(timestamp: number) {
@@ -75,13 +80,16 @@ export default function AdminDriversPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<DriverFilter>("all");
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [totalDrivers, setTotalDrivers] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
     const loadDrivers = async () => {
       try {
-        const response = await fetch("/api/admin/drivers", { method: "GET" });
+        const response = await fetch("/api/admin/drivers?limit=25", { method: "GET" });
         if (!response.ok) {
           const payload = await response.json().catch(() => null);
           throw new Error(payload?.error ?? "Unable to load drivers.");
@@ -90,6 +98,8 @@ export default function AdminDriversPage() {
         const payload: AdminDriversResponse = await response.json();
         if (isMounted) {
           setDrivers(payload.drivers ?? []);
+          setNextCursor(payload.pageInfo?.nextCursor ?? null);
+          setTotalDrivers(payload.pageInfo?.total ?? payload.drivers?.length ?? 0);
           setError(null);
         }
       } catch (fetchError) {
@@ -114,6 +124,40 @@ export default function AdminDriversPage() {
       isMounted = false;
     };
   }, []);
+
+  const handleLoadMore = async () => {
+    if (!nextCursor) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+
+    try {
+      const response = await fetch(
+        `/api/admin/drivers?limit=25&cursor=${encodeURIComponent(nextCursor)}`,
+        { method: "GET" }
+      );
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? "Unable to load drivers.");
+      }
+
+      const payload: AdminDriversResponse = await response.json();
+      setDrivers((current) => {
+        const existing = new Set(current.map((driver) => driver.uid));
+        const nextDrivers = (payload.drivers ?? []).filter((driver) => !existing.has(driver.uid));
+        return [...current, ...nextDrivers];
+      });
+      setNextCursor(payload.pageInfo?.nextCursor ?? null);
+      setTotalDrivers(payload.pageInfo?.total ?? totalDrivers);
+    } catch (fetchError) {
+      setError(
+        fetchError instanceof Error ? fetchError.message : "Unable to load drivers."
+      );
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const activeDrivers = useMemo(
     () => drivers.filter((driver) => driver.status === "active").length,
@@ -156,11 +200,7 @@ export default function AdminDriversPage() {
   }, [drivers, filter, search]);
 
   if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto p-8 text-sm text-muted-foreground">
-        Loading driver directory...
-      </div>
-    );
+    return <ListPageSkeleton rows={6} className="max-w-7xl p-0" />;
   }
 
   if (error) {
@@ -195,7 +235,7 @@ export default function AdminDriversPage() {
         {[
           {
             title: "Total Fleet",
-            value: drivers.length.toLocaleString("en-NG"),
+            value: totalDrivers.toLocaleString("en-NG"),
             subtitle: `${linkedVendors} linked vendors`,
             icon: Truck,
           },
@@ -338,6 +378,19 @@ export default function AdminDriversPage() {
           </Table>
         )}
       </Card>
+      {nextCursor ? (
+        <div className="flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-xl"
+            onClick={() => void handleLoadMore()}
+            disabled={isLoadingMore}
+          >
+            {isLoadingMore ? "Loading more..." : `Load more drivers (${drivers.length}/${totalDrivers})`}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

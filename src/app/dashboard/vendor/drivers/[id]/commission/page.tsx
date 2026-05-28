@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 
 export default function DriverIndividualCommissionPage() {
   const params = useParams();
@@ -121,11 +122,7 @@ export default function DriverIndividualCommissionPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-8 max-w-4xl mx-auto text-sm text-muted-foreground">
-        Loading driver commission settings...
-      </div>
-    );
+    return <ListPageSkeleton rows={3} className="max-w-4xl md:px-8" />;
   }
 
   return (

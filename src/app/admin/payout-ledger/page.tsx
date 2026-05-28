@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 function formatCurrency(amount: number) {
@@ -129,7 +130,7 @@ export default function AdminPayoutLedgerPage() {
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <p className="p-6 text-sm text-muted-foreground">Loading…</p>
+            <ListPageSkeleton rows={5} className="max-w-none px-6 py-6" />
           ) : error ? (
             <p className="p-6 text-sm text-destructive">{error}</p>
           ) : entries.length === 0 ? (

@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -75,12 +76,44 @@ type LatestOrderResponse = {
   };
 };
 
+type HomeBootstrapState = {
+  role: string | null;
+  vendors: VendorCatalogRecord[];
+  preferences: CustomerPreferencesResponse["preferences"];
+  cartItemsCount: number;
+  activeOrder: LatestOrderResponse["order"];
+};
+
 const customerNavItems = [
-  { name: 'Marketplace', href: '/', icon: Store },
+  { name: 'Marketplace', href: '/dashboard/customer/marketplace', icon: Store },
   { name: 'My Orders', href: '/dashboard/customer/orders', icon: ShoppingBag },
   { name: 'Profile', href: '/dashboard/customer', icon: User },
   { name: 'Settings', href: '/dashboard/customer/settings', icon: Settings },
 ];
+
+function VendorCarouselSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <Card key={index} className="overflow-hidden rounded-3xl border-none bg-white shadow-sm">
+          <Skeleton className="h-44 w-full rounded-none" />
+          <CardContent className="space-y-4 p-6">
+            <div className="flex items-start justify-between gap-3">
+              <Skeleton className="h-6 w-36 rounded-full" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+            <Skeleton className="h-4 w-full rounded-full" />
+            <Skeleton className="h-4 w-2/3 rounded-full" />
+            <div className="flex gap-2">
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-24 rounded-full" />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 function HomePageContent() {
   const { toast } = useToast();
@@ -90,6 +123,8 @@ function HomePageContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [vendorCatalog, setVendorCatalog] = useState<VendorCatalogRecord[]>([]);
+  const [isCatalogLoading, setIsCatalogLoading] = useState(true);
+  const [isHomeReady, setIsHomeReady] = useState(false);
   const [customerPreferences, setCustomerPreferences] = useState<CustomerPreferencesResponse["preferences"]>(null);
   const [isSavingOnboarding, setIsSavingOnboarding] = useState(false);
   const [cartItemsCount, setCartItemsCount] = useState(0);
@@ -110,149 +145,121 @@ function HomePageContent() {
         const response = await fetch('/api/auth/me', { method: 'GET' });
 
         if (!response.ok) {
-          if (isMounted) {
-            setSessionRole(null);
-          }
-          return;
+          return null;
         }
 
         const profile = await response.json();
-        if (isMounted) {
-          setSessionRole(profile?.role ?? "customer");
-        }
+        return (profile?.role ?? "customer") as string;
       } catch {
-        if (isMounted) {
-          setSessionRole(null);
-        }
+        return null;
       }
     };
-
-    void loadSession();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadCustomerPreferences = async () => {
-      if (sessionRole !== "customer") {
-        if (isMounted) {
-          setCustomerPreferences(null);
-          setShowOnboarding(false);
-        }
-        return;
-      }
-
-      try {
-        const response = await fetch('/api/customer/preferences', { method: 'GET' });
-        if (!response.ok) {
-          throw new Error('Unable to load customer preferences.');
-        }
-
-        const payload: CustomerPreferencesResponse = await response.json();
-        if (isMounted) {
-          setCustomerPreferences(payload.preferences);
-          setShowOnboarding((payload.preferences?.addresses.length ?? 0) === 0);
-        }
-      } catch {
-        if (isMounted) {
-          setCustomerPreferences(null);
-          setShowOnboarding(false);
-        }
-      }
-    };
-
-    void loadCustomerPreferences();
-    return () => {
-      isMounted = false;
-    };
-  }, [sessionRole]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadCustomerNavState = async () => {
-      if (sessionRole !== "customer") {
-        if (isMounted) {
-          setCartItemsCount(0);
-          setActiveOrder(null);
-        }
-        return;
-      }
-
-      try {
-        const [cartResponse, latestOrderResponse] = await Promise.all([
-          fetch('/api/cart', { method: 'GET' }),
-          fetch('/api/orders/latest', { method: 'GET' }),
-        ]);
-
-        let nextCartCount = 0;
-        let nextActiveOrder: LatestOrderResponse["order"] = null;
-
-        if (cartResponse.ok) {
-          const cartPayload: CartResponse = await cartResponse.json();
-          nextCartCount = (cartPayload.cart?.items ?? []).reduce(
-            (sum, item) => sum + item.quantity,
-            0
-          );
-        }
-
-        if (latestOrderResponse.ok) {
-          const latestOrderPayload: LatestOrderResponse = await latestOrderResponse.json();
-          nextActiveOrder = latestOrderPayload.order;
-        }
-
-        if (isMounted) {
-          setCartItemsCount(nextCartCount);
-          setActiveOrder(nextActiveOrder);
-        }
-      } catch {
-        if (isMounted) {
-          setCartItemsCount(0);
-          setActiveOrder(null);
-        }
-      }
-    };
-
-    void loadCustomerNavState();
-    return () => {
-      isMounted = false;
-    };
-  }, [sessionRole]);
-
-  useEffect(() => {
-    let isMounted = true;
 
     const loadVendors = async () => {
       try {
         const response = await fetch('/api/vendors', { method: 'GET' });
         if (!response.ok) {
-          throw new Error('Unable to load vendors.');
+          return [];
         }
 
         const payload = await response.json();
-        if (isMounted) {
-          setVendorCatalog(payload.vendors ?? []);
-        }
+        return (payload.vendors ?? []) as VendorCatalogRecord[];
       } catch {
-        if (isMounted) {
-          setVendorCatalog([]);
-        }
+        return [];
       }
     };
 
-    void loadVendors();
+    const loadCustomerState = async (role: string | null) => {
+      if (role !== "customer") {
+        return {
+          preferences: null,
+          cartItemsCount: 0,
+          activeOrder: null,
+        } satisfies Pick<HomeBootstrapState, "preferences" | "cartItemsCount" | "activeOrder">;
+      }
+
+      const [preferencesResponse, cartResponse, latestOrderResponse] = await Promise.all([
+        fetch('/api/customer/preferences', { method: 'GET' }).catch(() => null),
+        fetch('/api/cart', { method: 'GET' }).catch(() => null),
+        fetch('/api/orders/latest', { method: 'GET' }).catch(() => null),
+      ]);
+
+      let preferences: CustomerPreferencesResponse["preferences"] = null;
+      let nextCartCount = 0;
+      let nextActiveOrder: LatestOrderResponse["order"] = null;
+
+      if (preferencesResponse?.ok) {
+        const preferencesPayload: CustomerPreferencesResponse = await preferencesResponse.json();
+        preferences = preferencesPayload.preferences;
+      }
+
+      if (cartResponse?.ok) {
+        const cartPayload: CartResponse = await cartResponse.json();
+        nextCartCount = (cartPayload.cart?.items ?? []).reduce(
+          (sum, item) => sum + item.quantity,
+          0
+        );
+      }
+
+      if (latestOrderResponse?.ok) {
+        const latestOrderPayload: LatestOrderResponse = await latestOrderResponse.json();
+        nextActiveOrder = latestOrderPayload.order;
+      }
+
+      return {
+        preferences,
+        cartItemsCount: nextCartCount,
+        activeOrder: nextActiveOrder,
+      } satisfies Pick<HomeBootstrapState, "preferences" | "cartItemsCount" | "activeOrder">;
+    };
+
+    const loadHomeData = async () => {
+      const [role, vendors] = await Promise.all([loadSession(), loadVendors()]);
+      const customerState = await loadCustomerState(role);
+
+      if (isMounted) {
+        const nextState: HomeBootstrapState = {
+          role,
+          vendors,
+          ...customerState,
+        };
+
+        setSessionRole(nextState.role);
+        setVendorCatalog(nextState.vendors);
+        setCustomerPreferences(nextState.preferences);
+        setCartItemsCount(nextState.cartItemsCount);
+        setActiveOrder(nextState.activeOrder);
+        setShowOnboarding(
+          nextState.role === "customer" &&
+            (nextState.preferences?.addresses.length ?? 0) === 0
+        );
+        setIsHomeReady(true);
+        setIsCatalogLoading(false);
+      }
+    };
+
+    void loadHomeData().catch(() => {
+      if (isMounted) {
+        setSessionRole(null);
+        setVendorCatalog([]);
+        setCustomerPreferences(null);
+        setCartItemsCount(0);
+        setActiveOrder(null);
+        setShowOnboarding(false);
+        setIsHomeReady(true);
+        setIsCatalogLoading(false);
+      }
+    });
+
     return () => {
       isMounted = false;
     };
   }, []);
 
-  const isLoggedIn = sessionRole !== null;
+  const isLoggedIn = isHomeReady && sessionRole !== null;
   const isCustomerSession = sessionRole === "customer";
-  const homeHref = "/";
+  const shouldShowGuestHero = !isCustomerSession;
+  const homeHref = isCustomerSession ? "/dashboard/customer" : "/";
   const dashboardHref =
     sessionRole === "vendor"
       ? "/dashboard/vendor"
@@ -261,6 +268,7 @@ function HomePageContent() {
         : sessionRole === "admin"
           ? "/admin"
           : "/dashboard/customer";
+  const riderSignInHref = sessionRole === "driver" ? "/dashboard/driver" : "/auth/login?role=driver";
 
   const availableCategories = useMemo(() => {
     const categories = vendorCatalog.flatMap((vendor) => vendor.catalogCategories ?? []);
@@ -460,8 +468,13 @@ function HomePageContent() {
               </div>
 
               <div className="flex items-center gap-3">
-                <Link href={isLoggedIn ? "/dashboard/customer/orders" : "/auth/login?redirect=/dashboard/customer/orders"}>
-                  <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/5 rounded-full">
+                <Link href={riderSignInHref}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-primary hover:bg-primary/5 rounded-full"
+                    aria-label="Rider sign in"
+                  >
                     <Truck className="h-5 w-5" />
                   </Button>
                 </Link>
@@ -476,10 +489,15 @@ function HomePageContent() {
                   </Button>
                 </Link>
                 
-                {!isLoggedIn ? (
+                {!isHomeReady ? (
+                  <div className="hidden sm:flex items-center gap-2">
+                    <Skeleton className="h-10 w-24 rounded-xl" />
+                    <Skeleton className="h-10 w-28 rounded-xl" />
+                  </div>
+                ) : !isLoggedIn ? (
                   <>
                     <div className="hidden sm:flex items-center gap-2">
-                      <Link href="/dashboard/vendor">
+                      <Link href="/auth/login?role=vendor">
                         <Button variant="outline" size="sm" className="gap-2 border-primary/20 hover:bg-primary/5 text-primary rounded-xl">
                           <Store className="h-4 w-4" />
                           Vendor
@@ -526,8 +544,8 @@ function HomePageContent() {
             </div>
           )}
 
-          {!isCustomerSession && (
-            <section className="relative h-[550px] flex items-center overflow-hidden">
+          {shouldShowGuestHero && (
+            <section className="relative flex min-h-[calc(100dvh-4rem)] items-center overflow-hidden py-16 sm:py-20 md:min-h-[620px]">
               <div className="absolute inset-0 z-0">
                 <Image 
                   src={PlaceHolderImages.find(img => img.id === 'hero-water')?.imageUrl || ''} 
@@ -542,23 +560,23 @@ function HomePageContent() {
                   <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 px-4 py-1">
                     Fast & Fresh Delivery
                   </Badge>
-                  <h1 className="text-5xl md:text-6xl font-bold font-headline leading-tight mb-6">
+                  <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-headline leading-[1.05] mb-6">
                     Pure Water, <br />
                     <span className="text-primary">Delivered</span> to Your Door.
                   </h1>
-                  <p className="text-lg text-muted-foreground mb-8">
+                  <p className="max-w-xl text-base leading-7 text-muted-foreground mb-8 sm:text-lg">
                     The largest multi-vendor marketplace for high-quality bottled and sachet water. 
                   </p>
-                  <div className="flex flex-wrap gap-4">
-                    <Link href="#vendors">
-                      <Button size="lg" className="h-14 px-8 rounded-full text-lg shadow-lg">
+                  <div className="grid gap-3 sm:flex sm:flex-wrap sm:gap-4">
+                    <Link href="#vendors" className="w-full sm:w-auto">
+                      <Button size="lg" className="h-14 w-full px-8 rounded-full text-base shadow-lg sm:w-auto sm:text-lg">
                         Shop Now
                       </Button>
                     </Link>
                     <Button 
                       variant="outline" 
                       size="lg" 
-                      className="h-14 px-8 rounded-full text-lg gap-2 border-primary/20 text-primary hover:bg-primary/5"
+                      className="h-14 w-full px-8 rounded-full text-base gap-2 border-primary/20 text-primary hover:bg-primary/5 sm:w-auto sm:text-lg"
                     >
                       <Download className="h-5 w-5" />
                       Get the App
@@ -602,7 +620,9 @@ function HomePageContent() {
                 </div>
               </div>
 
-              {filteredVendors.length > 0 ? (
+              {isCatalogLoading ? (
+                <VendorCarouselSkeleton />
+              ) : filteredVendors.length > 0 ? (
                 <div className="relative group">
                   <Carousel
                     opts={{
@@ -768,7 +788,7 @@ function HomePageContent() {
 
         <footer className="bg-white border-t py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+            <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
               <div className="col-span-1 md:col-span-1">
                 <div className="flex items-center gap-2 mb-6">
                   <Droplets className="h-6 w-6 text-primary" />
@@ -788,14 +808,6 @@ function HomePageContent() {
                 </Button>
               </div>
               <div>
-                <h4 className="font-bold mb-4">Quick Links</h4>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><Link href="/#vendors" className="hover:text-primary">All Vendors</Link></li>
-                  <li><Link href="/dashboard/customer/orders" className="hover:text-primary">My Orders</Link></li>
-                  <li><Link href="/auth/admin" className="hover:text-primary">Super Admin Portal</Link></li>
-                </ul>
-              </div>
-              <div>
                 <h4 className="font-bold mb-4">Support</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li><Link href="#" className="hover:text-primary">Help Center</Link></li>
@@ -805,8 +817,8 @@ function HomePageContent() {
               <div>
                 <h4 className="font-bold mb-4">Join Us</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><Link href="/auth/register" className="hover:text-primary">Become a Vendor</Link></li>
-                  <li><Link href="/auth/register" className="hover:text-primary">Drive with WaterDrop</Link></li>
+                  <li><Link href="/auth/register?role=vendor" className="hover:text-primary">Become a Vendor</Link></li>
+                  <li><Link href="/auth/register?role=driver" className="hover:text-primary">Drive with WaterDrop</Link></li>
                 </ul>
               </div>
             </div>

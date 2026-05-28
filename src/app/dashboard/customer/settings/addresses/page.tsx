@@ -7,6 +7,7 @@ import type { CustomerAddress } from "@/lib/domain/schemas";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import {
   Dialog,
   DialogContent,
@@ -280,7 +281,7 @@ export default function CustomerAddressesSettingsPage() {
         </div>
 
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading saved addresses...</p>
+          <ListPageSkeleton rows={3} className="px-0 py-0" />
         ) : addresses.length > 0 ? (
           <div className="space-y-4">
             {addresses.map((address) => {

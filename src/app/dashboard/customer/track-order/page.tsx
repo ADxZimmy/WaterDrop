@@ -22,6 +22,7 @@ import { getCustomerDeliveryExceptionBanner } from "@/lib/orders/delivery-except
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { getOrderExecutionEventDescription, getOrderExecutionEventLabel } from "@/lib/orders/execution";
 import { ORDER_STATUS_STEPS, getOrderStatusLabel } from "@/lib/orders/status";
 
@@ -99,8 +100,8 @@ export default function TrackOrderPage() {
 
   return (
     <div className="min-h-screen bg-background pb-10">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-4 mb-8">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 flex items-center gap-4">
           <Link href="/dashboard/customer/orders">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-5 w-5" />
@@ -113,19 +114,20 @@ export default function TrackOrderPage() {
         </div>
 
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading latest order...</p>
+          <ListPageSkeleton rows={4} className="max-w-7xl px-0 py-0" />
         ) : !order ? (
           <Card className="border-none shadow-sm p-8 text-center">
             <CardContent className="p-0 space-y-3">
               <h2 className="text-xl font-bold">No active order</h2>
               <p className="text-muted-foreground">Place an order to see live tracking updates here.</p>
-              <Link href="/">
+              <Link href="/dashboard/customer/marketplace">
                 <Button className="rounded-xl">Browse Vendors</Button>
               </Link>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
+            <div className="space-y-6">
             <Card className="border-none shadow-lg overflow-hidden bg-primary text-white">
               <CardContent className="p-8">
                 <div className="flex justify-between items-start gap-4">
@@ -182,7 +184,9 @@ export default function TrackOrderPage() {
                 })}
               </div>
             </Card>
+            </div>
 
+            <div className="space-y-6">
             {exceptionBanner ? (
               <Card
                 className={`border-none shadow-sm p-6 ${
@@ -317,6 +321,7 @@ export default function TrackOrderPage() {
                 </div>
               </div>
             </Card>
+            </div>
           </div>
         )}
       </div>

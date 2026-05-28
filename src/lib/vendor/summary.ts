@@ -11,13 +11,17 @@ import {
   subWeeks,
 } from "date-fns";
 import {
+  orderSchema,
   productSchema,
+  userProfileSchema,
   vendorProfileSchema,
   type Product,
+  type UserProfile,
 } from "@/lib/domain/schemas";
 import { getFirebaseAdminDb } from "@/lib/firebase/admin";
+import { measurePerf } from "@/lib/observability/perf";
 import { ORDER_ACTIVE_STATUSES } from "@/lib/orders/status";
-import { listVendorOrders, type VendorOrderRecord } from "@/lib/orders/vendor-order";
+import type { VendorOrderRecord } from "@/lib/orders/vendor-order";
 import type {
   VendorDashboardSummary,
   VendorMetricPoint,
@@ -28,6 +32,14 @@ const DAILY_POINTS = 7;
 const WEEKLY_POINTS = 6;
 const MONTHLY_POINTS = 6;
 const LOW_STOCK_THRESHOLD = 50;
+
+type SummaryOrder = {
+  status: "pending" | "accepted" | "preparing" | "out_for_delivery" | "delivered" | "cancelled";
+  totalNaira: number;
+  createdAt: number;
+  updatedAt: number;
+  customerUid: string;
+};
 
 function createEmptySummary(): VendorOperationalSummary {
   return {
@@ -63,16 +75,16 @@ function createEmptyDashboardSummary(): VendorDashboardSummary {
   };
 }
 
-function getBillableOrders(orders: VendorOrderRecord[]) {
+function getBillableOrders<T extends SummaryOrder>(orders: T[]) {
   return orders.filter((order) => order.status !== "cancelled");
 }
 
-function sumOrderRevenue(orders: VendorOrderRecord[]) {
+function sumOrderRevenue<T extends SummaryOrder>(orders: T[]) {
   return getBillableOrders(orders).reduce((sum, order) => sum + order.totalNaira, 0);
 }
 
 function buildTimeSeries(
-  orders: VendorOrderRecord[],
+  orders: SummaryOrder[],
   period: "days" | "weeks" | "months"
 ): VendorMetricPoint[] {
   const now = new Date();
@@ -176,81 +188,144 @@ async function loadVendorProfile(vendorId: string) {
 }
 
 async function loadVendorProducts(vendorId: string) {
-  const snapshot = await getFirebaseAdminDb()
-    .collection("products")
-    .where("vendorId", "==", vendorId)
-    .get();
+  return measurePerf("vendor.summary.load-products", async () => {
+    const snapshot = await getFirebaseAdminDb()
+      .collection("products")
+      .where("vendorId", "==", vendorId)
+      .get();
 
-  return snapshot.docs.map((doc) => productSchema.parse(doc.data()));
+    return snapshot.docs.map((doc) => productSchema.parse(doc.data()));
+  }, { vendorId });
+}
+
+async function loadVendorOrders(vendorId: string) {
+  return measurePerf("vendor.summary.load-orders", async () => {
+    const snapshot = await getFirebaseAdminDb()
+      .collection("orders")
+      .where("vendorId", "==", vendorId)
+      .get();
+
+    return snapshot.docs
+      .map((doc) => orderSchema.parse(doc.data()))
+      .sort((left, right) => right.createdAt - left.createdAt);
+  }, { vendorId });
+}
+
+function getCustomerName(profile: Partial<UserProfile> | null, fallbackUid: string) {
+  const firstName = typeof profile?.firstName === "string" ? profile.firstName.trim() : "";
+  const lastName = typeof profile?.lastName === "string" ? profile.lastName.trim() : "";
+  const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
+
+  if (fullName) {
+    return fullName;
+  }
+
+  if (typeof profile?.email === "string" && profile.email.trim().length > 0) {
+    return profile.email;
+  }
+
+  return `Customer ${fallbackUid.slice(0, 6)}`;
+}
+
+async function loadCustomerProfiles(customerUids: string[]) {
+  const uniqueCustomerUids = [...new Set(customerUids.filter(Boolean))];
+  const db = getFirebaseAdminDb();
+  const entries = await Promise.all(
+    uniqueCustomerUids.map(async (uid) => {
+      const snapshot = await db.collection("users").doc(uid).get();
+      const parsed = userProfileSchema.safeParse(snapshot.data());
+      return [uid, parsed.success ? parsed.data : null] as const;
+    })
+  );
+
+  return new Map(entries);
 }
 
 export async function getVendorDashboardSummary(vendorId: string): Promise<VendorDashboardSummary> {
-  const [profile, orders, products] = await Promise.all([
-    loadVendorProfile(vendorId),
-    listVendorOrders(vendorId),
-    loadVendorProducts(vendorId),
-  ]);
+  return measurePerf("vendor.summary.build-payload", async () => {
+    const [profile, orders, products] = await Promise.all([
+      loadVendorProfile(vendorId),
+      loadVendorOrders(vendorId),
+      loadVendorProducts(vendorId),
+    ]);
 
-  if (!profile) {
-    return createEmptyDashboardSummary();
-  }
+    if (!profile) {
+      return createEmptyDashboardSummary();
+    }
 
-  const billableOrders = getBillableOrders(orders);
-  const now = new Date();
-  const currentMonthStart = startOfMonth(now).getTime();
-  const currentMonthRevenue = billableOrders
-    .filter((order) => order.createdAt >= currentMonthStart)
-    .reduce((sum, order) => sum + order.totalNaira, 0);
-  const deliveredOrders = orders.filter((order) => order.status === "delivered");
-  const averageFulfillmentMinutes =
-    deliveredOrders.length > 0
-      ? deliveredOrders.reduce((sum, order) => {
-          const elapsedMs = Math.max(order.updatedAt - order.createdAt, 0);
-          return sum + elapsedMs / 60000;
-        }, 0) / deliveredOrders.length
-      : null;
-  const activeProducts = products.filter((product) => product.isActive);
+    const billableOrders = getBillableOrders(orders);
+    const now = new Date();
+    const currentMonthStart = startOfMonth(now).getTime();
+    const currentMonthRevenue = billableOrders
+      .filter((order) => order.createdAt >= currentMonthStart)
+      .reduce((sum, order) => sum + order.totalNaira, 0);
+    const deliveredOrders = orders.filter((order) => order.status === "delivered");
+    const averageFulfillmentMinutes =
+      deliveredOrders.length > 0
+        ? deliveredOrders.reduce((sum, order) => {
+            const elapsedMs = Math.max(order.updatedAt - order.createdAt, 0);
+            return sum + elapsedMs / 60000;
+          }, 0) / deliveredOrders.length
+        : null;
+    const activeProducts = products.filter((product) => product.isActive);
+    const recentOrderBase = orders.slice(0, 5);
+    const customerProfiles = await loadCustomerProfiles(
+      recentOrderBase.map((order) => order.customerUid)
+    );
+    const recentOrders: VendorOrderRecord[] = recentOrderBase.map((order) => {
+      const customerProfile = customerProfiles.get(order.customerUid) ?? null;
 
-  return {
-    profile: {
-      businessName: profile.businessName,
-      status: profile.status,
-      submittedAt: profile.submittedAt,
-      reviewedAt: profile.reviewedAt,
-      reviewNotes: profile.reviewNotes,
-    },
-    summary: {
-      totalOrders: orders.length,
-      activeOrders: orders.filter((order) => ORDER_ACTIVE_STATUSES.has(order.status)).length,
-      deliveredOrders: deliveredOrders.length,
-      cancelledOrders: orders.filter((order) => order.status === "cancelled").length,
-      uniqueCustomers: new Set(orders.map((order) => order.customerUid)).size,
-      fulfillmentRate:
-        orders.length > 0 ? Math.round((deliveredOrders.length / orders.length) * 100) : 0,
-      grossRevenueNaira: billableOrders.reduce((sum, order) => sum + order.totalNaira, 0),
-      monthlyRevenueNaira: currentMonthRevenue,
-      averageOrderValueNaira:
-        billableOrders.length > 0
-          ? Math.round(
-              billableOrders.reduce((sum, order) => sum + order.totalNaira, 0) /
-                billableOrders.length
-            )
-          : 0,
-      averageFulfillmentMinutes:
-        averageFulfillmentMinutes !== null ? Math.round(averageFulfillmentMinutes) : null,
-      totalProducts: products.length,
-      activeProducts: activeProducts.length,
-      totalStockUnits: activeProducts.reduce((sum, product) => sum + product.stock, 0),
-      lowStockCount: activeProducts.filter((product) => product.stock <= LOW_STOCK_THRESHOLD)
-        .length,
-    },
-    recentOrders: buildRecentOrders(orders),
-    inventoryAlerts: buildInventoryAlerts(products),
-    charts: {
-      days: buildTimeSeries(orders, "days"),
-      weeks: buildTimeSeries(orders, "weeks"),
-      months: buildTimeSeries(orders, "months"),
-    },
-    categoryInsights: buildCategoryInsights(products),
-  };
+      return {
+        ...order,
+        customerName: getCustomerName(customerProfile, order.customerUid),
+        customerEmail:
+          typeof customerProfile?.email === "string" ? customerProfile.email : undefined,
+        customerPhone:
+          typeof customerProfile?.phone === "string" ? customerProfile.phone : undefined,
+      };
+    });
+
+    return {
+      profile: {
+        businessName: profile.businessName,
+        status: profile.status,
+        submittedAt: profile.submittedAt,
+        reviewedAt: profile.reviewedAt,
+        reviewNotes: profile.reviewNotes,
+      },
+      summary: {
+        totalOrders: orders.length,
+        activeOrders: orders.filter((order) => ORDER_ACTIVE_STATUSES.has(order.status)).length,
+        deliveredOrders: deliveredOrders.length,
+        cancelledOrders: orders.filter((order) => order.status === "cancelled").length,
+        uniqueCustomers: new Set(orders.map((order) => order.customerUid)).size,
+        fulfillmentRate:
+          orders.length > 0 ? Math.round((deliveredOrders.length / orders.length) * 100) : 0,
+        grossRevenueNaira: billableOrders.reduce((sum, order) => sum + order.totalNaira, 0),
+        monthlyRevenueNaira: currentMonthRevenue,
+        averageOrderValueNaira:
+          billableOrders.length > 0
+            ? Math.round(
+                billableOrders.reduce((sum, order) => sum + order.totalNaira, 0) /
+                  billableOrders.length
+              )
+            : 0,
+        averageFulfillmentMinutes:
+          averageFulfillmentMinutes !== null ? Math.round(averageFulfillmentMinutes) : null,
+        totalProducts: products.length,
+        activeProducts: activeProducts.length,
+        totalStockUnits: activeProducts.reduce((sum, product) => sum + product.stock, 0),
+        lowStockCount: activeProducts.filter((product) => product.stock <= LOW_STOCK_THRESHOLD)
+          .length,
+      },
+      recentOrders: buildRecentOrders(recentOrders),
+      inventoryAlerts: buildInventoryAlerts(products),
+      charts: {
+        days: buildTimeSeries(orders, "days"),
+        weeks: buildTimeSeries(orders, "weeks"),
+        months: buildTimeSeries(orders, "months"),
+      },
+      categoryInsights: buildCategoryInsights(products),
+    };
+  }, { vendorId });
 }

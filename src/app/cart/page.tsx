@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Trash2, Plus, Minus, CreditCard, Truck, MapPin, CheckCircle2, Zap } from 'lucide-react';
+import { ArrowLeft, Trash2, Plus, Minus, CreditCard, Truck, MapPin, CheckCircle2, Zap, ShoppingBag } from 'lucide-react';
 import type { CustomerAddress, PaymentMethod } from "@/lib/domain/schemas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { CartSkeleton } from "@/components/ui/loading-skeletons";
 import { formatCustomerAddress, getDefaultCustomerAddress } from "@/lib/customer/preferences";
 import { useToast } from "@/hooks/use-toast";
 import { getPaymentMethodLabel } from "@/lib/orders/status";
@@ -231,7 +232,7 @@ export default function CartPage() {
   };
 
   if (isLoading) {
-    return <div className="min-h-screen bg-background p-8 text-sm text-muted-foreground">Loading cart...</div>;
+    return <CartSkeleton />;
   }
 
   if (step === 'success') {
@@ -246,8 +247,8 @@ export default function CartPage() {
           <Link href="/dashboard/customer/track-order">
             <Button className="w-full h-14 rounded-2xl text-lg shadow-lg shadow-primary/20">Track Order Now</Button>
           </Link>
-          <Link href="/">
-            <Button variant="ghost" className="w-full h-12 rounded-xl text-muted-foreground">Go back to Home</Button>
+          <Link href="/dashboard/customer/marketplace">
+            <Button variant="ghost" className="w-full h-12 rounded-xl text-muted-foreground">Go back to Marketplace</Button>
           </Link>
         </div>
         {orderId && <p className="mt-4 text-xs text-muted-foreground">Order ID: {orderId}</p>}
@@ -259,20 +260,34 @@ export default function CartPage() {
     <div className="min-h-screen bg-background pb-10">
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="icon" onClick={() => step === 'checkout' ? setStep('cart') : router.push('/')}>
+          <Button variant="ghost" size="icon" onClick={() => step === 'checkout' ? setStep('cart') : router.push('/dashboard/customer/marketplace')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-2xl font-bold font-headline">{step === 'cart' ? 'Shopping Cart' : 'Checkout'}</h1>
         </div>
 
         {!cart || cart.items.length === 0 ? (
-          <Card className="border-none shadow-sm p-10 text-center">
-            <CardContent className="space-y-4 p-0">
-              <h2 className="text-xl font-bold">Your cart is empty</h2>
-              <p className="text-muted-foreground">Add products from a vendor catalog to begin checkout.</p>
-              <Link href="/">
-                <Button className="rounded-xl">Browse Vendors</Button>
-              </Link>
+          <Card className="overflow-hidden border-none bg-white shadow-sm">
+            <CardContent className="space-y-6 p-8 text-center sm:p-10">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/10 text-primary">
+                <ShoppingBag className="h-10 w-10" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold font-headline">Your cart is ready for water</h2>
+                <p className="mx-auto max-w-sm text-sm leading-6 text-muted-foreground">
+                  Choose a verified vendor, add the products you need, and come back here for a faster checkout.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Link href="/dashboard/customer/marketplace">
+                  <Button className="h-12 w-full rounded-xl">Browse Vendors</Button>
+                </Link>
+                <Link href="/dashboard/customer/orders">
+                  <Button variant="outline" className="h-12 w-full rounded-xl">
+                    View My Orders
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         ) : step === 'cart' ? (
@@ -374,20 +389,26 @@ export default function CartPage() {
                     ))}
                   </RadioGroup>
                 ) : (
-                  <Card className="border-none shadow-sm">
-                    <CardContent className="p-5 space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        Save a delivery address in your customer settings before checkout.
-                      </p>
-                      <div className="flex gap-3">
-                        <Link href="/dashboard/customer/settings/addresses" className="flex-1">
-                          <Button variant="outline" className="w-full rounded-xl">
-                            Manage Addresses
-                          </Button>
+                  <Card className="border-primary/15 bg-primary/5 shadow-sm">
+                    <CardContent className="space-y-4 p-5">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
+                          <MapPin className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-sm">Delivery address needed</h4>
+                          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                            Add or choose a default address before placing this order. This keeps checkout from failing at the final step.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <Link href="/dashboard/customer/settings/addresses">
+                          <Button className="w-full rounded-xl">Add Address</Button>
                         </Link>
-                        <Link href="/" className="flex-1">
-                          <Button className="w-full rounded-xl">Go to Home</Button>
-                        </Link>
+                        <Button variant="outline" className="w-full rounded-xl" onClick={() => setStep('cart')}>
+                          Review Cart
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>

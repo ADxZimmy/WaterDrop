@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { useToast } from "@/hooks/use-toast";
 
 type ProfileFormState = {
@@ -154,13 +155,7 @@ export default function CustomerProfileSettingsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background pb-10">
-        <div className="max-w-2xl mx-auto px-4 py-8 text-sm text-muted-foreground">
-          Loading your profile...
-        </div>
-      </div>
-    );
+    return <ListPageSkeleton rows={3} />;
   }
 
   if (!account) {

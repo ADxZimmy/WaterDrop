@@ -1,7 +1,7 @@
 # WaterDrop MVP Handover
 
-Last updated: 2026-03-22 (ledger CSV + admin read path)  
-Agent: Cursor (Composer)
+Last updated: 2026-05-28 (Chrome Phase 1 desktop QA)
+Agent: Codex
 
 ## Rollback snapshot
 - **Tag:** `snapshot/2026-03-22-mvp` (resolve SHA with `git rev-parse snapshot/2026-03-22-mvp` or `git show snapshot/2026-03-22-mvp`)
@@ -9,21 +9,136 @@ Agent: Cursor (Composer)
 - Captures full MVP + Phase 5 kickoff state (Firebase-backed flows, driver payouts, execution events, customer order history) before continuing Phase 5 work
 
 ## Current Phase and Milestone
-- Phase: **5 - Post-MVP productization kickoff**
-- Milestone: MVP hardening is complete. Post-MVP work has started with customer-visible per-order history and delivery exception tracking on top of the live assignment/proof-of-delivery flow; next focus is deeper delivery exceptions, finance/settlement foundations, and production readiness.
+- Phase: **2 - Current data access stabilization**
+- Milestone: Phase 2 is in progress while Firebase remains temporary. Public vendor reads, customer latest order, customer overview summary reads, and customer/vendor order list reads are now bounded or paginated. Phase 1 authenticated desktop QA is complete in Chrome; protected 390px mobile QA remains open because the Chrome extension session did not expose viewport emulation and resizing the Chrome window did not affect the controlled tab viewport.
 
 ## Decisions and Constraints
-- Follow plan sequence strictly: **Phase 0 -> Phase 4**.
+- Follow the remediation sequence in [`progress.md`](progress.md): **Phase 0 -> Phase 6**.
 - Preserve current UI system (existing components, fonts, spacing, color tokens).
 - Currency across MVP flows remains **Nigerian Naira (`₦`)**.
 - Driver scope now includes assignment and payout fundamentals; proof-of-delivery, route telemetry, and bank transfer automation remain deferred.
 - COD/manual transfer is the MVP payment mode.
-- Firebase is the backend foundation for MVP.
-- The remaining 8 low `npm audit` findings in the `firebase-admin` transitive tree are an explicitly accepted MVP dependency risk unless a safe upstream fix appears.
+- Firebase remains the temporary backend foundation only while Phases 1-2 stabilize the current MVP; the selected target stack is **Next.js App Router + Supabase Postgres/Auth/Storage/Realtime + Tailwind/shadcn + Vitest**.
+- Avoid deep new Firestore-specific architecture unless it is needed to keep the MVP usable before Supabase migration.
+- Preserve existing public route paths and API response shapes during migration unless [`progress.md`](progress.md) explicitly marks a route for deprecation.
+- Supabase Phase 3 migrations must include explicit table and sequence `GRANT` statements for Data API access. Supabase announced that new tables in `public` will no longer be exposed automatically for new projects by default beginning 2026-05-30, with existing-project enforcement scheduled for 2026-10-30.
+- The remaining `firebase-admin` audit findings are temporary migration debt; do not churn Firebase dependency versions unless a production/security requirement demands it before Phase 4 removal.
 - Any new agent must read and continue from this file before coding.
 - If any file changes are made in a turn, this file must be updated in the same turn.
 
 ## Completed
+- [x] Implemented [`progress.md`](progress.md) Phase 1 UX/perceived-performance fixes:
+  - Added shared skeleton loading primitives in [`src/components/ui/loading-skeletons.tsx`](src/components/ui/loading-skeletons.tsx) and route-level loading fallbacks for cart, vendor catalog, customer, and vendor dashboards.
+  - Added route-aware app chrome in [`src/components/app-chrome.tsx`](src/components/app-chrome.tsx), so public mobile navigation no longer leaks into admin or role dashboards.
+  - Added customer-specific shell navigation in [`src/components/layouts/customer-shell.tsx`](src/components/layouts/customer-shell.tsx) and wired it through [`src/app/dashboard/customer/layout.tsx`](src/app/dashboard/customer/layout.tsx).
+  - Refined homepage bootstrapping and mobile hero behavior in [`src/app/page.tsx`](src/app/page.tsx), including fewer client fetch/effect churn points and no blocking full-hero startup skeleton.
+  - Replaced plain page-loading copy with skeletons across the customer, vendor, driver, admin, cart, and catalog surfaces.
+  - Improved cart empty state and checkout missing-address guidance in [`src/app/cart/page.tsx`](src/app/cart/page.tsx).
+- [x] Followed up on Phase 1 navigation/perceived-speed feedback:
+  - Customer brand navigation now stays inside the customer workspace by linking to [`/dashboard/customer`](/dashboard/customer) from [`src/components/layouts/customer-shell.tsx`](src/components/layouts/customer-shell.tsx).
+  - Homepage brand navigation now resolves customer sessions to [`/dashboard/customer`](/dashboard/customer) instead of the public landing page in [`src/app/page.tsx`](src/app/page.tsx).
+  - The public homepage now renders the real hero immediately and limits startup skeletons to async auth/catalog regions, reducing the sluggish full-page loading feel.
+  - Public homepage/cart screenshots were captured at 390px and desktop; authenticated role screenshots still need a logged-in browser/session.
+- [x] Followed up on customer Marketplace and desktop layout feedback:
+  - Added dedicated customer Marketplace route [`/dashboard/customer/marketplace`](src/app/dashboard/customer/marketplace/page.tsx) so Marketplace navigation no longer loads the public homepage first.
+  - Updated customer shell and homepage customer-nav Marketplace links to use `/dashboard/customer/marketplace`.
+  - Reworked customer Overview, Orders, Track, and Settings pages from narrow `max-w-2xl` mobile-style layouts into `max-w-7xl` desktop grids while preserving mobile behavior.
+  - Partially stabilized customer order reads by ordering recent customer orders by `createdAt` and limiting `/api/orders` to 50 rows and `/api/orders/latest` to 10 rows.
+  - Optimized `/api/vendors` by fetching active products once and grouping them by vendor instead of doing a product query for every approved vendor.
+- [x] Completed role-session navigation audit:
+  - Added shared protected session router [`/dashboard/session`](src/app/dashboard/session/page.tsx).
+  - Added real role session pages for customer, vendor, and driver:
+    - [`src/app/dashboard/customer/session/page.tsx`](src/app/dashboard/customer/session/page.tsx)
+    - [`src/app/dashboard/vendor/session/page.tsx`](src/app/dashboard/vendor/session/page.tsx)
+    - [`src/app/dashboard/driver/session/page.tsx`](src/app/dashboard/driver/session/page.tsx)
+  - Updated legacy mobile nav, cart, vendor-detail back links, vendor shell branding, and driver shell branding so session navigation no longer points through `/`.
+  - Repo-wide root-link audit leaves only the public homepage footer `/#vendors` anchor as intentional public-page navigation.
+- [x] Fixed customer notification and install-prompt behavior:
+  - Customer notification bell in [`src/components/layouts/customer-shell.tsx`](src/components/layouts/customer-shell.tsx) now opens an in-place popover instead of navigating to track order.
+  - Customer notification badge is data-driven: hidden at zero notifications, shows `1`-`9`, and caps at `9+`.
+  - [`PwaInstallPrompt`](src/components/pwa-install-prompt.tsx) remains mounted through app chrome but [`src/components/app-chrome.tsx`](src/components/app-chrome.tsx) only renders it on the public homepage (`pathname === "/"`).
+- [x] Fixed public footer and role-entry links:
+  - Removed Quick Links from the public homepage footer and added an admin-only Quick Links card to [`src/app/admin/page.tsx`](src/app/admin/page.tsx).
+  - Join Us footer links now point to `/auth/register?role=vendor` and `/auth/register?role=driver`.
+  - [`src/app/auth/register/page.tsx`](src/app/auth/register/page.tsx) reads the `role` query param and preselects the matching registration tab.
+  - Public header rider/truck icon now routes to `/auth/login?role=driver` unless the current session is already a driver.
+- [x] Hardened customer overview account loading:
+  - [`src/lib/customer/account.ts`](src/lib/customer/account.ts) now returns the authenticated customer profile even if optional preferences or order-summary reads fail.
+  - Invalid customer preference/order records are skipped from the overview summary instead of blanking the whole page.
+  - [`src/app/api/customer/account/route.ts`](src/app/api/customer/account/route.ts) now returns `401`/`403` only for auth failures and `500` for real account-load failures.
+- [x] Updated Supabase migration notes after reviewing the 2026 Data API grants change:
+  - [`progress.md`](progress.md) now requires explicit `GRANT` statements in Phase 3 migrations alongside RLS policies.
+  - Future Supabase migration verification must check intended `anon`, `authenticated`, and `service_role` grants before Data API routes are considered done.
+- [x] Continued Phase 2 data-access stabilization for customer/vendor order lists:
+  - [`src/app/api/orders/route.ts`](src/app/api/orders/route.ts) now supports bounded cursor pagination with `limit` and `cursor` while preserving the `orders` response array.
+  - [`src/app/api/vendor/orders/route.ts`](src/app/api/vendor/orders/route.ts) now uses paginated vendor order reads with `pageInfo.nextCursor`.
+  - [`src/lib/orders/vendor-order.ts`](src/lib/orders/vendor-order.ts) keeps the legacy array-returning `listVendorOrders()` for existing payout/driver flows and adds a separate paginated helper for the API route.
+  - [`src/app/dashboard/customer/orders/page.tsx`](src/app/dashboard/customer/orders/page.tsx) and [`src/app/dashboard/vendor/orders/page.tsx`](src/app/dashboard/vendor/orders/page.tsx) now load the first 20 orders and expose "Load more orders".
+  - [`src/app/dashboard/vendor/revenue/page.tsx`](src/app/dashboard/vendor/revenue/page.tsx) now requests a bounded recent 50-order window instead of depending on an unbounded vendor order endpoint.
+- [x] Completed Chrome-authenticated desktop Phase 1 QA:
+  - Seeded isolated QA role accounts in the Firebase dev backend for customer, vendor, driver, and admin visual checks.
+  - [`src/components/auth/sign-in-panel.tsx`](src/components/auth/sign-in-panel.tsx) now falls back to Firebase password REST auth when the Firebase client SDK reports `auth/network-request-failed`, then continues through the existing session route.
+  - Chrome desktop checks passed for `/dashboard/customer/orders`, `/dashboard/vendor/orders`, `/dashboard/driver`, and `/admin` at a 1536px viewport.
+  - Verified the four protected pages loaded the correct role surface, had no app-origin console errors, had no horizontal overflow, and did not show account/internal-server error states.
+  - Protected 390px mobile QA is still open: Chrome extension tooling did not expose viewport emulation, and the controlled tab viewport remained 1536px after attempting to resize the Chrome window.
+- [x] Added [`progress.md`](progress.md) as the canonical remediation tracker with phased priorities, statuses, verification gates, public-interface commitments, and Supabase migration assumptions.
+- [x] Locked the new execution order: UX/performance first, current data-access stabilization second, Supabase foundation third, Firebase removal fourth, then flow fine-tuning and production hardening.
+- [x] Recorded Supabase as the selected Firebase replacement stack:
+  - Next.js App Router
+  - Supabase Postgres/Auth/Storage/Realtime
+  - Tailwind CSS and shadcn/ui
+  - Vitest
+- [x] Added a lightweight automated unit-test harness with `vitest` and a root `npm test` command via [`vitest.config.ts`](vitest.config.ts) and [`package.json`](package.json).
+- [x] Added first business-logic coverage for order lifecycle helpers:
+  - [`src/lib/orders/status.test.ts`](src/lib/orders/status.test.ts)
+  - [`src/lib/orders/delivery-exception.test.ts`](src/lib/orders/delivery-exception.test.ts)
+  - Covers progress transitions, cancellation rules, customer exception banners, vendor exception resolution, and exception-closing behavior.
+- [x] Added compensation/payout workflow coverage in [`src/lib/driver/compensation.test.ts`](src/lib/driver/compensation.test.ts):
+  - Covers category normalization, payout calculation, payout-request creation, empty-balance rejection, payout approval, and payout rejection rollback.
+  - Uses mocked Firestore and payout-ledger boundaries so business logic can be exercised without live Firebase dependencies.
+- [x] Expanded [`src/lib/driver/compensation.test.ts`](src/lib/driver/compensation.test.ts) to cover the remaining high-risk mutation flows:
+  - Driver assignment and unassignment
+  - Arrival confirmation idempotency
+  - Delivery confirmation with proof and payout accrual
+  - Failed delivery attempts opening a delivery exception
+- [x] Split the former monolithic [`src/lib/driver/compensation.ts`](src/lib/driver/compensation.ts) into focused modules while preserving the existing public import surface through a barrel file:
+  - [`src/lib/driver/compensation-config.ts`](src/lib/driver/compensation-config.ts)
+  - [`src/lib/driver/compensation-directory.ts`](src/lib/driver/compensation-directory.ts)
+  - [`src/lib/driver/compensation-orders.ts`](src/lib/driver/compensation-orders.ts)
+  - [`src/lib/driver/compensation-payouts.ts`](src/lib/driver/compensation-payouts.ts)
+  - Shared types/helpers in [`src/lib/driver/compensation-types.ts`](src/lib/driver/compensation-types.ts) and [`src/lib/driver/compensation-shared.ts`](src/lib/driver/compensation-shared.ts)
+- [x] Added payout-ledger coverage in [`src/lib/finance/payout-ledger.test.ts`](src/lib/finance/payout-ledger.test.ts):
+  - Covers commission accrual append rules, payout request/review append behavior, failure logging, and vendor/driver/global listing with limit clamping.
+- [x] Added auth and guard coverage:
+  - [`src/lib/auth/routing.test.ts`](src/lib/auth/routing.test.ts) for role normalization, path inference, safe redirect routing, and login URL building.
+  - [`src/lib/auth/server.test.ts`](src/lib/auth/server.test.ts) for session-cookie auth lookup, default-role fallback, and `requireRole`.
+  - [`middleware.test.ts`](middleware.test.ts) for unauthenticated redirects and authenticated pass-through on protected routes.
+- [x] Added first-pass cursor pagination plumbing for the highest-read list surfaces:
+  - Shared helper [`src/lib/pagination.ts`](src/lib/pagination.ts)
+  - Vendor drivers API + page: [`src/app/api/vendor/drivers/route.ts`](src/app/api/vendor/drivers/route.ts), [`src/app/dashboard/vendor/drivers/page.tsx`](src/app/dashboard/vendor/drivers/page.tsx)
+  - Admin drivers/customers/orders APIs + pages:
+    - [`src/app/api/admin/drivers/route.ts`](src/app/api/admin/drivers/route.ts), [`src/app/admin/drivers/page.tsx`](src/app/admin/drivers/page.tsx)
+    - [`src/app/api/admin/customers/route.ts`](src/app/api/admin/customers/route.ts), [`src/app/admin/customers/page.tsx`](src/app/admin/customers/page.tsx)
+    - [`src/app/api/admin/orders/route.ts`](src/app/api/admin/orders/route.ts), [`src/app/admin/orders/page.tsx`](src/app/admin/orders/page.tsx)
+  - Library pagination support:
+    - [`src/lib/driver/compensation-directory.ts`](src/lib/driver/compensation-directory.ts)
+    - [`src/lib/admin/ops.ts`](src/lib/admin/ops.ts)
+- [x] Reduced backend read amplification behind the new paginated feeds:
+  - Vendor driver listing now paginates sorted driver profiles first, loads user profiles only for the current page, and computes driver metrics only for the visible driver UIDs within the vendor’s orders.
+  - Admin orders now hydrate customer/vendor records only for the current order page.
+  - Admin customers now load paged customer profiles first, then fetch only those customers’ preferences and orders.
+  - Admin drivers now hydrate user/vendor records only for the current driver page.
+- [x] Reduced vendor dashboard/analytics hydration work in [`src/lib/vendor/summary.ts`](src/lib/vendor/summary.ts):
+  - Vendor summary now reads raw vendor orders directly for aggregate metrics/charts and only hydrates customer profile data for the small recent-orders slice shown in the UI.
+  - This removes the previous need to hydrate every historical vendor order with customer identity data just to render overview/analytics cards.
+- [x] Narrowed admin analytics loading in [`src/lib/admin/ops.ts`](src/lib/admin/ops.ts):
+  - `getAdminAnalyticsPayload()` now uses a dedicated analytics loader instead of the old generic all-collections base loader.
+  - The analytics path no longer loads customer preferences or the full users collection; it now fetches customer count, vendors, drivers, orders, products, and only the vendor owner user records needed for rankings.
+- [x] Added lightweight performance instrumentation for the remaining broad aggregation paths:
+  - Shared helpers in [`src/lib/observability/perf.ts`](src/lib/observability/perf.ts) expose `logPerf()` and `measurePerf()` for timing server-side operations.
+  - [`src/app/api/admin/analytics/route.ts`](src/app/api/admin/analytics/route.ts) and [`src/app/api/vendor/summary/route.ts`](src/app/api/vendor/summary/route.ts) now log end-to-end request duration plus small result metadata.
+  - [`src/lib/admin/ops.ts`](src/lib/admin/ops.ts) and [`src/lib/vendor/summary.ts`](src/lib/vendor/summary.ts) now time the internal data-load and payload-build stages so real bottlenecks can be measured before introducing materialized analytics.
+  - Logs are enabled by default and can be disabled with `WATERDROP_PERF_LOGS=0`.
 - [x] Extended payout ledger: **CSV export** via `?format=csv` on vendor, driver, and new admin routes; **`GET /api/admin/payout-ledger`** (optional `vendorId`, `limit`, `format=csv`); admin UI [`/admin/payout-ledger`](src/app/admin/payout-ledger/page.tsx) with nav link; shared formatter [`src/lib/finance/payout-ledger-csv.ts`](src/lib/finance/payout-ledger-csv.ts); Download CSV actions on vendor withdrawals and driver earnings. Global ledger query uses `orderBy(createdAt desc)` — deploy Firestore indexes as needed if the console prompts.
 - [x] Added append-only **payout settlement ledger** (`payoutLedgerEntries` in Firestore) with kinds `commission_accrued`, `payout_requested`, `payout_paid`, and `payout_rejected`, wired from [`src/lib/finance/payout-ledger.ts`](src/lib/finance/payout-ledger.ts); read APIs [`GET /api/vendor/payout-ledger`](src/app/api/vendor/payout-ledger/route.ts) and [`GET /api/driver/payout-ledger`](src/app/api/driver/payout-ledger/route.ts); UI on vendor withdrawals and driver earnings. Deploy composite indexes from [`firestore.indexes.json`](firestore.indexes.json) (`firebase deploy --only firestore:indexes` or paste the console link) before relying on ledger queries in production.
 - [x] Added vendor delivery exception resolution after driver failed attempts: `deliveryException` on orders, execution events `delivery_exception_rescheduled` / `delivery_exception_return_to_vendor`, vendor PATCH `deliveryExceptionResolution`, customer-visible banners, and lifecycle rules (block naked OFD→preparing, block mark-delivered while exception open). Key files: [`src/lib/domain/schemas.ts`](src/lib/domain/schemas.ts), [`src/lib/orders/delivery-exception.ts`](src/lib/orders/delivery-exception.ts), [`src/lib/orders/status.ts`](src/lib/orders/status.ts), [`src/lib/driver/compensation.ts`](src/lib/driver/compensation.ts), [`src/app/api/vendor/orders/[id]/route.ts`](src/app/api/vendor/orders/[id]/route.ts), [`src/app/dashboard/vendor/orders/[id]/page.tsx`](src/app/dashboard/vendor/orders/[id]/page.tsx), [`src/app/dashboard/customer/track-order/page.tsx`](src/app/dashboard/customer/track-order/page.tsx), [`src/app/dashboard/customer/orders/[id]/page.tsx`](src/app/dashboard/customer/orders/[id]/page.tsx).
@@ -326,7 +441,7 @@ Agent: Cursor (Composer)
     - [`src/ai/dev.ts`](src/ai/dev.ts)
     - [`src/ai/genkit.ts`](src/ai/genkit.ts)
     - [`src/ai/flows/generate-product-description-flow.ts`](src/ai/flows/generate-product-description-flow.ts)
-- [x] Documented the accepted remaining dependency risk and removed stale Genkit references from project docs:
+- [x] Previously documented the remaining Firebase dependency risk and removed stale Genkit references from project docs:
   - [`README.md`](README.md)
   - [`handover.md`](handover.md)
 - [x] Started Phase 5 by adding customer-visible per-order history and driver-reported failed delivery attempts:
@@ -345,17 +460,23 @@ Agent: Cursor (Composer)
   - [x] `npm run build` passes in this environment.
 
 ## In Progress
-- [ ] Phase 5 continuation: optional photo/OTP execution history, reconciliation-style reports beyond raw CSV, and production-operability improvements.
+- [ ] Phase 1 authenticated visual QA remains: check 390px mobile and desktop for customer orders, vendor orders, driver dashboard, and admin overview. Automated gates pass, and public homepage/cart screenshots are captured, but protected role pages still need a logged-in browser/session for meaningful screenshots.
 
 ## Next Up
-- [x] ~~Extend delivery exceptions into vendor reschedule / return-to-vendor flows and customer-visible exception states.~~ (Shipped 2026-03-22.)
-- [x] ~~Immutable payout/audit records separate from mutable order documents (initial ledger slice).~~ (Shipped 2026-03-22.)
-- [x] ~~Settlement ledger CSV export and admin read path.~~ (Shipped 2026-03-22.)
-- [ ] Decide whether the execution-event model should grow further into photo evidence, OTP confirmation, and richer customer-visible event history across more surfaces.
-- [ ] Optional: automated reconciliation summaries (totals by vendor/driver/period) or scheduled exports.
-- [ ] Revisit the accepted 8 low `firebase-admin` audit findings only if a non-breaking upstream remediation appears or production/compliance requirements change.
+- [ ] Complete protected 390px Phase 1 visual QA when a real narrow Chrome viewport or equivalent browser viewport control is available and record the result in [`progress.md`](progress.md).
+- [ ] Continue Phase 2 by checking remaining broad admin/vendor analytics reads with existing perf logs before making any Firestore-specific redesign.
+- [ ] Begin Phase 3 Supabase foundation after UX/performance and current data access are stable: add Supabase env/client scaffolding, SQL migrations, DTO mapping, Auth path, and Storage buckets.
+- [ ] When Phase 3 starts, include explicit Supabase `GRANT` statements in every exposed-table migration; do not rely on default public-schema Data API exposure.
+- [ ] Remove Firebase in Phase 4 only after Supabase parity is verified across auth, profiles, catalog/cart/orders, vendor/admin ops, driver compensation, and payout ledger.
+- [ ] Keep [`progress.md`](progress.md) statuses current after every phase or meaningful task.
 
 ## Known Blockers / Risks
+- Pagination/performance risk:
+  - Vendor/admin list endpoints now page their response payloads and UI rendering, and the current page hydration work has been narrowed substantially. Vendor summary hydration has also been reduced, and admin analytics no longer loads unrelated collections. Lightweight timing logs now exist for `/api/admin/analytics` and `/api/vendor/summary`, but the main remaining hotspot is still the fact that analytics aggregates over broad order/product/vendor/driver sets in one request. Phase 2 should stabilize only the worst bottlenecks before Supabase migration.
+- Firebase migration risk:
+  - Firebase is deeply coupled into auth, session verification, Firestore access, admin health checks, tests, docs, package dependencies, and Firebase App Hosting config. Supabase migration should be phased through [`progress.md`](progress.md) and should preserve route/API behavior while replacing infrastructure.
+- Supabase grant risk:
+  - Supabase Data API clients can fail with table permission errors if Phase 3 migrations create tables without explicit grants, even when RLS policies are present. Keep grants and RLS policies together in migration review.
 - Open risk:
   - Warning cleanup is now complete for the previously listed surfaces and `npm run lint` is clean in this environment; future warnings will likely come from new work rather than the old backlog.
 - Product/browse empty-state risk:
@@ -369,28 +490,120 @@ Agent: Cursor (Composer)
 - Customer account risk:
   - Core customer dashboard/profile data is now live, but several notifications/security/help surfaces still remain mostly placeholder-level UX even though their warning-heavy imports were cleaned up this turn.
 - Security risk:
-  - `npm audit` is down to 8 low-severity vulnerabilities after removing the unused Genkit stack; the remaining findings now sit only in the `firebase-admin` tree, and the audit tool still suggests a semver-major move to `firebase-admin@10.3.0`, which needs deliberate review rather than blind application.
+  - `npm audit` previously reported remaining findings in the `firebase-admin` tree. Because Firebase removal is now planned, treat this as temporary migration debt unless a production/security requirement forces earlier remediation.
 - Admin account provisioning risk:
   - Admin sign-in is now separated at [`/auth/admin`](/auth/admin) and public role registration no longer accepts `admin`, but there is still no dedicated internal admin invitation/provisioning workflow beyond creating/administering those accounts outside the public registration flow.
 
 ## Latest Verification
+- Phase 1 UX/perceived-performance implementation on 2026-05-04:
+  - `npm test` passes with 6 files / 37 tests.
+  - `npm run lint` passes.
+  - `npm run typecheck` passes (`next typegen && tsc --noEmit`).
+  - `npm run build` passes and generated 90 static pages.
+  - Visual screenshots were still pending for the Phase 1 checklist at the end of that pass.
+- Phase 1 navigation/perceived-speed follow-up on 2026-05-05:
+  - Fixed customer WaterDrop brand links to avoid a public-homepage flash before the customer dashboard.
+  - Removed the full public-hero startup skeleton so meaningful homepage content paints immediately.
+  - `npm test` passes with 6 files / 37 tests.
+  - `npm run lint` passes.
+  - `npm run typecheck` passes (`next typegen && tsc --noEmit`).
+  - `npm run build` passes and generated 90 static pages.
+  - `git diff --check` passes.
+  - Local dev server responds at `http://127.0.0.1:3000` with `GET / -> 200` under process `26804`.
+  - Public homepage/cart screenshots captured under `.codex/screenshots`; authenticated role-page screenshots remain pending without a logged-in session.
+- Phase 1 customer marketplace and desktop-layout follow-up on 2026-05-05:
+  - Added `/dashboard/customer/marketplace` and moved customer Marketplace navigation away from `/`.
+  - Widened customer Overview, Orders, Track, and Settings into desktop-first dashboard grids.
+  - Customer orders/latest-order API reads now order by `createdAt` and limit recent records.
+  - `/api/vendors` no longer performs per-vendor product collection scans.
+  - `npm test` passes with 6 files / 37 tests.
+  - `npm run lint` passes.
+  - `npm run typecheck` passes (`next typegen && tsc --noEmit`).
+  - `npm run build` passes and generated 91 static pages.
+  - `git diff --check` passes.
+  - Local dev server responds at `http://127.0.0.1:3000` with `GET / -> 200` under process `65488`.
+- Role-session navigation audit on 2026-05-05:
+  - `npm test` passes with 6 files / 37 tests.
+  - `npm run lint` passes.
+  - `npm run typecheck` passes (`next typegen && tsc --noEmit`).
+  - `npm run build` passes and generated 95 static pages.
+  - `git diff --check` passes.
+  - Local dev server responds at `http://127.0.0.1:3000` with `GET / -> 200` under process `58520`.
+- Customer notification/install-prompt follow-up on 2026-05-05:
+  - `npm test` passes with 6 files / 37 tests.
+  - `npm run lint` passes.
+  - `npm run typecheck` passes (`next typegen && tsc --noEmit`).
+  - `npm run build` passes and generated 95 static pages.
+  - `git diff --check` passes.
+  - Local dev server responds at `http://127.0.0.1:3000` with `GET / -> 200` under process `57808`.
+- Public footer/role-entry follow-up on 2026-05-05:
+  - `npm test` passes with 6 files / 37 tests.
+  - `npm run lint` passes.
+  - `npm run typecheck` passes (`next typegen && tsc --noEmit`).
+  - `npm run build` passes and generated 95 static pages.
+  - `git diff --check` passes.
+  - Local dev server responds at `http://127.0.0.1:3000` with `GET / -> 200` under process `40624`.
+- Customer overview resilience and Supabase grant tracking on 2026-05-28:
+  - Hardened `/api/customer/account` so optional Firestore summary reads do not blank the customer overview.
+  - Recorded Supabase's explicit-grants requirement in [`progress.md`](progress.md) and this handover.
+  - `npm test` passes with 6 files / 37 tests.
+  - `npm run lint` passes.
+  - `npm run typecheck` passes (`next typegen && tsc --noEmit`).
+  - `npm run build` passes and generated 95 static pages.
+  - `git diff --check` passes.
+  - Local dev server responds at `http://127.0.0.1:3000` with `GET / -> 200` under process `14356`.
+- Phase 2 customer/vendor order pagination on 2026-05-28:
+  - Added cursor pagination to customer and vendor order APIs and "Load more orders" UI to both role pages.
+  - `npm test` passes with 6 files / 37 tests.
+  - `npm run lint` passes.
+  - `npm run typecheck` passes (`next typegen && tsc --noEmit`).
+  - `npm run build` passes and generated 95 static pages.
+  - `git diff --check` passes.
+  - Local dev server responds at `http://127.0.0.1:3000` with `GET / -> 200` under process `22440`.
+- Chrome Phase 1 authenticated desktop QA on 2026-05-28:
+  - Customer orders, vendor orders, driver dashboard, and admin overview passed authenticated Chrome desktop checks.
+  - Protected 390px mobile visual QA remains open due Chrome viewport-control limitation in the current connector session.
+  - `npm test` passes with 6 files / 37 tests.
+  - `npm run lint` passes.
+  - `npm run typecheck` passes (`next typegen && tsc --noEmit`).
+  - `npm run build` passes and generated 95 static pages.
+  - `git diff --check` passes.
+  - Local dev server responds at `http://127.0.0.1:3000` with `GET / -> 200` under process `29656`.
+- Documentation tracking update on 2026-05-04:
+  - Docs-only change for [`progress.md`](progress.md) and [`handover.md`](handover.md); no product behavior changed.
+  - Reviewed `handover.md` with `git diff -- handover.md` and confirmed [`progress.md`](progress.md) is a new tracker with `git status --short --branch -- progress.md handover.md`.
+- `npm test`:
+  - Passes on 2026-04-14 with 6 test files / 37 tests covering order status, delivery exceptions, compensation flows, payout-ledger helpers, auth routing/server helpers, and middleware redirects.
 - `npm run typecheck`:
-  - Passes on 2026-03-22 after ledger CSV + admin slice.
+  - Passes on 2026-04-14. If it fails with missing `.next/types` route files or generated validator artifacts, run `npm run build` once to regenerate them and rerun typecheck.
 - `npm run lint`:
-  - Passes clean on 2026-03-22 after ledger CSV + admin slice.
+  - Passes clean on 2026-04-14 after adding analytics/vendor summary performance instrumentation.
 - `npm run build`:
-  - Passes on 2026-03-22 after ledger CSV + admin slice.
+  - Passes on 2026-04-14 after adding analytics/vendor summary performance instrumentation.
 - `npm audit --json`:
-  - Reports 8 low vulnerabilities, 0 moderate, 0 high, and 0 critical on 2026-03-15. The remaining findings all trace back to `firebase-admin` transitive dependencies.
+  - `npm install -D vitest` reported 16 vulnerabilities on 2026-04-14 (8 low, 2 moderate, 6 high). This should be reviewed separately from the Firebase migration track before any dependency cleanup work.
 
 ## Notes for Successor Agent
+- [`progress.md`](progress.md) is now the canonical remediation tracker. Update it alongside this handover whenever a phase starts, finishes, changes scope, or intentionally deprecates a route.
+- Continue by closing [`progress.md`](progress.md) Phase 1 visual QA, then move into Phase 2 current data-access stabilization before backend migration.
+- Firebase remains temporary through Phases 1-2 only. Phase 3 builds the Supabase foundation and Phase 4 removes Firebase after feature parity is verified.
+- Do not treat the `firebase-admin` audit findings as long-term accepted risk; track them as temporary migration debt unless security requirements force earlier action.
+- The repo now has a working `npm test` path via Vitest with alias resolution in [`vitest.config.ts`](vitest.config.ts); use it to grow coverage around pure business logic before attempting larger refactors.
+- [`src/lib/driver/compensation.test.ts`](src/lib/driver/compensation.test.ts) includes a small in-memory Firestore mock adapter that can be reused for the remaining payout/assignment tests instead of introducing a heavier emulator dependency.
+- The highest-risk business paths in [`src/lib/driver/compensation.ts`](src/lib/driver/compensation.ts) now have direct tests around payout math, payout-request lifecycle, assignment/unassignment, arrival idempotency, delivery confirmation, and failed-attempt exception opening, so the file is in a safer state for extraction work.
+- [`src/lib/driver/compensation.ts`](src/lib/driver/compensation.ts) is now a barrel that preserves existing imports while delegating to focused submodules; app routes and hooks were intentionally left untouched in this refactor.
+- The payout-ledger helpers and auth guard utilities now have direct tests too, so the remaining major risk area is less correctness and more architecture/performance: pagination, N+1 reads, and the oversized homepage/app shells.
+- The vendor/admin driver/customer/order list surfaces now accept `limit` and `cursor` and return `pageInfo.nextCursor` / `pageInfo.total`, with matching “Load more” UI on the corresponding pages. This is a response-payload improvement first, not a full Firestore query optimization.
+- The admin/vendor paginated feeds now also narrow related hydration to the current page where possible, so follow-up performance work should target analytics/summary helpers and any remaining broad collection scans rather than these list endpoints first.
+- [`src/lib/vendor/summary.ts`](src/lib/vendor/summary.ts) no longer depends on fully hydrated vendor order records for analytics/overview calculations; it now hydrates customer identity only for recent orders shown in the UI.
+- [`src/lib/admin/ops.ts`](src/lib/admin/ops.ts) now has a dedicated analytics loader separate from the paginated directory loaders, so future performance work can target analytics independently from admin customers/drivers/orders pages.
+- [`src/lib/observability/perf.ts`](src/lib/observability/perf.ts) now provides lightweight timing hooks for the remaining broad summary paths; watch server logs from `/api/admin/analytics` and `/api/vendor/summary` before deciding whether to build materialized stats.
+- `npm run typecheck` succeeded on 2026-04-14 only after a fresh `npm run build` regenerated `.next/types`; if it fails with missing generated route-type files, rebuild before assuming the source tree is broken.
 - The targeted admin-lite analytics/orders/customers/drivers surfaces are now live, and the remaining admin placeholder flows (`/admin`, `/admin/settings`, `/admin/vendors/new`) now show honest live/read-only operational data instead of fake save flows.
 - The auth flow now keeps admin off the public sign-in/register pages, routes unauthenticated `/admin` access to the dedicated [`/auth/admin`](/auth/admin) page, prevents public profile registration from setting/admin-mutating roles, and keeps shell sign-out buttons clearing the session cookie.
 - Driver dashboard/earnings/history/profile/order-reference/navigation/withdrawal surfaces no longer use fake data. They now consume the shared driver workspace, assigned-order, and payout-request APIs, and vendors can assign drivers plus approve/reject payout requests from live pages.
 - A small auth/perf win landed by using the role returned from `/api/auth/session` directly instead of fetching `/api/auth/me` immediately after login, and by removing post-redirect `router.refresh()` calls in shared sign-in/sign-out helpers.
 - The newest backend slice adds `driverAssignment` and `driverPayout` onto orders, persists vendor/default and per-driver commission configs, stores driver payout requests, and gates `out_for_delivery` behind an assigned active driver. This is wired through new vendor/driver APIs plus the fleet/profile/commission/withdrawal pages.
-- Continue Phase 5 from the rollback snapshot: richer delivery exception resolution, settlement/ledger foundations, and production readiness; keep accepting the documented low-severity `firebase-admin` audit risk unless a safe upstream fix appears.
-- The remaining `firebase-admin` audit findings are now explicitly documented as accepted MVP risk in [`README.md`](README.md) and this handoff; do not churn dependency versions further unless the risk posture changes or a safe upstream fix appears.
 - Phase 5 has now begun. The first post-MVP slice added a customer-owned `/api/orders/[id]` route, a new [`/dashboard/customer/orders/[id]`](src/app/dashboard/customer/orders/[id]/page.tsx) detail page, customer-visible execution-event history on the tracking surfaces, and a driver-side failed delivery attempt mutation that records exception notes without inventing fake telemetry or resolution states.
 - Failed attempts now set `deliveryException.state` to `open`; vendors resolve via [`PATCH /api/vendor/orders/[id]`](src/app/api/vendor/orders/[id]/route.ts) with `deliveryExceptionResolution: "reschedule" | "return_to_vendor"` and optional `customerMessage`, which moves the order to `preparing` and records the new execution events for customer timelines.
 - Commission accrual and payout request lifecycle events append to **`payoutLedgerEntries`** (never updated in place). Failures to write ledger rows are logged and do not roll back order/payout mutations.

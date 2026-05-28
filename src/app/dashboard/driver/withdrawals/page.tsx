@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 
 type DriverPayoutRequestRecord = {
   id: string;
@@ -127,11 +128,7 @@ export default function DriverWithdrawalHistoryPage() {
       </div>
 
       {isLoading ? (
-        <Card className="border-none shadow-sm rounded-3xl bg-white">
-          <CardContent className="p-8 text-sm text-muted-foreground">
-            Loading withdrawal history...
-          </CardContent>
-        </Card>
+        <ListPageSkeleton rows={4} className="max-w-none px-0 py-0" />
       ) : error ? (
         <Card className="border-none shadow-sm rounded-3xl bg-white">
           <CardContent className="p-8 text-sm text-destructive">{error}</CardContent>

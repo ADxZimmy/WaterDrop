@@ -17,7 +17,6 @@ import {
   productSchema,
   userProfileSchema,
   vendorProfileSchema,
-  type CustomerPreferences,
   type DriverProfile,
   type Order,
   type OrderItem,
@@ -34,15 +33,14 @@ import {
 import type {
   AdminAnalyticsPayload,
   AdminCategoryDistribution,
-  AdminCustomerRecord,
-  AdminDriverRecord,
   AdminMetricPoint,
-  AdminOrderRecord,
   AdminPaymentDistribution,
   AdminStatusDistribution,
   AdminVendorRankingRecord,
   CustomerTier,
 } from "@/lib/admin/ops-types";
+import { measurePerf } from "@/lib/observability/perf";
+import { paginateArray } from "@/lib/pagination";
 
 const DAILY_POINTS = 7;
 const WEEKLY_POINTS = 6;
@@ -206,63 +204,115 @@ function getCustomerTier(orderCount: number, totalSpentNaira: number): CustomerT
   return "Bronze";
 }
 
-type AdminBaseData = {
-  users: UserProfile[];
+type AdminAnalyticsData = {
+  customerCount: number;
   vendors: VendorProfile[];
   drivers: DriverProfile[];
   orders: Order[];
   products: Product[];
-  customerPreferences: CustomerPreferences[];
-  usersByUid: Map<string, UserProfile>;
-  vendorsById: Map<string, VendorProfile>;
-  preferencesByCustomerUid: Map<string, CustomerPreferences>;
+  vendorOwnerProfilesByUid: Map<string, UserProfile | null>;
 };
 
-async function loadAdminBaseData(): Promise<AdminBaseData> {
+async function loadUsersByIds(userIds: string[]) {
+  const uniqueIds = [...new Set(userIds.filter(Boolean))];
   const db = getFirebaseAdminDb();
-  const [
-    usersSnapshot,
-    vendorsSnapshot,
-    driversSnapshot,
-    ordersSnapshot,
-    productsSnapshot,
-    preferencesSnapshot,
-  ] = await Promise.all([
-    db.collection("users").get(),
-    db.collection("vendors").get(),
-    db.collection("drivers").get(),
-    db.collection("orders").get(),
-    db.collection("products").get(),
-    db.collection("customerPreferences").get(),
-  ]);
-
-  const users = usersSnapshot.docs.map((doc) => userProfileSchema.parse(doc.data()));
-  const vendors = vendorsSnapshot.docs.map((doc) => vendorProfileSchema.parse(doc.data()));
-  const drivers = driversSnapshot.docs.map((doc) => driverProfileSchema.parse(doc.data()));
-  const orders = ordersSnapshot.docs
-    .map((doc) => orderSchema.parse(doc.data()))
-    .sort((left, right) => right.createdAt - left.createdAt);
-  const products = productsSnapshot.docs.map((doc) => productSchema.parse(doc.data()));
-  const customerPreferences = preferencesSnapshot.docs.map((doc) =>
-    customerPreferencesSchema.parse(doc.data())
+  const entries = await Promise.all(
+    uniqueIds.map(async (uid) => {
+      const snapshot = await db.collection("users").doc(uid).get();
+      const parsed = userProfileSchema.safeParse(snapshot.data());
+      return [uid, parsed.success ? parsed.data : null] as const;
+    })
   );
 
-  return {
-    users,
-    vendors,
-    drivers,
-    orders,
-    products,
-    customerPreferences,
-    usersByUid: new Map(users.map((user) => [user.uid, user])),
-    vendorsById: new Map(vendors.map((vendor) => [vendor.vendorId, vendor])),
-    preferencesByCustomerUid: new Map(
-      customerPreferences.map((preferences) => [preferences.customerUid, preferences])
-    ),
-  };
+  return new Map(entries);
 }
 
-function buildVendorRankings(baseData: AdminBaseData): AdminVendorRankingRecord[] {
+async function loadVendorsByIds(vendorIds: string[]) {
+  const uniqueIds = [...new Set(vendorIds.filter(Boolean))];
+  const db = getFirebaseAdminDb();
+  const entries = await Promise.all(
+    uniqueIds.map(async (vendorId) => {
+      const snapshot = await db.collection("vendors").doc(vendorId).get();
+      const parsed = vendorProfileSchema.safeParse(snapshot.data());
+      return [vendorId, parsed.success ? parsed.data : null] as const;
+    })
+  );
+
+  return new Map(entries);
+}
+
+async function loadCustomerPreferencesByIds(customerUids: string[]) {
+  const uniqueIds = [...new Set(customerUids.filter(Boolean))];
+  const db = getFirebaseAdminDb();
+  const entries = await Promise.all(
+    uniqueIds.map(async (customerUid) => {
+      const snapshot = await db.collection("customerPreferences").doc(customerUid).get();
+      const parsed = customerPreferencesSchema.safeParse(snapshot.data());
+      return [customerUid, parsed.success ? parsed.data : null] as const;
+    })
+  );
+
+  return new Map(entries);
+}
+
+async function loadOrdersByCustomerIds(customerUids: string[]) {
+  const uniqueIds = [...new Set(customerUids.filter(Boolean))];
+  if (uniqueIds.length === 0) {
+    return [] as Order[];
+  }
+
+  const db = getFirebaseAdminDb();
+  const chunks = Array.from({ length: Math.ceil(uniqueIds.length / 10) }, (_, index) =>
+    uniqueIds.slice(index * 10, index * 10 + 10)
+  );
+  const snapshots = await Promise.all(
+    chunks.map((chunk) => db.collection("orders").where("customerUid", "in", chunk).get())
+  );
+
+  return snapshots.flatMap((snapshot) =>
+    snapshot.docs.map((doc) => orderSchema.parse(doc.data()))
+  );
+}
+
+async function loadAdminAnalyticsData(): Promise<AdminAnalyticsData> {
+  return measurePerf("admin.analytics.load-data", async () => {
+    const db = getFirebaseAdminDb();
+    const [
+      customerUsersSnapshot,
+      vendorsSnapshot,
+      driversSnapshot,
+      ordersSnapshot,
+      productsSnapshot,
+    ] = await Promise.all([
+      db.collection("users").where("role", "==", "customer").get(),
+      db.collection("vendors").get(),
+      db.collection("drivers").get(),
+      db.collection("orders").get(),
+      db.collection("products").get(),
+    ]);
+
+    const vendors = vendorsSnapshot.docs.map((doc) => vendorProfileSchema.parse(doc.data()));
+    const ownerProfiles = await loadUsersByIds(vendors.map((vendor) => vendor.ownerUid));
+
+    return {
+      customerCount: customerUsersSnapshot.docs.length,
+      vendors,
+      drivers: driversSnapshot.docs.map((doc) => driverProfileSchema.parse(doc.data())),
+      orders: ordersSnapshot.docs
+        .map((doc) => orderSchema.parse(doc.data()))
+        .sort((left, right) => right.createdAt - left.createdAt),
+      products: productsSnapshot.docs.map((doc) => productSchema.parse(doc.data())),
+      vendorOwnerProfilesByUid: ownerProfiles,
+    };
+  });
+}
+
+function buildVendorRankings(baseData: {
+  vendors: VendorProfile[];
+  products: Product[];
+  orders: Order[];
+  vendorOwnerProfilesByUid: Map<string, UserProfile | null>;
+}): AdminVendorRankingRecord[] {
   const currentMonthStart = startOfMonth(new Date()).getTime();
   const metricsByVendor = new Map<
     string,
@@ -314,7 +364,7 @@ function buildVendorRankings(baseData: AdminBaseData): AdminVendorRankingRecord[
 
   return baseData.vendors
     .map((vendor) => {
-      const ownerProfile = baseData.usersByUid.get(vendor.ownerUid) ?? null;
+      const ownerProfile = baseData.vendorOwnerProfilesByUid.get(vendor.ownerUid) ?? null;
       const metrics = metricsByVendor.get(vendor.vendorId) ?? {
         productCount: 0,
         activeProductCount: 0,
@@ -349,65 +399,77 @@ function buildVendorRankings(baseData: AdminBaseData): AdminVendorRankingRecord[
 }
 
 export async function getAdminAnalyticsPayload(): Promise<AdminAnalyticsPayload> {
-  const baseData = await loadAdminBaseData();
-  const billableOrders = getBillableOrders(baseData.orders);
-  const deliveredOrders = baseData.orders.filter((order) => order.status === "delivered");
-  const currentMonthStart = startOfMonth(new Date()).getTime();
-  const vendorRankings = buildVendorRankings(baseData);
-  const averageFulfillmentMinutes =
-    deliveredOrders.length > 0
-      ? Math.round(
-          deliveredOrders.reduce((sum, order) => {
-            const elapsedMs = Math.max(order.updatedAt - order.createdAt, 0);
-            return sum + elapsedMs / 60000;
-          }, 0) / deliveredOrders.length
-        )
-      : null;
+  return measurePerf("admin.analytics.build-payload", async () => {
+    const analyticsData = await loadAdminAnalyticsData();
+    const billableOrders = getBillableOrders(analyticsData.orders);
+    const deliveredOrders = analyticsData.orders.filter((order) => order.status === "delivered");
+    const currentMonthStart = startOfMonth(new Date()).getTime();
+    const vendorRankings = buildVendorRankings(analyticsData);
+    const averageFulfillmentMinutes =
+      deliveredOrders.length > 0
+        ? Math.round(
+            deliveredOrders.reduce((sum, order) => {
+              const elapsedMs = Math.max(order.updatedAt - order.createdAt, 0);
+              return sum + elapsedMs / 60000;
+            }, 0) / deliveredOrders.length
+          )
+        : null;
 
-  return {
-    summary: {
-      grossRevenueNaira: billableOrders.reduce((sum, order) => sum + order.totalNaira, 0),
-      monthlyRevenueNaira: billableOrders
-        .filter((order) => order.createdAt >= currentMonthStart)
-        .reduce((sum, order) => sum + order.totalNaira, 0),
-      totalOrders: baseData.orders.length,
-      activeOrders: baseData.orders.filter((order) => ORDER_ACTIVE_STATUSES.has(order.status))
-        .length,
-      deliveredOrders: deliveredOrders.length,
-      cancelledOrders: baseData.orders.filter((order) => order.status === "cancelled").length,
-      averageOrderValueNaira:
-        billableOrders.length > 0
-          ? Math.round(
-              billableOrders.reduce((sum, order) => sum + order.totalNaira, 0) /
-                billableOrders.length
-            )
-          : 0,
-      averageFulfillmentMinutes,
-      totalCustomers: baseData.users.filter((user) => user.role === "customer").length,
-      activeCustomers: new Set(baseData.orders.map((order) => order.customerUid)).size,
-      totalDrivers: baseData.drivers.length,
-      activeDrivers: baseData.drivers.filter((driver) => driver.status === "active").length,
-      totalVendors: baseData.vendors.length,
-      approvedVendors: baseData.vendors.filter((vendor) => vendor.status === "approved").length,
-    },
-    charts: {
-      days: buildTimeSeries(baseData.orders, "days"),
-      weeks: buildTimeSeries(baseData.orders, "weeks"),
-      months: buildTimeSeries(baseData.orders, "months"),
-    },
-    categoryDistribution: buildCategoryDistribution(baseData.products),
-    statusDistribution: buildStatusDistribution(baseData.orders),
-    paymentDistribution: buildPaymentDistribution(baseData.orders),
-    vendorRankings,
-  };
+    return {
+      summary: {
+        grossRevenueNaira: billableOrders.reduce((sum, order) => sum + order.totalNaira, 0),
+        monthlyRevenueNaira: billableOrders
+          .filter((order) => order.createdAt >= currentMonthStart)
+          .reduce((sum, order) => sum + order.totalNaira, 0),
+        totalOrders: analyticsData.orders.length,
+        activeOrders: analyticsData.orders.filter((order) => ORDER_ACTIVE_STATUSES.has(order.status))
+          .length,
+        deliveredOrders: deliveredOrders.length,
+        cancelledOrders: analyticsData.orders.filter((order) => order.status === "cancelled").length,
+        averageOrderValueNaira:
+          billableOrders.length > 0
+            ? Math.round(
+                billableOrders.reduce((sum, order) => sum + order.totalNaira, 0) /
+                  billableOrders.length
+              )
+            : 0,
+        averageFulfillmentMinutes,
+        totalCustomers: analyticsData.customerCount,
+        activeCustomers: new Set(analyticsData.orders.map((order) => order.customerUid)).size,
+        totalDrivers: analyticsData.drivers.length,
+        activeDrivers: analyticsData.drivers.filter((driver) => driver.status === "active").length,
+        totalVendors: analyticsData.vendors.length,
+        approvedVendors: analyticsData.vendors.filter((vendor) => vendor.status === "approved").length,
+      },
+      charts: {
+        days: buildTimeSeries(analyticsData.orders, "days"),
+        weeks: buildTimeSeries(analyticsData.orders, "weeks"),
+        months: buildTimeSeries(analyticsData.orders, "months"),
+      },
+      categoryDistribution: buildCategoryDistribution(analyticsData.products),
+      statusDistribution: buildStatusDistribution(analyticsData.orders),
+      paymentDistribution: buildPaymentDistribution(analyticsData.orders),
+      vendorRankings,
+    };
+  });
 }
 
-export async function listAdminOrderRecords(): Promise<AdminOrderRecord[]> {
-  const baseData = await loadAdminBaseData();
+export async function listAdminOrderRecords(options?: { limit?: number; cursor?: string | null }) {
+  const ordersSnapshot = await getFirebaseAdminDb().collection("orders").get();
+  const orders = ordersSnapshot.docs
+    .map((doc) => orderSchema.parse(doc.data()))
+    .sort((left, right) => right.createdAt - left.createdAt);
+  const paginatedOrders = paginateArray(orders, {
+    limit: options?.limit,
+    cursor: options?.cursor,
+    maxLimit: 100,
+  });
+  const usersByUid = await loadUsersByIds(paginatedOrders.items.map((order) => order.customerUid));
+  const vendorsById = await loadVendorsByIds(paginatedOrders.items.map((order) => order.vendorId));
 
-  return baseData.orders.map((order) => {
-    const customerProfile = baseData.usersByUid.get(order.customerUid) ?? null;
-    const vendorProfile = baseData.vendorsById.get(order.vendorId) ?? null;
+  const records = paginatedOrders.items.map((order) => {
+    const customerProfile = usersByUid.get(order.customerUid) ?? null;
+    const vendorProfile = vendorsById.get(order.vendorId) ?? null;
 
     return {
       id: order.id,
@@ -426,10 +488,34 @@ export async function listAdminOrderRecords(): Promise<AdminOrderRecord[]> {
       updatedAt: order.updatedAt,
     };
   });
+
+  return {
+    ...paginatedOrders,
+    items: records,
+  };
 }
 
-export async function listAdminCustomerRecords(): Promise<AdminCustomerRecord[]> {
-  const baseData = await loadAdminBaseData();
+export async function listAdminCustomerRecords(options?: {
+  limit?: number;
+  cursor?: string | null;
+}) {
+  const customerSnapshot = await getFirebaseAdminDb()
+    .collection("users")
+    .where("role", "==", "customer")
+    .get();
+  const customers = customerSnapshot.docs
+    .map((doc) => userProfileSchema.parse(doc.data()))
+    .sort((left, right) => right.createdAt - left.createdAt);
+  const paginatedCustomers = paginateArray(customers, {
+    limit: options?.limit,
+    cursor: options?.cursor,
+    maxLimit: 100,
+  });
+  const pageCustomerUids = paginatedCustomers.items.map((customer) => customer.uid);
+  const [orders, preferencesByCustomerUid] = await Promise.all([
+    loadOrdersByCustomerIds(pageCustomerUids),
+    loadCustomerPreferencesByIds(pageCustomerUids),
+  ]);
   const customerMetrics = new Map<
     string,
     {
@@ -442,7 +528,7 @@ export async function listAdminCustomerRecords(): Promise<AdminCustomerRecord[]>
     }
   >();
 
-  baseData.orders.forEach((order) => {
+  orders.forEach((order) => {
     const current = customerMetrics.get(order.customerUid) ?? {
       orderCount: 0,
       activeOrderCount: 0,
@@ -471,8 +557,7 @@ export async function listAdminCustomerRecords(): Promise<AdminCustomerRecord[]>
     customerMetrics.set(order.customerUid, current);
   });
 
-  return baseData.users
-    .filter((user) => user.role === "customer")
+  const records = paginatedCustomers.items
     .map((customer) => {
       const metrics = customerMetrics.get(customer.uid) ?? {
         orderCount: 0,
@@ -482,7 +567,7 @@ export async function listAdminCustomerRecords(): Promise<AdminCustomerRecord[]>
         totalSpentNaira: 0,
         lastOrderAt: null,
       };
-      const preferences = baseData.preferencesByCustomerUid.get(customer.uid) ?? null;
+      const preferences = preferencesByCustomerUid.get(customer.uid) ?? null;
 
       return {
         uid: customer.uid,
@@ -509,20 +594,42 @@ export async function listAdminCustomerRecords(): Promise<AdminCustomerRecord[]>
 
       return right.createdAt - left.createdAt;
     });
+
+  return {
+    ...paginatedCustomers,
+    items: records,
+  };
 }
 
-export async function listAdminDriverRecords(): Promise<AdminDriverRecord[]> {
-  const baseData = await loadAdminBaseData();
+export async function listAdminDriverRecords(options?: { limit?: number; cursor?: string | null }) {
+  const driverSnapshot = await getFirebaseAdminDb().collection("drivers").get();
+  const drivers = driverSnapshot.docs.map((doc) => driverProfileSchema.parse(doc.data()));
   const statusOrder = {
     active: 0,
     pending: 1,
     inactive: 2,
   } satisfies Record<DriverProfile["status"], number>;
 
-  return baseData.drivers
+  const sortedDrivers = [...drivers].sort((left, right) => {
+    const statusDiff = statusOrder[left.status] - statusOrder[right.status];
+    if (statusDiff !== 0) {
+      return statusDiff;
+    }
+
+    return right.updatedAt - left.updatedAt;
+  });
+  const paginatedDrivers = paginateArray(sortedDrivers, {
+    limit: options?.limit,
+    cursor: options?.cursor,
+    maxLimit: 100,
+  });
+  const usersByUid = await loadUsersByIds(paginatedDrivers.items.map((driver) => driver.uid));
+  const vendorsById = await loadVendorsByIds(paginatedDrivers.items.map((driver) => driver.vendorId));
+
+  const records = paginatedDrivers.items
     .map((driver) => {
-      const userProfile = baseData.usersByUid.get(driver.uid) ?? null;
-      const vendorProfile = baseData.vendorsById.get(driver.vendorId) ?? null;
+      const userProfile = usersByUid.get(driver.uid) ?? null;
+      const vendorProfile = vendorsById.get(driver.vendorId) ?? null;
 
       return {
         uid: driver.uid,
@@ -540,13 +647,10 @@ export async function listAdminDriverRecords(): Promise<AdminDriverRecord[]> {
         createdAt: driver.createdAt,
         updatedAt: driver.updatedAt,
       };
-    })
-    .sort((left, right) => {
-      const statusDiff = statusOrder[left.status] - statusOrder[right.status];
-      if (statusDiff !== 0) {
-        return statusDiff;
-      }
-
-      return right.updatedAt - left.updatedAt;
     });
+
+  return {
+    ...paginatedDrivers,
+    items: records,
+  };
 }

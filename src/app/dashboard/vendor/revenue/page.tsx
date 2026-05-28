@@ -19,6 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DashboardSkeleton } from "@/components/ui/loading-skeletons";
 import {
   Area,
   AreaChart,
@@ -117,7 +118,7 @@ export default function VendorRevenuePage() {
       try {
         const [summaryResponse, ordersResponse] = await Promise.all([
           fetch("/api/vendor/summary", { method: "GET" }),
-          fetch("/api/vendor/orders", { method: "GET" }),
+          fetch("/api/vendor/orders?limit=50", { method: "GET" }),
         ]);
 
         if (!summaryResponse.ok) {
@@ -208,11 +209,7 @@ export default function VendorRevenuePage() {
   }, [orders, statusFilter]);
 
   if (isLoading) {
-    return (
-      <div className="p-8 max-w-7xl mx-auto text-sm text-muted-foreground">
-        Loading live revenue analytics...
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (error || !summary) {

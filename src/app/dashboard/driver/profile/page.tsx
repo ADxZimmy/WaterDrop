@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { useAuthSignOut } from "@/hooks/use-auth-sign-out";
 import { useDriverWorkspace } from "@/hooks/use-driver-workspace";
 
@@ -51,11 +52,7 @@ export default function DriverProfilePage() {
   const { signOut, isSigningOut } = useAuthSignOut();
 
   if (isLoading) {
-    return (
-      <div className="p-4 md:p-8 text-sm text-muted-foreground">
-        Loading driver profile...
-      </div>
-    );
+    return <ListPageSkeleton rows={3} className="max-w-4xl p-0" />;
   }
 
   if (error || !workspace) {

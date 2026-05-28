@@ -8,7 +8,7 @@ import { Home, ShoppingBag, User, Truck } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 const mobileItems = [
-  { name: 'Home', href: '/', icon: Home },
+  { name: 'Home', href: '/dashboard/session', icon: Home },
   { name: 'Orders', href: '/dashboard/customer/orders', icon: Truck },
   { name: 'Cart', href: '/cart', icon: ShoppingBag },
   { name: 'Profile', href: '/dashboard/customer', icon: User },
@@ -17,13 +17,13 @@ const mobileItems = [
 export function MobileNav() {
   const pathname = usePathname();
 
-  // Hide mobile nav in auth and dashboard screens to use role-specific navigation
-  // Note: We keep it for /dashboard/customer to provide easy back-to-home access
+  // Hide mobile nav in auth and role workspaces; those areas provide
+  // role-specific shells so customer controls do not leak into admin pages.
   const isAuth = pathname?.startsWith('/auth');
-  const isVendorDashboard = pathname?.startsWith('/dashboard/vendor');
-  const isDriverDashboard = pathname?.startsWith('/dashboard/driver');
+  const isDashboard = pathname?.startsWith('/dashboard');
+  const isAdminDashboard = pathname?.startsWith('/admin');
 
-  if (isAuth || isVendorDashboard || isDriverDashboard) return null;
+  if (isAuth || isDashboard || isAdminDashboard) return null;
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t safe-area-bottom">

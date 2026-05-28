@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireRole } from "@/lib/auth/server";
 import { cartSchema, orderSchema, paymentMethodSchema } from "@/lib/domain/schemas";
 import { getFirebaseAdminDb } from "@/lib/firebase/admin";
+import { getOrderPageInfo, getOrderPageParams } from "@/lib/orders/order-pagination";
 
 const createOrderInputSchema = z.object({
   deliveryFeeNaira: z.number().nonnegative(),
@@ -11,19 +12,25 @@ const createOrderInputSchema = z.object({
   deliveryAddress: z.string().min(1),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const user = await requireRole(["customer"]);
-    const snapshot = await getFirebaseAdminDb()
+    const { cursor, limit } = getOrderPageParams(request.url);
+    let query = getFirebaseAdminDb()
       .collection("orders")
       .where("customerUid", "==", user.uid)
-      .get();
+      .orderBy("createdAt", "desc")
+      .limit(limit + 1);
 
-    const orders = snapshot.docs
-      .map((doc) => orderSchema.parse(doc.data()))
-      .sort((a, b) => b.createdAt - a.createdAt);
+    if (cursor) {
+      query = query.startAfter(cursor.createdAt);
+    }
 
-    return NextResponse.json({ orders }, { status: 200 });
+    const snapshot = await query.get();
+    const orders = snapshot.docs.map((doc) => orderSchema.parse(doc.data()));
+    const page = getOrderPageInfo(orders, limit);
+
+    return NextResponse.json(page, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to load orders";
     return NextResponse.json({ error: message }, { status: 401 });

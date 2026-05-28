@@ -40,6 +40,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -701,7 +702,7 @@ export default function VendorProductsPage() {
         </div>
 
         {isLoading ? (
-          <div className="p-8 text-sm text-muted-foreground">Loading products...</div>
+          <ListPageSkeleton rows={5} className="max-w-none px-0 py-0" />
         ) : products.length === 0 ? (
           <div className="p-10 text-center space-y-3">
             <h3 className="text-lg font-bold">No products listed yet</h3>

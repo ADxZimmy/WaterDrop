@@ -14,6 +14,7 @@ import type { VendorDashboardSummary } from "@/lib/vendor/summary-types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { DashboardSkeleton } from "@/components/ui/loading-skeletons";
 import {
   AreaChart,
   Area,
@@ -99,7 +100,7 @@ export default function VendorAnalyticsPage() {
   }, [summary]);
 
   if (isLoading) {
-    return <div className="p-8 max-w-7xl mx-auto text-sm text-muted-foreground">Loading live analytics...</div>;
+    return <DashboardSkeleton />;
   }
 
   if (!profile || profile.status !== 'approved') {

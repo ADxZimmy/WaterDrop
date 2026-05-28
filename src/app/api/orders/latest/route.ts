@@ -10,11 +10,11 @@ export async function GET() {
     const snapshot = await getFirebaseAdminDb()
       .collection("orders")
       .where("customerUid", "==", user.uid)
+      .orderBy("createdAt", "desc")
+      .limit(10)
       .get();
 
-    const orders = snapshot.docs
-      .map((doc) => orderSchema.parse(doc.data()))
-      .sort((a, b) => b.createdAt - a.createdAt);
+    const orders = snapshot.docs.map((doc) => orderSchema.parse(doc.data()));
 
     const activeOrder = orders.find((order) => ORDER_ACTIVE_STATUSES.has(order.status)) ?? null;
     return NextResponse.json({ order: activeOrder }, { status: 200 });

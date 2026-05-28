@@ -28,6 +28,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { Separator } from "@/components/ui/separator";
 
 type AdminVendorResponse = {
@@ -152,11 +153,7 @@ export default function AdminVendorProfilePage() {
   }, [vendor]);
 
   if (isLoading) {
-    return (
-      <div className="max-w-5xl mx-auto p-8 text-sm text-muted-foreground">
-        Loading vendor profile...
-      </div>
-    );
+    return <ListPageSkeleton rows={4} className="max-w-5xl p-0" />;
   }
 
   if (!vendor || error) {

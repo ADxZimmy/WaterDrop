@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { useDriverWorkspace } from "@/hooks/use-driver-workspace";
 import { useToast } from "@/hooks/use-toast";
 
@@ -77,11 +78,7 @@ export default function WithdrawalPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-4 md:p-8 text-sm text-muted-foreground">
-        Loading withdrawal request form...
-      </div>
-    );
+    return <ListPageSkeleton rows={3} className="max-w-3xl p-0" />;
   }
 
   if (error || !workspace) {

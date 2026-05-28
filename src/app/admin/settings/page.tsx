@@ -22,6 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DashboardSkeleton } from "@/components/ui/loading-skeletons";
 
 type AdminSystemResponse = {
   system: AdminSystemSnapshot;
@@ -82,11 +83,7 @@ export default function AdminSettingsPage() {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto p-8 text-sm text-muted-foreground">
-        Loading system settings snapshot...
-      </div>
-    );
+    return <DashboardSkeleton className="p-0" />;
   }
 
   if (!system || error) {

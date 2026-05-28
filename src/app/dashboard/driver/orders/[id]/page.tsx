@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { Textarea } from "@/components/ui/textarea";
 import type { DriverOrderReferencePayload } from "@/lib/driver/workspace-types";
 import { getOrderExecutionEventDescription, getOrderExecutionEventLabel } from "@/lib/orders/execution";
@@ -122,11 +123,7 @@ export default function DriverOrderDetailPage() {
   }, [orderId]);
 
   if (isLoading) {
-    return (
-      <div className="p-4 md:p-8 text-sm text-muted-foreground">
-        Loading order reference...
-      </div>
-    );
+    return <ListPageSkeleton rows={4} className="max-w-4xl p-0" />;
   }
 
   if (error || !reference) {

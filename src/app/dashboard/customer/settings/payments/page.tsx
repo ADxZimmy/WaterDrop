@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { getPaymentMethodLabel } from "@/lib/orders/status";
@@ -110,7 +111,7 @@ export default function CustomerPaymentsSettingsPage() {
         </div>
 
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading payment preferences...</p>
+          <ListPageSkeleton rows={2} className="px-0 py-0" />
         ) : (
           <RadioGroup
             value={preferredPaymentMethod}

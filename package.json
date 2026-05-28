@@ -6,6 +6,7 @@
     "dev": "next dev --turbopack -p 9002",
     "build": "next build",
     "start": "next start",
+    "test": "vitest run",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "typecheck": "next typegen && tsc --noEmit"
   },
@@ -59,6 +60,7 @@
     "eslint-config-next": "^15.5.12",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.4"
   }
 }

@@ -15,6 +15,13 @@ const roleHomePaths: Record<UserRole, string> = {
   admin: "/admin",
 };
 
+const roleSessionPaths: Record<UserRole, string> = {
+  customer: "/dashboard/customer/session",
+  vendor: "/dashboard/vendor/session",
+  driver: "/dashboard/driver/session",
+  admin: "/admin",
+};
+
 function stripSearchAndHash(path: string) {
   return path.split(/[?#]/, 1)[0] || path;
 }
@@ -44,6 +51,10 @@ export function formatRoleLabel(role: UserRole) {
 
 export function getRoleHomePath(role: UserRole) {
   return roleHomePaths[role];
+}
+
+export function getRoleSessionPath(role: UserRole) {
+  return roleSessionPaths[role];
 }
 
 export function inferRoleFromProtectedPath(path: string | null | undefined): UserRole | null {

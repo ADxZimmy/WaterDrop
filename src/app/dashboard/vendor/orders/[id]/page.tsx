@@ -30,6 +30,7 @@ import type {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import {
   Select,
   SelectContent,
@@ -351,11 +352,7 @@ export default function OrderDetailPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-8 max-w-5xl mx-auto">
-        <p className="text-sm text-muted-foreground">Loading order details...</p>
-      </div>
-    );
+    return <ListPageSkeleton rows={4} className="max-w-5xl md:px-8" />;
   }
 
   if (!order) {

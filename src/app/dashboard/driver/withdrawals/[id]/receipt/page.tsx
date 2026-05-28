@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { Separator } from "@/components/ui/separator";
 
 type DriverPayoutRequestRecord = {
@@ -134,13 +135,7 @@ Keep this receipt for your records.
   if (isLoading) {
     return (
       <div className="min-h-screen bg-muted/30 p-4 md:p-8 flex flex-col items-center">
-        <div className="w-full max-w-lg">
-          <Card className="border-none shadow-sm rounded-3xl bg-white">
-            <CardContent className="p-8 text-sm text-muted-foreground">
-              Loading payout receipt...
-            </CardContent>
-          </Card>
-        </div>
+        <ListPageSkeleton rows={3} className="max-w-lg px-0 py-0" />
       </div>
     );
   }

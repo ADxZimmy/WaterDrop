@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 
 type VendorDriverRecord = {
   uid: string;
@@ -134,11 +135,7 @@ export default function VendorDriverProfilePage() {
   );
 
   if (isLoading) {
-    return (
-      <div className="p-8 max-w-5xl mx-auto text-sm text-muted-foreground">
-        Loading driver profile...
-      </div>
-    );
+    return <ListPageSkeleton rows={4} className="max-w-5xl md:px-8" />;
   }
 
   if (error || !profile) {

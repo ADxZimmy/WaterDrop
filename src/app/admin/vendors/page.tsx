@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import {
   Table,
   TableBody,
@@ -298,7 +299,7 @@ export default function AdminVendorsPage() {
 
       <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white">
         {isLoading ? (
-          <div className="p-8 text-sm text-slate-500">Loading vendor directory...</div>
+          <ListPageSkeleton rows={6} className="max-w-none px-0 py-0" />
         ) : error ? (
           <div className="p-10 text-center space-y-3">
             <h2 className="text-xl font-bold text-slate-900">

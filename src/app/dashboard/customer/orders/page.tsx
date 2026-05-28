@@ -7,6 +7,7 @@ import type { OrderStatus } from "@/lib/domain/schemas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { ORDER_ACTIVE_STATUSES, getOrderStatusLabel } from "@/lib/orders/status";
 
 type OrderRecord = {
@@ -23,16 +24,23 @@ type OrderRecord = {
   createdAt: number;
 };
 
+type OrdersPageInfo = {
+  nextCursor: string | null;
+  limit: number;
+};
+
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [pageInfo, setPageInfo] = useState<OrdersPageInfo | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
     const loadOrders = async () => {
       try {
-        const response = await fetch('/api/orders', { method: 'GET' });
+        const response = await fetch('/api/orders?limit=20', { method: 'GET' });
         if (!response.ok) {
           throw new Error('Unable to load orders.');
         }
@@ -40,10 +48,12 @@ export default function MyOrdersPage() {
         const payload = await response.json();
         if (isMounted) {
           setOrders(payload.orders ?? []);
+          setPageInfo(payload.pageInfo ?? null);
         }
       } catch {
         if (isMounted) {
           setOrders([]);
+          setPageInfo(null);
         }
       } finally {
         if (isMounted) {
@@ -58,33 +68,71 @@ export default function MyOrdersPage() {
     };
   }, []);
 
+  const loadMoreOrders = async () => {
+    if (!pageInfo?.nextCursor || isLoadingMore) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+
+    try {
+      const params = new URLSearchParams({
+        limit: String(pageInfo.limit),
+        cursor: pageInfo.nextCursor,
+      });
+      const response = await fetch(`/api/orders?${params.toString()}`, { method: 'GET' });
+      if (!response.ok) {
+        throw new Error('Unable to load more orders.');
+      }
+
+      const payload = await response.json();
+      setOrders((currentOrders) => [...currentOrders, ...(payload.orders ?? [])]);
+      setPageInfo(payload.pageInfo ?? null);
+    } catch {
+      setPageInfo((currentPageInfo) =>
+        currentPageInfo ? { ...currentPageInfo, nextCursor: null } : currentPageInfo
+      );
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-10">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-4 mb-8">
-          <Link href="/">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+          <Link href="/dashboard/customer/marketplace">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold font-headline">My Orders</h1>
+          <div>
+            <h1 className="font-headline text-3xl font-bold lg:text-4xl">My Orders</h1>
+            <p className="text-sm text-muted-foreground">Review active and completed water deliveries.</p>
+          </div>
+          </div>
+          <Link href="/dashboard/customer/marketplace">
+            <Button className="rounded-xl">Browse marketplace</Button>
+          </Link>
         </div>
 
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading orders...</p>
+          <ListPageSkeleton rows={5} className="max-w-7xl px-0 py-0" />
         ) : orders.length === 0 ? (
           <Card className="border-none shadow-sm p-8 text-center">
             <CardContent className="p-0 space-y-3">
               <h2 className="text-xl font-bold">No orders yet</h2>
               <p className="text-muted-foreground">Your completed and active orders will appear here.</p>
-              <Link href="/">
+              <Link href="/dashboard/customer/marketplace">
                 <Button className="rounded-xl">Browse Vendors</Button>
               </Link>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {orders.map((order) => {
+          <div className="space-y-6">
+            <div className="grid gap-4 xl:grid-cols-2">
+              {orders.map((order) => {
               const isActive = ORDER_ACTIVE_STATUSES.has(order.status);
               const hasFailedAttempt = (order.executionEvents ?? []).some(
                 (event) => event.type === "delivery_failed_attempt"
@@ -97,7 +145,7 @@ export default function MyOrdersPage() {
 
               return (
                 <Link key={order.id} href={`/dashboard/customer/orders/${order.id}`}>
-                  <Card className={`border-none shadow-sm hover:shadow-md transition-shadow overflow-hidden group mb-4 ${isActive ? 'bg-primary/5 border border-primary/20' : ''}`}>
+                  <Card className={`h-full border-none shadow-sm hover:shadow-md transition-shadow overflow-hidden group ${isActive ? 'bg-primary/5 border border-primary/20' : ''}`}>
                     <CardContent className="p-6">
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-3">
@@ -144,7 +192,20 @@ export default function MyOrdersPage() {
                   </Card>
                 </Link>
               );
-            })}
+              })}
+            </div>
+            {pageInfo?.nextCursor ? (
+              <div className="flex justify-center">
+                <Button
+                  variant="outline"
+                  className="rounded-xl"
+                  disabled={isLoadingMore}
+                  onClick={() => void loadMoreOrders()}
+                >
+                  {isLoadingMore ? "Loading orders..." : "Load more orders"}
+                </Button>
+              </div>
+            ) : null}
           </div>
         )}
       </div>

@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { DashboardSkeleton } from "@/components/ui/loading-skeletons";
 import { getOrderStatusLabel } from "@/lib/orders/status";
 import { cn } from "@/lib/utils";
 
@@ -60,7 +61,7 @@ export default function VendorDashboardOverview() {
   const profile = summary?.profile ?? null;
 
   if (isLoading) {
-    return <div className="p-8 max-w-7xl mx-auto text-sm text-muted-foreground">Loading vendor workspace...</div>;
+    return <DashboardSkeleton />;
   }
 
   if (!profile || profile.status !== 'approved') {

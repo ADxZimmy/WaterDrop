@@ -6,6 +6,7 @@ import { Calendar, Clock3, History, MapPin, Truck, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { useDriverWorkspace } from "@/hooks/use-driver-workspace";
 
 type DriverOrderRecord = {
@@ -79,11 +80,7 @@ export default function DriverHistoryPage() {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="p-4 md:p-8 text-sm text-muted-foreground">
-        Loading driver history...
-      </div>
-    );
+    return <ListPageSkeleton rows={4} className="max-w-5xl p-0" />;
   }
 
   if (error || !workspace) {
@@ -133,11 +130,7 @@ export default function DriverHistoryPage() {
       </div>
 
       {ordersLoading ? (
-        <Card className="border-none shadow-sm rounded-3xl bg-white">
-          <CardContent className="p-8 text-sm text-muted-foreground">
-            Loading assigned order history...
-          </CardContent>
-        </Card>
+        <ListPageSkeleton rows={3} className="max-w-none px-0 py-0" />
       ) : ordersError ? (
         <Card className="border-none shadow-sm rounded-3xl bg-white">
           <CardContent className="p-8 text-sm text-destructive">{ordersError}</CardContent>

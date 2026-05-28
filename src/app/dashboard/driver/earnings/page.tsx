@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DashboardSkeleton, ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useDriverWorkspace } from "@/hooks/use-driver-workspace";
 
@@ -79,11 +80,7 @@ export default function DriverEarningsPage() {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="p-4 md:p-8 text-sm text-muted-foreground">
-        Loading driver earnings...
-      </div>
-    );
+    return <DashboardSkeleton className="p-0" />;
   }
 
   if (error || !workspace) {
@@ -293,7 +290,7 @@ export default function DriverEarningsPage() {
         </CardHeader>
         <CardContent className="p-6">
           {ledgerLoading ? (
-            <p className="text-sm text-muted-foreground">Loading ledger…</p>
+            <ListPageSkeleton rows={3} className="max-w-none px-0 py-0" />
           ) : ledgerError ? (
             <p className="text-sm text-destructive">{ledgerError}</p>
           ) : ledgerEntries.length === 0 ? (

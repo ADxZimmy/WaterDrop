@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import {
   Table,
   TableBody,
@@ -18,6 +19,10 @@ import {
 
 type AdminCustomersResponse = {
   customers: AdminCustomerRecord[];
+  pageInfo?: {
+    nextCursor: string | null;
+    total: number;
+  };
 };
 
 function formatNaira(value: number) {
@@ -63,13 +68,16 @@ export default function AdminCustomersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [totalCustomers, setTotalCustomers] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
     const loadCustomers = async () => {
       try {
-        const response = await fetch("/api/admin/customers", { method: "GET" });
+        const response = await fetch("/api/admin/customers?limit=25", { method: "GET" });
         if (!response.ok) {
           const payload = await response.json().catch(() => null);
           throw new Error(payload?.error ?? "Unable to load customers.");
@@ -78,6 +86,8 @@ export default function AdminCustomersPage() {
         const payload: AdminCustomersResponse = await response.json();
         if (isMounted) {
           setCustomers(payload.customers ?? []);
+          setNextCursor(payload.pageInfo?.nextCursor ?? null);
+          setTotalCustomers(payload.pageInfo?.total ?? payload.customers?.length ?? 0);
           setError(null);
         }
       } catch (fetchError) {
@@ -102,6 +112,42 @@ export default function AdminCustomersPage() {
       isMounted = false;
     };
   }, []);
+
+  const handleLoadMore = async () => {
+    if (!nextCursor) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+
+    try {
+      const response = await fetch(
+        `/api/admin/customers?limit=25&cursor=${encodeURIComponent(nextCursor)}`,
+        { method: "GET" }
+      );
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? "Unable to load customers.");
+      }
+
+      const payload: AdminCustomersResponse = await response.json();
+      setCustomers((current) => {
+        const existing = new Set(current.map((customer) => customer.uid));
+        const nextCustomers = (payload.customers ?? []).filter(
+          (customer) => !existing.has(customer.uid)
+        );
+        return [...current, ...nextCustomers];
+      });
+      setNextCursor(payload.pageInfo?.nextCursor ?? null);
+      setTotalCustomers(payload.pageInfo?.total ?? totalCustomers);
+    } catch (fetchError) {
+      setError(
+        fetchError instanceof Error ? fetchError.message : "Unable to load customers."
+      );
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const totalLifetimeValue = useMemo(
     () => customers.reduce((sum, customer) => sum + customer.totalSpentNaira, 0),
@@ -141,11 +187,7 @@ export default function AdminCustomersPage() {
   }, [customers, search]);
 
   if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto p-8 text-sm text-muted-foreground">
-        Loading customer directory...
-      </div>
-    );
+    return <ListPageSkeleton rows={6} className="max-w-7xl p-0" />;
   }
 
   if (error) {
@@ -180,7 +222,7 @@ export default function AdminCustomersPage() {
         {[
           {
             title: "Total Customers",
-            value: customers.length.toLocaleString("en-NG"),
+            value: totalCustomers.toLocaleString("en-NG"),
             subtitle: "Registered customer profiles",
             icon: Users,
           },
@@ -304,6 +346,20 @@ export default function AdminCustomersPage() {
           </Table>
         )}
       </Card>
+      {nextCursor ? (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+            onClick={() => void handleLoadMore()}
+            disabled={isLoadingMore}
+          >
+            {isLoadingMore
+              ? "Loading more..."
+              : `Load more customers (${customers.length}/${totalCustomers})`}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

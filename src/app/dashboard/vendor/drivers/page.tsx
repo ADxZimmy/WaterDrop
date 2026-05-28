@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { useToast } from "@/hooks/use-toast";
 
 type VendorDriverRecord = {
@@ -36,6 +37,14 @@ type VendorDriverRecord = {
   availableBalanceNaira: number;
   requestedBalanceNaira: number;
   paidBalanceNaira: number;
+};
+
+type VendorDriversResponse = {
+  drivers: VendorDriverRecord[];
+  pageInfo?: {
+    nextCursor: string | null;
+    total: number;
+  };
 };
 
 function formatCurrency(amount: number) {
@@ -62,7 +71,10 @@ export default function VendorDriversPage() {
   const [drivers, setDrivers] = useState<VendorDriverRecord[]>([]);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [updatingDriverUid, setUpdatingDriverUid] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [totalDrivers, setTotalDrivers] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -70,15 +82,17 @@ export default function VendorDriversPage() {
 
     const loadDrivers = async () => {
       try {
-        const response = await fetch("/api/vendor/drivers", { method: "GET" });
-        const payload = await response.json().catch(() => null);
+        const response = await fetch("/api/vendor/drivers?limit=12", { method: "GET" });
+        const payload = (await response.json().catch(() => null)) as VendorDriversResponse | null;
 
         if (!response.ok) {
-          throw new Error(payload?.error ?? "Unable to load drivers.");
+          throw new Error((payload as { error?: string } | null)?.error ?? "Unable to load drivers.");
         }
 
         if (isMounted) {
           setDrivers((payload?.drivers ?? []) as VendorDriverRecord[]);
+          setNextCursor(payload?.pageInfo?.nextCursor ?? null);
+          setTotalDrivers(payload?.pageInfo?.total ?? payload?.drivers?.length ?? 0);
         }
       } catch (error) {
         if (isMounted) {
@@ -102,6 +116,42 @@ export default function VendorDriversPage() {
       isMounted = false;
     };
   }, [toast]);
+
+  const handleLoadMore = async () => {
+    if (!nextCursor) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+
+    try {
+      const response = await fetch(
+        `/api/vendor/drivers?limit=12&cursor=${encodeURIComponent(nextCursor)}`,
+        { method: "GET" }
+      );
+      const payload = (await response.json().catch(() => null)) as VendorDriversResponse | null;
+
+      if (!response.ok) {
+        throw new Error((payload as { error?: string } | null)?.error ?? "Unable to load more drivers.");
+      }
+
+      setDrivers((current) => {
+        const existing = new Set(current.map((driver) => driver.uid));
+        const nextDrivers = (payload?.drivers ?? []).filter((driver) => !existing.has(driver.uid));
+        return [...current, ...nextDrivers];
+      });
+      setNextCursor(payload?.pageInfo?.nextCursor ?? null);
+      setTotalDrivers(payload?.pageInfo?.total ?? totalDrivers);
+    } catch (error) {
+      toast({
+        title: "Unable to load more drivers",
+        description: error instanceof Error ? error.message : "Unable to load more drivers.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const filteredDrivers = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -210,7 +260,7 @@ export default function VendorDriversPage() {
               <Truck className="h-8 w-8" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{drivers.length}</p>
+              <p className="text-2xl font-bold">{totalDrivers}</p>
               <p className="text-sm text-muted-foreground">Total Drivers</p>
             </div>
           </div>
@@ -264,11 +314,9 @@ export default function VendorDriversPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {isLoading ? (
-          <Card className="border-none shadow-sm overflow-hidden">
-            <CardContent className="p-6 text-sm text-muted-foreground">
-              Loading driver fleet...
-            </CardContent>
-          </Card>
+          <div className="lg:col-span-4">
+            <ListPageSkeleton rows={4} className="max-w-none px-0 py-0" />
+          </div>
         ) : filteredDrivers.length === 0 ? (
           <Card className="border-none shadow-sm overflow-hidden lg:col-span-4">
             <CardContent className="p-8 text-center text-sm text-muted-foreground">
@@ -355,6 +403,19 @@ export default function VendorDriversPage() {
           </Card>
         ))}
       </div>
+      {nextCursor ? (
+        <div className="flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-xl px-6"
+            onClick={() => void handleLoadMore()}
+            disabled={isLoadingMore}
+          >
+            {isLoadingMore ? "Loading more..." : `Load more drivers (${drivers.length}/${totalDrivers})`}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

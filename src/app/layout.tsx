@@ -1,9 +1,7 @@
 import { Inter } from 'next/font/google';
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster";
-import { MobileNav } from "@/components/mobile-nav";
-import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
+import { AppChrome } from "@/components/app-chrome";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -47,14 +45,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className={`${inter.variable} font-body`}>
-        <div className="flex flex-col min-h-screen">
-          <main className="flex-1 w-full max-w-full pb-16 md:pb-0 relative">
-            {children}
-          </main>
-          <MobileNav />
-          <PwaInstallPrompt />
-          <Toaster />
-        </div>
+        <AppChrome>{children}</AppChrome>
       </body>
     </html>
   );

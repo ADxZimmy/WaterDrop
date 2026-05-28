@@ -1,9 +1,9 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Droplets, Mail, Lock, ArrowLeft, Phone } from 'lucide-react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import type { PublicUserRole } from "@/lib/auth/routing";
@@ -16,7 +16,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { getFirebaseClientAuth } from "@/lib/firebase/client";
 
-export default function RegisterPage() {
+function RegisterPageContent() {
   const [role, setRole] = useState<PublicUserRole>('customer');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -25,7 +25,15 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const requestedRole = normalizePublicRole(searchParams.get("role"));
+    if (requestedRole) {
+      setRole(requestedRole);
+    }
+  }, [searchParams]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,7 +118,7 @@ export default function RegisterPage() {
           </CardHeader>
           <CardContent className="p-6">
             <Tabs
-              defaultValue="customer"
+              value={role}
               onValueChange={(value) => {
                 const nextRole = normalizePublicRole(value);
                 if (nextRole) {
@@ -218,5 +226,17 @@ export default function RegisterPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+function RegisterPageFallback() {
+  return <div className="min-h-screen bg-background" />;
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<RegisterPageFallback />}>
+      <RegisterPageContent />
+    </Suspense>
   );
 }

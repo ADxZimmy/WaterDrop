@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import {
   Table,
   TableBody,
@@ -213,11 +214,7 @@ export default function AdminVendorOrdersPage() {
   }, [filter, orders, search]);
 
   if (isLoading) {
-    return (
-      <div className="max-w-6xl mx-auto p-8 text-sm text-muted-foreground">
-        Loading vendor order history...
-      </div>
-    );
+    return <ListPageSkeleton rows={6} className="max-w-6xl p-0" />;
   }
 
   if (!vendor || error) {

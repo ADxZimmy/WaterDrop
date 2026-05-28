@@ -62,7 +62,7 @@ export function VendorShell({
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-white">
-      <div className="p-6 flex items-center gap-2 border-b">
+      <Link href="/dashboard/vendor/session" className="p-6 flex items-center gap-2 border-b">
         <Droplets className="h-8 w-8 text-primary" />
         <div className="flex flex-col">
           <span className="text-2xl font-bold tracking-tight text-primary font-headline leading-none">WaterDrop</span>
@@ -70,7 +70,7 @@ export function VendorShell({
             Vendor Hub
           </span>
         </div>
-      </div>
+      </Link>
 
       <nav className="flex-1 p-4 space-y-1">
         <TooltipProvider>
@@ -139,10 +139,10 @@ export function VendorShell({
                 </SheetContent>
               </Sheet>
             </div>
-            <div className="lg:hidden flex items-center gap-2">
+            <Link href="/dashboard/vendor/session" className="lg:hidden flex items-center gap-2">
               <Droplets className="h-6 w-6 text-primary" />
               <span className="font-bold text-lg font-headline">WaterDrop</span>
-            </div>
+            </Link>
             <div className="hidden sm:flex items-center gap-2 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 ml-4">
               <ShieldCheck className="h-3 w-3 text-emerald-600" />
               <span className="text-[10px] font-bold uppercase tracking-tight text-emerald-700">

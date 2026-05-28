@@ -26,7 +26,8 @@ export async function GET() {
     return NextResponse.json(account, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to load customer account";
-    return NextResponse.json({ error: message }, { status: 401 });
+    const status = message === "Unauthenticated" ? 401 : message === "Unauthorized" ? 403 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -67,6 +68,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json(account, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to update customer account";
-    return NextResponse.json({ error: message }, { status: 400 });
+    const status = message === "Unauthenticated" ? 401 : message === "Unauthorized" ? 403 : 400;
+    return NextResponse.json({ error: message }, { status });
   }
 }

@@ -8,6 +8,7 @@ import { ArrowLeft, Building2, MapPin, Package, ShoppingCart } from 'lucide-reac
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CatalogSkeleton } from "@/components/ui/loading-skeletons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from "@/hooks/use-toast";
@@ -169,11 +170,7 @@ function VendorDetailPageContent() {
   );
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background p-8 text-sm text-muted-foreground">
-        Loading vendor catalog...
-      </div>
-    );
+    return <CatalogSkeleton />;
   }
 
   if (!vendor) {
@@ -185,7 +182,7 @@ function VendorDetailPageContent() {
             <p className="text-muted-foreground">
               This vendor is not currently available for public ordering.
             </p>
-            <Link href="/">
+            <Link href="/dashboard/customer/marketplace">
               <Button className="rounded-xl">Browse Other Vendors</Button>
             </Link>
           </CardContent>
@@ -204,7 +201,7 @@ function VendorDetailPageContent() {
           className="object-cover"
         />
         <div className="absolute inset-0 bg-black/40" />
-        <Link href="/" className="absolute top-6 left-6 z-10">
+        <Link href="/dashboard/customer/marketplace" className="absolute top-6 left-6 z-10">
           <Button variant="secondary" size="icon" className="rounded-full shadow-lg">
             <ArrowLeft className="h-5 w-5" />
           </Button>

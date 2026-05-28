@@ -22,6 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DashboardSkeleton } from "@/components/ui/loading-skeletons";
 import { useDriverWorkspace } from "@/hooks/use-driver-workspace";
 
 function getDisplayName(firstName?: string, lastName?: string, email?: string) {
@@ -78,11 +79,7 @@ export default function DriverDashboard() {
   const { workspace, isLoading, error } = useDriverWorkspace();
 
   if (isLoading) {
-    return (
-      <div className="p-4 md:p-8 text-sm text-muted-foreground">
-        Loading driver workspace...
-      </div>
-    );
+    return <DashboardSkeleton className="p-0" />;
   }
 
   if (error || !workspace) {
