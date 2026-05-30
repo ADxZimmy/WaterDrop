@@ -9,6 +9,7 @@ export const userProfileSchema = z.object({
   firstName: z.string().min(1).optional(),
   lastName: z.string().min(1).optional(),
   phone: z.string().min(1).optional(),
+  avatarUrl: z.string().min(1).max(500000).optional(),
   createdAt: z.number().int(),
   updatedAt: z.number().int(),
 });

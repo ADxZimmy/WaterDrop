@@ -11,7 +11,7 @@ export default async function CustomerLayout({ children }: { children: React.Rea
     redirect(
       buildRoleLoginPath({
         role: "customer",
-        redirect: "/dashboard/customer",
+        redirect: "/dashboard/customer/marketplace",
       })
     );
   }

@@ -9,6 +9,7 @@ const updateCustomerAccountSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required."),
   lastName: z.string().trim().min(1, "Last name is required."),
   phone: z.string().trim().max(40, "Phone number is too long.").optional(),
+  avatarUrl: z.string().trim().max(500000, "Avatar image is too large.").nullable().optional(),
 });
 
 export async function GET() {
@@ -40,6 +41,10 @@ export async function PATCH(request: Request) {
     const existingProfile = snapshot.exists ? userProfileSchema.parse(snapshot.data()) : null;
     const now = Date.now();
     const nextPhone = input.phone && input.phone.length > 0 ? input.phone : undefined;
+    const nextAvatarUrl =
+      input.avatarUrl === null || input.avatarUrl === ""
+        ? undefined
+        : input.avatarUrl ?? existingProfile?.avatarUrl;
     const profile = userProfileSchema.parse({
       uid: user.uid,
       role: "customer",
@@ -47,6 +52,7 @@ export async function PATCH(request: Request) {
       firstName: input.firstName,
       lastName: input.lastName,
       phone: nextPhone,
+      avatarUrl: nextAvatarUrl,
       createdAt: existingProfile?.createdAt ?? now,
       updatedAt: now,
     });

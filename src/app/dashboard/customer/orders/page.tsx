@@ -112,9 +112,11 @@ export default function MyOrdersPage() {
             <p className="text-sm text-muted-foreground">Review active and completed water deliveries.</p>
           </div>
           </div>
-          <Link href="/dashboard/customer/marketplace">
-            <Button className="rounded-xl">Browse marketplace</Button>
-          </Link>
+          {orders.length > 0 ? (
+            <Link href="/dashboard/customer/marketplace">
+              <Button className="rounded-xl">Browse marketplace</Button>
+            </Link>
+          ) : null}
         </div>
 
         {isLoading ? (

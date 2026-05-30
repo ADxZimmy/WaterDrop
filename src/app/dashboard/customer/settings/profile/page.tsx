@@ -2,14 +2,14 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Mail, Phone, Save, User } from 'lucide-react';
+import { ArrowLeft, Camera, Mail, Phone, Save, Trash2, User } from 'lucide-react';
 import type { CustomerAccountPayload } from "@/lib/customer/account-types";
 import { getPaymentMethodLabel } from "@/lib/orders/status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ListPageSkeleton } from "@/components/ui/loading-skeletons";
 import { useToast } from "@/hooks/use-toast";
 
@@ -45,8 +45,10 @@ export default function CustomerProfileSettingsPage() {
     lastName: '',
     phone: '',
   });
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isReadingAvatar, setIsReadingAvatar] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -67,6 +69,7 @@ export default function CustomerProfileSettingsPage() {
             lastName: payload.profile.lastName ?? '',
             phone: payload.profile.phone ?? '',
           });
+          setAvatarUrl(payload.profile.avatarUrl ?? null);
         }
       } catch (error) {
         if (isMounted) {
@@ -124,6 +127,7 @@ export default function CustomerProfileSettingsPage() {
           firstName: form.firstName.trim(),
           lastName: form.lastName.trim(),
           phone: form.phone.trim(),
+          avatarUrl,
         }),
       });
 
@@ -139,6 +143,7 @@ export default function CustomerProfileSettingsPage() {
         lastName: payload.profile.lastName ?? '',
         phone: payload.profile.phone ?? '',
       });
+      setAvatarUrl(payload.profile.avatarUrl ?? null);
       toast({
         title: 'Profile Updated',
         description: 'Your account details have been saved successfully.',
@@ -152,6 +157,49 @@ export default function CustomerProfileSettingsPage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Unsupported File',
+        description: 'Choose an image file for your avatar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (file.size > 350_000) {
+      toast({
+        title: 'Image Too Large',
+        description: 'Choose an avatar image under 350 KB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsReadingAvatar(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarUrl(typeof reader.result === 'string' ? reader.result : null);
+      setIsReadingAvatar(false);
+    };
+    reader.onerror = () => {
+      setIsReadingAvatar(false);
+      toast({
+        title: 'Upload Failed',
+        description: 'Unable to read that avatar image.',
+        variant: 'destructive',
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   if (isLoading) {
@@ -194,8 +242,34 @@ export default function CustomerProfileSettingsPage() {
           <Card className="border-none shadow-xl rounded-[32px] overflow-hidden">
             <CardHeader className="bg-primary/5 p-8 text-center flex flex-col items-center">
               <Avatar className="h-28 w-28 border-4 border-white shadow-xl">
+                {avatarUrl ? <AvatarImage src={avatarUrl} alt={getDisplayName(account, form)} /> : null}
                 <AvatarFallback>{getInitials(account, form)}</AvatarFallback>
               </Avatar>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                <Label htmlFor="avatarUpload" className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20">
+                  <Camera className="h-4 w-4" />
+                  {isReadingAvatar ? 'Reading...' : 'Upload Avatar'}
+                </Label>
+                <Input
+                  id="avatarUpload"
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={handleAvatarUpload}
+                  disabled={isReadingAvatar}
+                />
+                {avatarUrl ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10 rounded-xl bg-white"
+                    onClick={() => setAvatarUrl(null)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Remove
+                  </Button>
+                ) : null}
+              </div>
               <CardTitle className="mt-4 text-xl">{getDisplayName(account, form)}</CardTitle>
               <CardDescription>Customer account since {getMemberSinceLabel(account.profile.createdAt)}</CardDescription>
             </CardHeader>

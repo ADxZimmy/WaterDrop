@@ -9,6 +9,13 @@ export const publicAuthRoles: PublicUserRole[] = [
 ];
 
 const roleHomePaths: Record<UserRole, string> = {
+  customer: "/dashboard/customer/marketplace",
+  vendor: "/dashboard/vendor",
+  driver: "/dashboard/driver",
+  admin: "/admin",
+};
+
+const roleProtectedRootPaths: Record<UserRole, string> = {
   customer: "/dashboard/customer",
   vendor: "/dashboard/vendor",
   driver: "/dashboard/driver",
@@ -88,8 +95,8 @@ export function canRoleAccessPath(role: UserRole, path: string | null | undefine
   }
 
   const pathname = stripSearchAndHash(path);
-  const homePath = getRoleHomePath(role);
-  return pathname === homePath || pathname.startsWith(`${homePath}/`);
+  const rootPath = roleProtectedRootPaths[role];
+  return pathname === rootPath || pathname.startsWith(`${rootPath}/`);
 }
 
 export function getSafePostLoginDestination(

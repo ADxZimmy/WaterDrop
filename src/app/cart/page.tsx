@@ -7,6 +7,7 @@ import { ArrowLeft, Trash2, Plus, Minus, CreditCard, Truck, MapPin, CheckCircle2
 import type { CustomerAddress, PaymentMethod } from "@/lib/domain/schemas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
@@ -50,6 +51,16 @@ export default function CartPage() {
   const [customerPreferences, setCustomerPreferences] = useState<CustomerPreferencesResponse["preferences"]>(null);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>('cod');
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [addressDraft, setAddressDraft] = useState({
+    label: 'Home',
+    street: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: 'Nigeria',
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -120,6 +131,96 @@ export default function CartPage() {
   const selectedAddress =
     customerPreferences?.addresses.find((address) => address.id === selectedAddressId) ??
     getDefaultCustomerAddress(customerPreferences?.addresses ?? []);
+  const hasSavedAddresses = (customerPreferences?.addresses.length ?? 0) > 0;
+  const shouldShowAddressForm = showAddressForm || !hasSavedAddresses;
+
+  const updateAddressDraft = (field: keyof typeof addressDraft, value: string) => {
+    setAddressDraft((currentDraft) => ({ ...currentDraft, [field]: value }));
+  };
+
+  const saveCheckoutAddress = async () => {
+    const trimmedDraft = {
+      label: addressDraft.label.trim(),
+      street: addressDraft.street.trim(),
+      city: addressDraft.city.trim(),
+      state: addressDraft.state.trim(),
+      postalCode: addressDraft.postalCode.trim(),
+      country: addressDraft.country.trim() || 'Nigeria',
+    };
+
+    if (
+      !trimmedDraft.label ||
+      !trimmedDraft.street ||
+      !trimmedDraft.city ||
+      !trimmedDraft.state ||
+      !trimmedDraft.postalCode
+    ) {
+      toast({
+        title: 'Address Incomplete',
+        description: 'Add the delivery address details before saving.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const newAddress: CustomerAddress = {
+      id:
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `address-${Date.now()}`,
+      ...trimmedDraft,
+      isDefault: true,
+    };
+    const addresses = [
+      ...(customerPreferences?.addresses ?? []).map((address) => ({
+        ...address,
+        isDefault: false,
+      })),
+      newAddress,
+    ];
+
+    setIsSavingAddress(true);
+    try {
+      const response = await fetch('/api/customer/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          addresses,
+          preferredPaymentMethod: selectedPaymentMethod,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? 'Unable to save delivery address.');
+      }
+
+      const payload: CustomerPreferencesResponse = await response.json();
+      setCustomerPreferences(payload.preferences);
+      setSelectedAddressId(newAddress.id);
+      setShowAddressForm(false);
+      setAddressDraft({
+        label: 'Home',
+        street: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        country: 'Nigeria',
+      });
+      toast({
+        title: 'Address Saved',
+        description: 'Your delivery address is ready for checkout.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Address Save Failed',
+        description: error instanceof Error ? error.message : 'Unable to save delivery address.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingAddress(false);
+    }
+  };
 
   const updateQuantity = async (productId: string, quantity: number) => {
     try {
@@ -358,61 +459,149 @@ export default function CartPage() {
             <div className="space-y-6">
               <section>
                 <h3 className="font-bold mb-3 flex items-center gap-2"><MapPin className="h-5 w-5 text-primary" /> Delivery Address</h3>
-                {customerPreferences?.addresses.length ? (
-                  <RadioGroup
-                    value={selectedAddressId ?? undefined}
-                    onValueChange={setSelectedAddressId}
-                    className="space-y-2"
-                  >
-                    {customerPreferences.addresses.map((address) => (
-                      <Label key={address.id} className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="relative h-5 w-5 flex items-center justify-center">
-                            <MapPin className="h-5 w-5 text-primary" />
-                          </div>
-                          <div className="space-y-0.5">
-                            <div className="flex items-center gap-2">
-                              <p className="font-bold text-sm">{address.label}</p>
-                              {address.isDefault && (
-                                <Badge className="text-[10px] h-4 px-1.5 bg-primary/10 text-primary border-none">
-                                  Default
-                                </Badge>
-                              )}
+                {hasSavedAddresses ? (
+                  <div className="space-y-3">
+                    <RadioGroup
+                      value={selectedAddressId ?? undefined}
+                      onValueChange={setSelectedAddressId}
+                      className="space-y-2"
+                    >
+                      {customerPreferences?.addresses.map((address) => (
+                        <Label key={address.id} className="flex items-center justify-between p-4 bg-white rounded-xl border cursor-pointer hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="relative h-5 w-5 flex items-center justify-center">
+                              <MapPin className="h-5 w-5 text-primary" />
                             </div>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {formatCustomerAddress(address)}
-                            </p>
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2">
+                                <p className="font-bold text-sm">{address.label}</p>
+                                {address.isDefault && (
+                                  <Badge className="text-[10px] h-4 px-1.5 bg-primary/10 text-primary border-none">
+                                    Default
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {formatCustomerAddress(address)}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <RadioGroupItem value={address.id} />
-                      </Label>
-                    ))}
-                  </RadioGroup>
-                ) : (
-                  <Card className="border-primary/15 bg-primary/5 shadow-sm">
-                    <CardContent className="space-y-4 p-5">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
-                          <MapPin className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-sm">Delivery address needed</h4>
-                          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                            Add or choose a default address before placing this order. This keeps checkout from failing at the final step.
-                          </p>
-                        </div>
+                          <RadioGroupItem value={address.id} />
+                        </Label>
+                      ))}
+                    </RadioGroup>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full rounded-xl"
+                      onClick={() => setShowAddressForm((current) => !current)}
+                    >
+                      {showAddressForm ? 'Hide address form' : 'Add delivery address'}
+                    </Button>
+                  </div>
+                ) : null}
+
+                {shouldShowAddressForm ? (
+                  <div className="mt-3 space-y-4 rounded-2xl border border-primary/15 bg-primary/5 p-5">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
+                        <MapPin className="h-5 w-5" />
                       </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <Link href="/dashboard/customer/settings/addresses">
-                          <Button className="w-full rounded-xl">Add Address</Button>
-                        </Link>
-                        <Button variant="outline" className="w-full rounded-xl" onClick={() => setStep('cart')}>
-                          Review Cart
-                        </Button>
+                      <div>
+                        <h4 className="font-bold text-sm">Delivery address needed</h4>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                          Save an address here and continue checkout without leaving the cart.
+                        </p>
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="checkout-address-label">Label</Label>
+                        <Input
+                          id="checkout-address-label"
+                          value={addressDraft.label}
+                          onChange={(event) => updateAddressDraft('label', event.target.value)}
+                          placeholder="Home"
+                          className="rounded-xl bg-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="checkout-country">Country</Label>
+                        <Input
+                          id="checkout-country"
+                          value={addressDraft.country}
+                          onChange={(event) => updateAddressDraft('country', event.target.value)}
+                          placeholder="Nigeria"
+                          className="rounded-xl bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="checkout-street">Delivery Address</Label>
+                      <Input
+                        id="checkout-street"
+                        value={addressDraft.street}
+                        onChange={(event) => updateAddressDraft('street', event.target.value)}
+                        placeholder="Street, building, or landmark"
+                        className="rounded-xl bg-white"
+                      />
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="checkout-city">City</Label>
+                        <Input
+                          id="checkout-city"
+                          value={addressDraft.city}
+                          onChange={(event) => updateAddressDraft('city', event.target.value)}
+                          placeholder="Lagos"
+                          className="rounded-xl bg-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="checkout-state">State</Label>
+                        <Input
+                          id="checkout-state"
+                          value={addressDraft.state}
+                          onChange={(event) => updateAddressDraft('state', event.target.value)}
+                          placeholder="Lagos State"
+                          className="rounded-xl bg-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="checkout-postal-code">Postal Code</Label>
+                        <Input
+                          id="checkout-postal-code"
+                          value={addressDraft.postalCode}
+                          onChange={(event) => updateAddressDraft('postalCode', event.target.value)}
+                          placeholder="100001"
+                          className="rounded-xl bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Button
+                        type="button"
+                        className="rounded-xl"
+                        disabled={isSavingAddress}
+                        onClick={() => void saveCheckoutAddress()}
+                      >
+                        {isSavingAddress ? 'Saving Address...' : 'Save Address'}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-xl bg-white"
+                        onClick={() => setStep('cart')}
+                      >
+                        Review Cart
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
               </section>
 
               <section>

@@ -4,7 +4,8 @@ import { z } from "zod";
 import { requireRole } from "@/lib/auth/server";
 import { cartSchema, orderSchema, paymentMethodSchema } from "@/lib/domain/schemas";
 import { getFirebaseAdminDb } from "@/lib/firebase/admin";
-import { getOrderPageInfo, getOrderPageParams } from "@/lib/orders/order-pagination";
+import { listCustomerOrdersPage } from "@/lib/orders/customer-order";
+import { getOrderPageParams } from "@/lib/orders/order-pagination";
 
 const createOrderInputSchema = z.object({
   deliveryFeeNaira: z.number().nonnegative(),
@@ -16,20 +17,7 @@ export async function GET(request: Request) {
   try {
     const user = await requireRole(["customer"]);
     const { cursor, limit } = getOrderPageParams(request.url);
-    let query = getFirebaseAdminDb()
-      .collection("orders")
-      .where("customerUid", "==", user.uid)
-      .orderBy("createdAt", "desc")
-      .limit(limit + 1);
-
-    if (cursor) {
-      query = query.startAfter(cursor.createdAt);
-    }
-
-    const snapshot = await query.get();
-    const orders = snapshot.docs.map((doc) => orderSchema.parse(doc.data()));
-    const page = getOrderPageInfo(orders, limit);
-
+    const page = await listCustomerOrdersPage(user.uid, { cursor, limit });
     return NextResponse.json(page, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to load orders";

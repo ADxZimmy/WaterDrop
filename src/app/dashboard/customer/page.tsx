@@ -15,7 +15,7 @@ import type { CustomerAccountPayload } from "@/lib/customer/account-types";
 import { getOrderStatusLabel, getPaymentMethodLabel } from "@/lib/orders/status";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { DashboardSkeleton } from "@/components/ui/loading-skeletons";
 import { useAuthSignOut } from "@/hooks/use-auth-sign-out";
@@ -159,6 +159,9 @@ export default function CustomerDashboard() {
         <div className="mx-auto flex max-w-7xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative">
             <Avatar className="h-24 w-24 border-4 border-white shadow-xl">
+              {account.profile.avatarUrl ? (
+                <AvatarImage src={account.profile.avatarUrl} alt={getDisplayName(account)} />
+              ) : null}
               <AvatarFallback>{getInitials(account)}</AvatarFallback>
             </Avatar>
             <Badge className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-accent text-white border-none px-3 whitespace-nowrap">

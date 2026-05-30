@@ -25,6 +25,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthSignOut } from "@/hooks/use-auth-sign-out";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ type LayoutUser = {
   email: string;
   firstName?: string;
   lastName?: string;
+  avatarUrl?: string;
 };
 
 type CustomerNotification = {
@@ -42,7 +44,7 @@ type CustomerNotification = {
 
 const customerNav = [
   { name: "Marketplace", href: "/dashboard/customer/marketplace", icon: Home },
-  { name: "Overview", href: "/dashboard/customer", icon: User },
+  { name: "Profile", href: "/dashboard/customer", icon: User },
   { name: "Orders", href: "/dashboard/customer/orders", icon: ShoppingBag },
   { name: "Track", href: "/dashboard/customer/track-order", icon: Truck },
   { name: "Settings", href: "/dashboard/customer/settings", icon: Settings },
@@ -87,10 +89,12 @@ export function CustomerShell({
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<CustomerNotification[]>([]);
+  const [cartItemsCount, setCartItemsCount] = useState(0);
   const { isSigningOut, signOut } = useAuthSignOut();
   const displayName = getDisplayName(user);
   const notificationCount = notifications.length;
   const notificationBadge = notificationCount > 9 ? "9+" : String(notificationCount);
+  const cartBadge = cartItemsCount > 9 ? "9+" : String(cartItemsCount);
 
   useEffect(() => {
     let isMounted = true;
@@ -120,6 +124,10 @@ export function CustomerShell({
           0
         );
 
+        if (isMounted) {
+          setCartItemsCount(cartItemsCount);
+        }
+
         if (cartItemsCount > 0) {
           nextNotifications.push({
             title: "Cart waiting",
@@ -137,6 +145,7 @@ export function CustomerShell({
     void loadNotifications().catch(() => {
       if (isMounted) {
         setNotifications([]);
+        setCartItemsCount(0);
       }
     });
 
@@ -147,7 +156,7 @@ export function CustomerShell({
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col bg-white">
-      <Link href="/dashboard/customer" className="flex items-center gap-3 border-b p-6">
+      <Link href="/dashboard/customer/marketplace" className="flex items-center gap-3 border-b p-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20">
           <Droplets className="h-6 w-6" />
         </div>
@@ -163,9 +172,12 @@ export function CustomerShell({
 
       <div className="border-b bg-primary/5 p-4">
         <div className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-xs font-bold text-white">
-            {getInitials(user)}
-          </div>
+          <Avatar className="h-10 w-10 rounded-xl">
+            {user.avatarUrl ? <AvatarImage src={user.avatarUrl} alt={displayName} /> : null}
+            <AvatarFallback className="rounded-xl bg-primary text-xs font-bold text-white">
+              {getInitials(user)}
+            </AvatarFallback>
+          </Avatar>
           <div className="min-w-0">
             <p className="truncate text-sm font-bold">{displayName}</p>
             <p className="truncate text-xs text-muted-foreground">{user.email}</p>
@@ -235,13 +247,24 @@ export function CustomerShell({
                 </SheetContent>
               </Sheet>
             </div>
-            <Link href="/dashboard/customer" className="flex items-center gap-2">
+            <Link href="/dashboard/customer/marketplace" className="flex items-center gap-2">
               <Droplets className="h-6 w-6 text-primary" />
               <span className="font-headline text-lg font-bold tracking-tight">WaterDrop</span>
             </Link>
           </div>
 
           <div className="flex items-center gap-3">
+            <Link href="/cart">
+              <Button variant="ghost" size="icon" className="relative h-11 w-11 rounded-xl hover:bg-muted">
+                <ShoppingCart className="h-5 w-5" />
+                {cartItemsCount > 0 ? (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+                    {cartBadge}
+                  </span>
+                ) : null}
+                <span className="sr-only">Open cart</span>
+              </Button>
+            </Link>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative h-11 w-11 rounded-xl hover:bg-muted">
@@ -298,9 +321,12 @@ export function CustomerShell({
                 Customer
               </p>
             </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-xs font-bold text-white shadow-lg shadow-primary/20">
-              {getInitials(user)}
-            </div>
+            <Avatar className="h-10 w-10 rounded-xl shadow-lg shadow-primary/20">
+              {user.avatarUrl ? <AvatarImage src={user.avatarUrl} alt={displayName} /> : null}
+              <AvatarFallback className="rounded-xl bg-primary text-xs font-bold text-white">
+                {getInitials(user)}
+              </AvatarFallback>
+            </Avatar>
           </div>
         </header>
 

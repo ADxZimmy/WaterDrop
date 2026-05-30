@@ -26,6 +26,7 @@ export async function getAuthenticatedUser() {
       firstName: typeof userData?.firstName === "string" ? userData.firstName : undefined,
       lastName: typeof userData?.lastName === "string" ? userData.lastName : undefined,
       phone: typeof userData?.phone === "string" ? userData.phone : undefined,
+      avatarUrl: typeof userData?.avatarUrl === "string" ? userData.avatarUrl : undefined,
     };
   } catch {
     return null;

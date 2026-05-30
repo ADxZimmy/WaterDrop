@@ -26,6 +26,7 @@ describe("auth routing helpers", () => {
 
   it("maps roles to labels and home paths", () => {
     expect(formatRoleLabel("customer")).toBe("Customer");
+    expect(getRoleHomePath("customer")).toBe("/dashboard/customer/marketplace");
     expect(getRoleHomePath("vendor")).toBe("/dashboard/vendor");
     expect(getRoleHomePath("admin")).toBe("/admin");
   });
@@ -42,6 +43,7 @@ describe("auth routing helpers", () => {
     expect(canRoleAccessPath("vendor", "/dashboard/vendor/orders")).toBe(true);
     expect(canRoleAccessPath("vendor", "/dashboard/customer")).toBe(false);
     expect(canRoleAccessPath("admin", "/admin/vendors")).toBe(true);
+    expect(canRoleAccessPath("customer", "/dashboard/customer/orders")).toBe(true);
     expect(canRoleAccessPath("driver", "dashboard/driver")).toBe(false);
   });
 
@@ -49,7 +51,9 @@ describe("auth routing helpers", () => {
     expect(getSafePostLoginDestination("customer", "/dashboard/customer/orders")).toBe(
       "/dashboard/customer/orders"
     );
-    expect(getSafePostLoginDestination("customer", "/admin")).toBe("/dashboard/customer");
+    expect(getSafePostLoginDestination("customer", "/admin")).toBe(
+      "/dashboard/customer/marketplace"
+    );
   });
 
   it("builds public, admin, and role-aware login URLs", () => {
