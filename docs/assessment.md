@@ -15,8 +15,9 @@ This assessment is no longer fully current. Since it was written, several items 
 - Customer profile/avatar data now uses the live customer profile path, with lightweight avatar upload/remove support.
 - Admin/vendor analytics broad reads now emit duration, document-count metadata, and threshold warnings so the remaining Firestore aggregation risk can be observed before Supabase migration.
 - `.env.local` has been audited clean: it is absent locally, absent from tracked files/history, and covered by `.gitignore`; only `.env.example` is tracked.
+- Role-level App Router error boundaries now exist for admin, customer, vendor, and driver dashboards.
 - Root `AGENTS.md` now records the project-level rules to update all progress-like Markdown files before committing or pushing WaterDrop work and to push every Codex-made local project change to GitHub before ending the turn, even in a fresh conversation.
-- The remaining high-risk areas are broad analytics reads, homepage/component size, missing role-flow E2E tests, error boundaries, security rules/RLS planning, and production image/storage work.
+- The remaining high-risk areas are broad analytics reads, homepage/component size, missing role-flow E2E tests, security rules/RLS planning, and production image/storage work.
 
 ---
 
@@ -137,11 +138,11 @@ Customer profile and shell avatar display now use the live customer profile path
 
 ---
 
-### 7. 🟡 No Error Boundaries
+### 7. ✅ Resolved: Role-Level Error Boundaries
 
-There are no React Error Boundaries anywhere in the application. A single uncaught error in any dashboard component will crash the entire page.
+Role-level App Router `error.tsx` boundaries now exist for the primary protected workspaces: admin, customer, vendor, and driver. Each fallback offers a retry action and a route-appropriate home action.
 
-**Recommendation:** Add error boundaries at layout level for each role (customer, vendor, driver, admin) with graceful fallback UI.
+**Recommendation:** Keep adding narrower segment-specific boundaries only where a page needs specialized recovery copy or actions.
 
 ---
 
@@ -229,7 +230,7 @@ graph TB
 
 | # | Item | Effort | Impact |
 |---|------|--------|--------|
-| 6 | Add React Error Boundaries | Low | 🟡 High |
+| 6 | Add narrower segment-specific error boundaries where recovery needs differ | Low | 🟢 Medium |
 | 7 | Replace remaining placeholder imagery with owned upload/storage flows | Medium | 🟡 Medium |
 | 8 | Fix line endings + add `.editorconfig` | Low | 🟢 Low |
 | 9 | Add loading/skeleton states for API calls | Medium | 🟡 Medium |

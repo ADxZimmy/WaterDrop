@@ -1,6 +1,6 @@
 # WaterDrop MVP Handover
 
-Last updated: 2026-05-31 (env-secret audit)
+Last updated: 2026-05-31 (role error boundaries)
 Agent: Codex
 
 ## Rollback snapshot
@@ -91,6 +91,10 @@ Agent: Codex
   - [`src/app/cart/page.tsx`](src/app/cart/page.tsx) now lets customers add a checkout delivery address in place instead of leaving cart for Settings.
   - [`src/lib/domain/schemas.ts`](src/lib/domain/schemas.ts), [`src/app/api/customer/account/route.ts`](src/app/api/customer/account/route.ts), [`src/app/dashboard/customer/page.tsx`](src/app/dashboard/customer/page.tsx), and [`src/app/dashboard/customer/settings/profile/page.tsx`](src/app/dashboard/customer/settings/profile/page.tsx) now support customer avatar upload/remove through a lightweight `avatarUrl`.
   - Driver order visibility remains assignment-based: a customer order should appear in customer/vendor/admin order surfaces immediately, then in a driver's workspace after the vendor assigns an active driver.
+- [x] Added role-level dashboard error boundaries:
+  - [`src/components/layouts/role-error-boundary.tsx`](src/components/layouts/role-error-boundary.tsx) provides a shared client fallback with retry and role-home actions.
+  - Added segment error boundaries for [`src/app/admin/error.tsx`](src/app/admin/error.tsx), [`src/app/dashboard/customer/error.tsx`](src/app/dashboard/customer/error.tsx), [`src/app/dashboard/vendor/error.tsx`](src/app/dashboard/vendor/error.tsx), and [`src/app/dashboard/driver/error.tsx`](src/app/dashboard/driver/error.tsx).
+  - This closes the previously noted no-error-boundary crash risk for the primary protected workspaces.
 - [x] Completed Chrome-authenticated desktop Phase 1 QA:
   - Seeded isolated QA role accounts in the Firebase dev backend for customer, vendor, driver, and admin visual checks.
   - [`src/components/auth/sign-in-panel.tsx`](src/components/auth/sign-in-panel.tsx) now falls back to Firebase password REST auth when the Firebase client SDK reports `auth/network-request-failed`, then continues through the existing session route.
@@ -517,6 +521,12 @@ Agent: Codex
   - Admin sign-in is now separated at [`/auth/admin`](/auth/admin) and public role registration no longer accepts `admin`, but there is still no dedicated internal admin invitation/provisioning workflow beyond creating/administering those accounts outside the public registration flow.
 
 ## Latest Verification
+- Role error-boundary hardening on 2026-05-31:
+  - Added shared role workspace error fallback and segment `error.tsx` files for admin, customer, vendor, and driver dashboards.
+  - `npm.cmd run lint` passes.
+  - `npm.cmd run typecheck` passes (`next typegen && tsc --noEmit`).
+  - `npm.cmd run build` passes and generated 95 static pages.
+  - `git diff --check` passes; Git reported only CRLF-normalization warnings for edited files.
 - Env-secret audit on 2026-05-31:
   - `Test-Path .env.local` returned `False`; `Test-Path .env.example` returned `True`.
   - `git ls-files -- .env.local .env .env.*` returned only `.env.example`.

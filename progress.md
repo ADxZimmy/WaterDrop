@@ -42,7 +42,7 @@ Reference sources:
 | Phase 3 - Supabase foundation | Pending | P1 | Backend migration owner | Add replacement backend foundation | Supabase env, clients, SQL schema, migrations, DTO mapping, Auth path, and Storage buckets defined |
 | Phase 4 - Firebase removal | Pending | P1 | Backend migration owner | Move app behavior off Firebase | Firebase auth/db helpers, env checks, docs, apphosting config, and packages removed after feature parity |
 | Phase 5 - Flow fine-tuning | Partially started for customer checkout/profile UX | P2 | Product/UX owner after core stability | Improve customer/vendor/driver journeys | Checkout address capture, vendor document review, driver invite/link, dispatch, proof-of-delivery, and notifications improved |
-| Phase 6 - Production hardening | Pending | P2 | Release owner | Prepare for production operations | E2E role tests, visual checks, Supabase RLS, rate limiting, audit logging, deployment docs, seeds, monitoring |
+| Phase 6 - Production hardening | Started; role error boundaries added | P2 | Codex for first hardening slice | Prepare for production operations | E2E role tests, visual checks, Supabase RLS, rate limiting, audit logging, deployment docs, seeds, monitoring |
 
 ## Phase Details
 
@@ -229,9 +229,10 @@ Implementation notes:
 
 ### Phase 6 - Production Hardening
 
-Status: Pending
+Status: Started; role dashboard error boundaries added
 
 Tasks:
+- [x] Add role-level App Router error boundaries for customer, vendor, driver, and admin dashboard segments.
 - [ ] Add Supabase RLS policies for all user-owned and role-owned data.
 - [ ] Add rate limiting to public and authenticated API routes.
 - [ ] Add audit logging for admin review, payout review, order status changes, and auth-sensitive operations.
@@ -239,9 +240,14 @@ Tasks:
 - [ ] Add browser visual checks for critical pages.
 
 Verification:
+- 2026-05-31 role error-boundary hardening gates passed: `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd run build`, and `git diff --check`.
 - E2E smoke tests pass for all roles.
 - RLS tests confirm unauthorized cross-role reads/writes fail.
 - Production deployment checklist is complete.
+
+Implementation notes:
+- [`src/components/layouts/role-error-boundary.tsx`](src/components/layouts/role-error-boundary.tsx) provides the shared client fallback with retry and role-home actions.
+- Added segment `error.tsx` files for [`/admin`](src/app/admin/error.tsx), [`/dashboard/customer`](src/app/dashboard/customer/error.tsx), [`/dashboard/vendor`](src/app/dashboard/vendor/error.tsx), and [`/dashboard/driver`](src/app/dashboard/driver/error.tsx) so protected route crashes are contained inside the relevant workspace shell.
 
 ## Public Interface Commitments
 
