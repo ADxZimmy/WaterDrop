@@ -9,7 +9,7 @@ Status: **Phase 2 in progress with analytics broad-read observability strengthen
 
 The current execution track is **UX/performance first, Supabase migration second**. The working MVP remains Firebase-backed while Phases 1 and 2 stabilize the user experience and current data access. Firebase removal begins after the Supabase foundation is in place.
 
-Project documentation rule: [`AGENTS.md`](AGENTS.md) now records the durable project instruction to update all progress-like Markdown files before committing or pushing WaterDrop work, even in a fresh conversation. Treat [`progress.md`](progress.md), [`handover.md`](handover.md), [`docs/assessment.md`](docs/assessment.md), and any future tracker/handover/status/assessment/roadmap/changelog Markdown file as progress-like when project state changes.
+Project documentation rule: [`AGENTS.md`](AGENTS.md) now records the durable project instruction to update all progress-like Markdown files before committing or pushing WaterDrop work, even in a fresh conversation. It also records the durable project instruction to commit and push every Codex-made local project change to GitHub before ending the turn unless the user's latest instruction explicitly says not to push. Treat [`progress.md`](progress.md), [`handover.md`](handover.md), [`docs/assessment.md`](docs/assessment.md), and any future tracker/handover/status/assessment/roadmap/changelog Markdown file as progress-like when project state changes.
 
 ## Stack Decision
 

@@ -14,7 +14,7 @@ This assessment is no longer fully current. Since it was written, several items 
 - The former driver compensation god module has been split into focused modules behind the existing barrel import.
 - Customer profile/avatar data now uses the live customer profile path, with lightweight avatar upload/remove support.
 - Admin/vendor analytics broad reads now emit duration, document-count metadata, and threshold warnings so the remaining Firestore aggregation risk can be observed before Supabase migration.
-- Root `AGENTS.md` now records the project-level rule to update all progress-like Markdown files before committing or pushing WaterDrop work, even in a fresh conversation.
+- Root `AGENTS.md` now records the project-level rules to update all progress-like Markdown files before committing or pushing WaterDrop work and to push every Codex-made local project change to GitHub before ending the turn, even in a fresh conversation.
 - The remaining high-risk areas are broad analytics reads, homepage/component size, missing role-flow E2E tests, error boundaries, security rules/RLS planning, and production image/storage work.
 
 ---

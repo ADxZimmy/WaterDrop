@@ -1,6 +1,6 @@
 # WaterDrop MVP Handover
 
-Last updated: 2026-05-31 (Water Drop feedback docs sync + project instruction)
+Last updated: 2026-05-31 (auto-push project instruction)
 Agent: Codex
 
 ## Rollback snapshot
@@ -25,6 +25,7 @@ Agent: Codex
 - The remaining `firebase-admin` audit findings are temporary migration debt; do not churn Firebase dependency versions unless a production/security requirement demands it before Phase 4 removal.
 - Any new agent must read and continue from this file before coding.
 - If any file changes are made in a turn, this file must be updated in the same turn.
+- After every Codex-made local project change, commit intentionally and push the current branch to GitHub before ending the turn, even in a new conversation, unless the user's latest instruction explicitly says not to push.
 
 ## Completed
 - [x] Implemented [`progress.md`](progress.md) Phase 1 UX/perceived-performance fixes:
