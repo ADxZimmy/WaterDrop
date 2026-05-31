@@ -1,6 +1,6 @@
 # WaterDrop MVP Handover
 
-Last updated: 2026-05-28 (Chrome Phase 1 desktop QA)
+Last updated: 2026-05-31 (Water Drop feedback docs sync + project instruction)
 Agent: Codex
 
 ## Rollback snapshot
@@ -10,7 +10,7 @@ Agent: Codex
 
 ## Current Phase and Milestone
 - Phase: **2 - Current data access stabilization**
-- Milestone: Phase 2 is in progress while Firebase remains temporary. Public vendor reads, customer latest order, customer overview summary reads, and customer/vendor order list reads are now bounded or paginated. Phase 1 authenticated desktop QA is complete in Chrome; protected 390px mobile QA remains open because the Chrome extension session did not expose viewport emulation and resizing the Chrome window did not affect the controlled tab viewport.
+- Milestone: Phase 2 is in progress while Firebase remains temporary. Public vendor reads, customer latest order, customer overview summary reads, and customer/vendor order list reads are now bounded or paginated; customer order reads now have bounded unordered fallback behavior when Firestore composite indexes are not deployed. Phase 5 customer checkout/profile UX has partially started from the Water Drop feedback document. Phase 1 authenticated desktop QA is complete in Chrome; protected 390px mobile QA remains open because the Chrome extension session did not expose viewport emulation and resizing the Chrome window did not affect the controlled tab viewport.
 
 ## Decisions and Constraints
 - Follow the remediation sequence in [`progress.md`](progress.md): **Phase 0 -> Phase 6**.
@@ -75,6 +75,16 @@ Agent: Codex
   - [`src/lib/orders/vendor-order.ts`](src/lib/orders/vendor-order.ts) keeps the legacy array-returning `listVendorOrders()` for existing payout/driver flows and adds a separate paginated helper for the API route.
   - [`src/app/dashboard/customer/orders/page.tsx`](src/app/dashboard/customer/orders/page.tsx) and [`src/app/dashboard/vendor/orders/page.tsx`](src/app/dashboard/vendor/orders/page.tsx) now load the first 20 orders and expose "Load more orders".
   - [`src/app/dashboard/vendor/revenue/page.tsx`](src/app/dashboard/vendor/revenue/page.tsx) now requests a bounded recent 50-order window instead of depending on an unbounded vendor order endpoint.
+- [x] Applied Water Drop feedback follow-up for customer order visibility and UX:
+  - [`src/lib/orders/customer-order.ts`](src/lib/orders/customer-order.ts) now centralizes customer order pagination and bounded fallback parsing for `/api/orders` and `/api/orders/latest`.
+  - [`firestore.indexes.json`](firestore.indexes.json) now includes `orders` composite indexes for `customerUid + createdAt` and `vendorId + createdAt`.
+  - [`src/lib/auth/routing.ts`](src/lib/auth/routing.ts), [`src/app/auth/register/page.tsx`](src/app/auth/register/page.tsx), and [`src/app/dashboard/customer/layout.tsx`](src/app/dashboard/customer/layout.tsx) now route customer post-login/post-registration fallback to `/dashboard/customer/marketplace`.
+  - [`src/components/layouts/customer-shell.tsx`](src/components/layouts/customer-shell.tsx) renames "Overview" to "Profile" and exposes a persistent cart icon with a live item-count badge.
+  - [`src/app/dashboard/customer/orders/page.tsx`](src/app/dashboard/customer/orders/page.tsx) now avoids duplicate marketplace CTAs when no orders exist.
+  - [`src/app/api/auth/register-profile/route.ts`](src/app/api/auth/register-profile/route.ts) and [`src/app/auth/register/page.tsx`](src/app/auth/register/page.tsx) now collect and persist first customer delivery address and preferred payment method during registration.
+  - [`src/app/cart/page.tsx`](src/app/cart/page.tsx) now lets customers add a checkout delivery address in place instead of leaving cart for Settings.
+  - [`src/lib/domain/schemas.ts`](src/lib/domain/schemas.ts), [`src/app/api/customer/account/route.ts`](src/app/api/customer/account/route.ts), [`src/app/dashboard/customer/page.tsx`](src/app/dashboard/customer/page.tsx), and [`src/app/dashboard/customer/settings/profile/page.tsx`](src/app/dashboard/customer/settings/profile/page.tsx) now support customer avatar upload/remove through a lightweight `avatarUrl`.
+  - Driver order visibility remains assignment-based: a customer order should appear in customer/vendor/admin order surfaces immediately, then in a driver's workspace after the vendor assigns an active driver.
 - [x] Completed Chrome-authenticated desktop Phase 1 QA:
   - Seeded isolated QA role accounts in the Firebase dev backend for customer, vendor, driver, and admin visual checks.
   - [`src/components/auth/sign-in-panel.tsx`](src/components/auth/sign-in-panel.tsx) now falls back to Firebase password REST auth when the Firebase client SDK reports `auth/network-request-failed`, then continues through the existing session route.
@@ -461,9 +471,12 @@ Agent: Codex
 
 ## In Progress
 - [ ] Phase 1 authenticated visual QA remains: check 390px mobile and desktop for customer orders, vendor orders, driver dashboard, and admin overview. Automated gates pass, and public homepage/cart screenshots are captured, but protected role pages still need a logged-in browser/session for meaningful screenshots.
+- [ ] Water Drop feedback order-flow QA remains: run a full authenticated customer -> vendor -> driver -> customer cycle after seeding or signing into all roles. Confirm customer-created orders appear in customer My Orders/latest tracking, vendor queue/detail, admin orders/reports, and driver workspace only after vendor assignment.
 
 ## Next Up
 - [ ] Complete protected 390px Phase 1 visual QA when a real narrow Chrome viewport or equivalent browser viewport control is available and record the result in [`progress.md`](progress.md).
+- [ ] Deploy or verify Firestore composite indexes from [`firestore.indexes.json`](firestore.indexes.json) before relying on ordered `orders` feeds in production.
+- [ ] Complete an authenticated end-to-end order-flow smoke test for the Water Drop feedback blocker.
 - [ ] Continue Phase 2 by checking remaining broad admin/vendor analytics reads with existing perf logs before making any Firestore-specific redesign.
 - [ ] Begin Phase 3 Supabase foundation after UX/performance and current data access are stable: add Supabase env/client scaffolding, SQL migrations, DTO mapping, Auth path, and Storage buckets.
 - [ ] When Phase 3 starts, include explicit Supabase `GRANT` statements in every exposed-table migration; do not rely on default public-schema Data API exposure.
@@ -483,12 +496,14 @@ Agent: Codex
   - Homepage and vendor detail are now fully Firestore-driven, so empty catalogs depend entirely on approved vendors having active products in Firestore.
 - Order lifecycle risk:
   - Vendor/customer/admin order feeds are live, driver assignment and payout accrual are stored on orders, and the backend persists vendor/driver execution events plus recipient-confirmed delivery proof. Failed attempts open a `deliveryException`, and vendors can reschedule or return-to-vendor (moving back to preparing) with customer-visible messaging; photo evidence, OTP verification, and richer driver telemetry remain out of scope.
+- Water Drop feedback order-flow risk:
+  - The customer order APIs now tolerate missing customer order indexes and index definitions were added, but the exact blocker should still be closed with an authenticated multi-role test. Driver visibility is intentionally not automatic; vendors must assign an active driver before the order appears in driver order/history/workspace surfaces.
 - Vendor compliance asset risk:
   - Vendor approval status and admin notes are now persisted, but the onboarding document-upload step and admin-side document inspection are still placeholder UI rather than stored assets.
 - Driver telemetry risk:
   - Admin drivers now reflect real driver profiles and loaded stock, driver-facing workspace/earnings/withdrawal pages now consume assigned-order and payout-request truth, and vendor driver-management surfaces are live for dispatch/payout review; however, delivery performance scores, ratings, navigation telemetry, confirmation codes, and bank-transfer settlement automation are still not captured in the backend.
 - Customer account risk:
-  - Core customer dashboard/profile data is now live, but several notifications/security/help surfaces still remain mostly placeholder-level UX even though their warning-heavy imports were cleaned up this turn.
+  - Core customer dashboard/profile data is now live, registration captures first checkout preferences, profile avatar upload/remove exists, and cart checkout can save an address in place. Several notifications/security/help surfaces still remain mostly placeholder-level UX even though their warning-heavy imports were cleaned up previously.
 - Security risk:
   - `npm audit` previously reported remaining findings in the `firebase-admin` tree. Because Firebase removal is now planned, treat this as temporary migration debt unless a production/security requirement forces earlier remediation.
 - Admin account provisioning risk:
@@ -569,6 +584,15 @@ Agent: Codex
   - `npm run build` passes and generated 95 static pages.
   - `git diff --check` passes.
   - Local dev server responds at `http://127.0.0.1:3000` with `GET / -> 200` under process `29656`.
+- Water Drop feedback follow-up on 2026-05-31:
+  - Read Google Drive document `WATER DROP FEEDBACK DOCUMENT` and confirmed it had no Google Doc comment threads.
+  - Hardened customer order reads with shared pagination/fallback helper and added order composite indexes to [`firestore.indexes.json`](firestore.indexes.json).
+  - Customer auth fallback now lands on Marketplace, customer shell labels `/dashboard/customer` as Profile, persistent cart icon shows item count, and empty orders now has one marketplace CTA.
+  - Customer registration now captures first delivery address and preferred payment method, cart checkout can save an address inline, and customer profile avatar upload/remove is available.
+  - `npm test` passes with 6 files / 37 tests.
+  - `npm run lint` passes.
+  - `npm run typecheck` passes (`next typegen && tsc --noEmit`).
+  - Browser smoke test passed for `http://localhost:3000/auth/register?role=customer`; default dev port `9002` failed with `EACCES`, so local dev server was started on port `3000`.
 - Documentation tracking update on 2026-05-04:
   - Docs-only change for [`progress.md`](progress.md) and [`handover.md`](handover.md); no product behavior changed.
   - Reviewed `handover.md` with `git diff -- handover.md` and confirmed [`progress.md`](progress.md) is a new tracker with `git status --short --branch -- progress.md handover.md`.
@@ -584,8 +608,9 @@ Agent: Codex
   - `npm install -D vitest` reported 16 vulnerabilities on 2026-04-14 (8 low, 2 moderate, 6 high). This should be reviewed separately from the Firebase migration track before any dependency cleanup work.
 
 ## Notes for Successor Agent
+- Root [`AGENTS.md`](AGENTS.md) now records the durable WaterDrop project rule: before committing or pushing project work, update all progress-like Markdown files (`progress.md`, this handover, `docs/assessment.md`, and future tracker/handover/status/assessment/roadmap/changelog files). Follow that rule even in a fresh conversation under this project.
 - [`progress.md`](progress.md) is now the canonical remediation tracker. Update it alongside this handover whenever a phase starts, finishes, changes scope, or intentionally deprecates a route.
-- Continue by closing [`progress.md`](progress.md) Phase 1 visual QA, then move into Phase 2 current data-access stabilization before backend migration.
+- Continue by closing [`progress.md`](progress.md) Phase 1 visual QA and the Water Drop feedback end-to-end order-flow QA, then move into the remaining Phase 2 analytics/read-stabilization work before backend migration.
 - Firebase remains temporary through Phases 1-2 only. Phase 3 builds the Supabase foundation and Phase 4 removes Firebase after feature parity is verified.
 - Do not treat the `firebase-admin` audit findings as long-term accepted risk; track them as temporary migration debt unless security requirements force earlier action.
 - The repo now has a working `npm test` path via Vitest with alias resolution in [`vitest.config.ts`](vitest.config.ts); use it to grow coverage around pure business logic before attempting larger refactors.
@@ -594,6 +619,7 @@ Agent: Codex
 - [`src/lib/driver/compensation.ts`](src/lib/driver/compensation.ts) is now a barrel that preserves existing imports while delegating to focused submodules; app routes and hooks were intentionally left untouched in this refactor.
 - The payout-ledger helpers and auth guard utilities now have direct tests too, so the remaining major risk area is less correctness and more architecture/performance: pagination, N+1 reads, and the oversized homepage/app shells.
 - The vendor/admin driver/customer/order list surfaces now accept `limit` and `cursor` and return `pageInfo.nextCursor` / `pageInfo.total`, with matching “Load more” UI on the corresponding pages. This is a response-payload improvement first, not a full Firestore query optimization.
+- Customer order feeds now have a dedicated helper with bounded fallback behavior for missing composite indexes, and [`firestore.indexes.json`](firestore.indexes.json) now declares the customer/vendor order feed indexes. Deploy or verify those indexes before production testing.
 - The admin/vendor paginated feeds now also narrow related hydration to the current page where possible, so follow-up performance work should target analytics/summary helpers and any remaining broad collection scans rather than these list endpoints first.
 - [`src/lib/vendor/summary.ts`](src/lib/vendor/summary.ts) no longer depends on fully hydrated vendor order records for analytics/overview calculations; it now hydrates customer identity only for recent orders shown in the UI.
 - [`src/lib/admin/ops.ts`](src/lib/admin/ops.ts) now has a dedicated analytics loader separate from the paginated directory loaders, so future performance work can target analytics independently from admin customers/drivers/orders pages.

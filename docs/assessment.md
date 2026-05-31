@@ -6,6 +6,16 @@ WaterDrop is a **multi-vendor water delivery marketplace** built with Next.js 15
 
 **Overall Verdict: Solid MVP foundation, but needs structural improvements before scaling further.**
 
+### Status Update - 2026-05-31
+
+This assessment is no longer fully current. Since it was written, several items below have been partially or fully addressed:
+- Vitest coverage now exists for order status, delivery exceptions, driver compensation, payout ledger, auth helpers, and middleware.
+- Customer/vendor order APIs now have bounded pagination, and customer order reads have fallback behavior when Firestore composite indexes are missing.
+- The former driver compensation god module has been split into focused modules behind the existing barrel import.
+- Customer profile/avatar data now uses the live customer profile path, with lightweight avatar upload/remove support.
+- Root `AGENTS.md` now records the project-level rule to update all progress-like Markdown files before committing or pushing WaterDrop work, even in a fresh conversation.
+- The remaining high-risk areas are broad analytics reads, homepage/component size, missing role-flow E2E tests, error boundaries, security rules/RLS planning, and production image/storage work.
+
 ---
 
 ## What's Working Well
@@ -43,44 +53,54 @@ WaterDrop is a **multi-vendor water delivery marketplace** built with Next.js 15
 
 ---
 
-### 2. 🔴 No Tests Whatsoever
+### 2. 🟡 Historical: Test Coverage Gap Reduced
 
-There are **zero test files** in the entire repository. No unit tests, no integration tests, no E2E tests.
+This was true when the assessment was written, but it is now partially resolved.
 
-The handover lists "gate results" as just `typecheck`, `lint`, and `build` — these only catch syntax/type errors, not logic bugs.
+Current automated coverage includes:
+- `src/lib/orders/status.test.ts`
+- `src/lib/orders/delivery-exception.test.ts`
+- `src/lib/driver/compensation.test.ts`
+- `src/lib/finance/payout-ledger.test.ts`
+- `src/lib/auth/routing.test.ts`
+- `src/lib/auth/server.test.ts`
+- `middleware.test.ts`
 
 > [!WARNING]
-> The order lifecycle, compensation calculations, delivery exception resolution, and payout ledger logic are all complex business-critical paths with zero test coverage.
+> The highest-risk pure business helpers now have unit coverage, but full role-flow E2E coverage is still missing.
 
-**Recommendation:** Before adding more features, add tests for:
-1. `calculateDriverPayoutForOrder()` — compensation math
-2. `ORDER_STATUS_TRANSITIONS` — state machine validation
-3. `resolveVendorDeliveryException()` — exception resolution logic
-4. Payout ledger entry creation
-5. Auth middleware and role enforcement
+**Recommendation:** Add browser/E2E coverage for:
+1. Customer checkout and order tracking
+2. Vendor order accept/assign/dispatch flow
+3. Driver assigned-order completion and failed-attempt flow
+4. Admin vendor/order review
 
 ---
 
-### 3. 🔴 N+1 Query Problem / No Pagination
+### 3. 🟡 Partial: N+1 Query Problem / Pagination
 
-`listVendorDrivers()` in [compensation.ts](file:///f:/WaterDrop/src/lib/driver/compensation.ts) is a textbook example:
+Several list surfaces now have bounded pagination, including customer/vendor orders, vendor drivers, and admin customers/drivers/orders. Customer order feeds also have fallback reads plus Firestore index definitions for ordered feeds.
+
+The original `listVendorDrivers()` warning has been partially addressed by paginating driver profiles first and limiting related hydration to the current page.
+
+Remaining broad-read risks still exist in analytics/summary paths:
 
 ```
-1. Fetch ALL drivers for a vendor
-2. Fetch ALL orders for the vendor  
-3. For EACH driver, fetch their user profile individually
-4. Calculate balances by iterating ALL orders for EACH driver
+1. Admin/vendor analytics still aggregate broad Firestore collections.
+2. Some dashboard summaries intentionally read broad slices until the Supabase migration.
+3. Counters are still calculated on demand rather than materialized.
 ```
 
-This will **collapse under load**. Similar patterns exist across the admin analytics, vendor summary, and order listing APIs.
+This can still **collapse under load** without materialized stats or a relational/reporting backend.
 
 > [!IMPORTANT]
-> There is **no pagination** on any list endpoint. Every query fetches the full collection.
+> The main risk is no longer "no pagination anywhere"; it is broad analytics and summary aggregation.
 
 **Recommendation:** 
-- Add `limit` + `startAfter` cursor-based pagination to all list APIs
+- Finish pagination audits for any remaining list APIs
 - Denormalize frequently-read counters (order counts, balances) onto driver/vendor documents
-- Use Firestore composite indexes and batch reads instead of N+1 patterns
+- Use Firestore composite indexes and batch reads where Firebase remains temporary infrastructure
+- Prefer Supabase/Postgres aggregation during the planned backend migration
 
 ---
 
@@ -92,40 +112,25 @@ The `.env.local` file (2,254 bytes) appears to contain **real Firebase credentia
 
 ---
 
-### 5. 🟡 `compensation.ts` is a 904-line God Module
+### 5. ✅ Resolved: `compensation.ts` God Module
 
-[compensation.ts](file:///f:/WaterDrop/src/lib/driver/compensation.ts) handles:
-- Compensation config CRUD
-- Driver directory listing
-- Driver status management
-- Order assignment
-- Payout calculation
-- Arrival/delivery confirmation
-- Failed delivery attempts
-- Payout request lifecycle
+The former monolithic driver compensation module has been split. `src/lib/driver/compensation.ts` is now a barrel that preserves the public import surface while delegating to:
+- `compensation-config.ts`
+- `compensation-directory.ts`
+- `compensation-orders.ts`
+- `compensation-payouts.ts`
+- `compensation-shared.ts`
+- `compensation-types.ts`
 
-This is **at least 4 distinct concerns** crammed into one file.
-
-**Recommendation:** Split into:
-- `lib/driver/config.ts` — compensation config CRUD
-- `lib/driver/directory.ts` — driver listing/status
-- `lib/driver/assignment.ts` — order assignment logic
-- `lib/driver/payout.ts` — payout calculation and request lifecycle
-- `lib/driver/delivery.ts` — arrival, delivery confirmation, failed attempts
+**Recommendation:** Keep any new driver payout/assignment work inside the focused modules rather than growing the barrel file.
 
 ---
 
-### 6. 🟡 Hardcoded Placeholder Data in UI
+### 6. 🟡 Partial: Hardcoded Placeholder Data in UI
 
-The homepage sidebar shows:
-```tsx
-<p className="text-sm font-bold truncate">John Doe</p>
-<p className="text-[10px] text-muted-foreground truncate font-medium">Gold Member</p>
-```
+Customer profile and shell avatar display now use the live customer profile path, with lightweight avatar upload/remove support. Some public/marketing and vendor/product imagery still uses placeholder image sources.
 
-Avatar images use `https://picsum.photos/seed/user-44/200` — a random image service. These should use the authenticated user's actual name and a proper avatar system.
-
-**Recommendation:** Wire sidebar user display to the session data already being fetched.
+**Recommendation:** Keep replacing placeholder imagery with role-owned upload/storage flows, starting with vendor/product images.
 
 ---
 
@@ -211,10 +216,10 @@ graph TB
 
 | # | Item | Effort | Impact |
 |---|------|--------|--------|
-| 1 | Add tests for compensation math & order lifecycle | Medium | 🔴 Critical |
-| 2 | Add pagination to all list endpoints | Medium | 🔴 Critical |
+| 1 | Add role-flow E2E tests for checkout, dispatch, driver completion, and admin review | Medium | 🔴 Critical |
+| 2 | Finish remaining pagination/broad-read audit, especially analytics and summaries | Medium | 🔴 Critical |
 | 3 | Verify `.env.local` is not in git history | Low | 🔴 Critical |
-| 4 | Split `compensation.ts` into focused modules | Medium | 🟡 High |
+| 4 | Keep driver compensation modules focused after the split | Low | 🟡 High |
 | 5 | Break up homepage into components | Medium | 🟡 High |
 
 ### During Next Feature Sprint
@@ -222,7 +227,7 @@ graph TB
 | # | Item | Effort | Impact |
 |---|------|--------|--------|
 | 6 | Add React Error Boundaries | Low | 🟡 High |
-| 7 | Wire real user data into sidebar/avatar | Low | 🟡 Medium |
+| 7 | Replace remaining placeholder imagery with owned upload/storage flows | Medium | 🟡 Medium |
 | 8 | Fix line endings + add `.editorconfig` | Low | 🟢 Low |
 | 9 | Add loading/skeleton states for API calls | Medium | 🟡 Medium |
 | 10 | Denormalize counters to reduce N+1 reads | High | 🟡 High |
@@ -241,9 +246,9 @@ graph TB
 
 ## What Phase 5 Should Focus On
 
-Based on the handover's "Next Up" and my assessment, I'd recommend this Phase 5 order:
+Based on the handover's "Next Up" and this updated assessment, I'd recommend this Phase 5 order:
 
-1. **🔧 Structural cleanup** — Split god files, add tests, add pagination (1-2 days)
+1. **🔧 Structural cleanup** — Break up homepage, add role-flow E2E tests, and finish remaining pagination/broad-read audit
 2. **📸 Image upload system** — Vendor/product photos via Firebase Storage (blocks production readiness)
 3. **🔒 Firestore security rules** — Even if all access goes through API routes, defense in depth matters
 4. **📊 Reconciliation reports** — The ledger CSV is a start; add period summaries
