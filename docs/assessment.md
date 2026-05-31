@@ -14,6 +14,7 @@ This assessment is no longer fully current. Since it was written, several items 
 - The former driver compensation god module has been split into focused modules behind the existing barrel import.
 - Customer profile/avatar data now uses the live customer profile path, with lightweight avatar upload/remove support.
 - Admin/vendor analytics broad reads now emit duration, document-count metadata, and threshold warnings so the remaining Firestore aggregation risk can be observed before Supabase migration.
+- `.env.local` has been audited clean: it is absent locally, absent from tracked files/history, and covered by `.gitignore`; only `.env.example` is tracked.
 - Root `AGENTS.md` now records the project-level rules to update all progress-like Markdown files before committing or pushing WaterDrop work and to push every Codex-made local project change to GitHub before ending the turn, even in a fresh conversation.
 - The remaining high-risk areas are broad analytics reads, homepage/component size, missing role-flow E2E tests, error boundaries, security rules/RLS planning, and production image/storage work.
 
@@ -106,11 +107,11 @@ This can still **collapse under load** without materialized stats or a relationa
 
 ---
 
-### 4. 🟡 `.env.local` Committed to Repository
+### 4. ✅ Resolved: `.env.local` Repository Audit
 
-The `.env.local` file (2,254 bytes) appears to contain **real Firebase credentials** and is present in the repo root. While `.gitignore` may exclude it from Git, its presence in the working directory alongside `.env.example` is a risk.
+The current checkout does not contain `.env.local`, Git tracks only `.env.example`, and `.env.local` has no Git history in this repository. `.gitignore` covers `.env`, `.env.local`, and other `.env*.local` files.
 
-**Recommendation:** Verify `.env.local` is in `.gitignore`. If credentials have been committed at any point in git history, rotate them immediately.
+**Recommendation:** Keep real Firebase/Supabase credentials out of the repository. If another clone or backup is found with committed secrets, rotate those credentials immediately.
 
 ---
 
@@ -220,7 +221,7 @@ graph TB
 |---|------|--------|--------|
 | 1 | Add role-flow E2E tests for checkout, dispatch, driver completion, and admin review | Medium | 🔴 Critical |
 | 2 | Use analytics document-count logs to finish the remaining broad-read audit, especially admin/vendor summaries | Medium | 🔴 Critical |
-| 3 | Verify `.env.local` is not in git history | Low | 🔴 Critical |
+| 3 | Keep env-secret audit clean as Firebase/Supabase credentials change | Low | 🟡 High |
 | 4 | Keep driver compensation modules focused after the split | Low | 🟡 High |
 | 5 | Break up homepage into components | Medium | 🟡 High |
 

@@ -5,7 +5,7 @@ Owner: Codex
 
 ## Current Focus
 
-Status: **Phase 2 in progress with analytics broad-read observability strengthened; Phase 1 authenticated desktop QA complete and 390px protected QA still open**
+Status: **Phase 2 in progress with analytics broad-read observability strengthened and env-secret history audit complete; Phase 1 authenticated desktop QA complete and 390px protected QA still open**
 
 The current execution track is **UX/performance first, Supabase migration second**. The working MVP remains Firebase-backed while Phases 1 and 2 stabilize the user experience and current data access. Firebase removal begins after the Supabase foundation is in place.
 
@@ -150,6 +150,7 @@ Verification:
 - 2026-05-28 Phase 2 customer/vendor order pagination gates passed: `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`, and `git diff --check`.
 - 2026-05-31 Water Drop feedback follow-up gates passed: `npm test`, `npm run lint`, and `npm run typecheck`.
 - 2026-05-31 Phase 2 analytics observability gates passed: `npm.cmd test`, `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd run build`, and `git diff --check`. Initial `npm` PowerShell invocations failed because `npm.ps1` is blocked by the local execution policy; `npm.cmd` was used instead.
+- 2026-05-31 env-secret audit found no local `.env.local`, no tracked `.env.local`, and no `.env.local` Git history. Only `.env.example` is tracked, and `.gitignore` excludes `.env` plus `.env*.local`.
 - Local dev server verified on 2026-05-28 with `GET / -> 200` at `http://127.0.0.1:3000`.
 - Local dev server verified on 2026-05-31 at `http://localhost:3000/auth/register?role=customer`; default port `9002` was unavailable with `EACCES`, so the smoke test used port `3000`.
 - Manual timing comparison for `/api/vendors`, customer latest order, vendor orders, admin analytics, and vendor summary before/after changes.
@@ -256,5 +257,5 @@ Verification:
 - Admin/vendor analytics are still broad Firestore aggregations, but the temporary paths now emit document-count metadata and warnings so production-like logs can identify the worst remaining bottlenecks before Supabase work starts.
 - Supabase schema design needs careful treatment of embedded Firestore arrays, especially order items, execution events, delivery proof, exceptions, and payout ledger records.
 - Supabase's 2026 Data API default-grant change means missing migration grants can break `supabase-js`, REST, and GraphQL access even when RLS policies are correct.
-- Existing `.env.local` may contain Firebase credentials; review git history and rotate credentials if exposure is suspected.
+- Env-secret audit is clean for `.env.local`: it is absent locally, absent from tracked files, absent from Git history, and covered by `.gitignore`; keep real credentials out of the repository.
 - Water Drop feedback order-flow verification still needs an authenticated end-to-end role smoke test: customer places an order, vendor accepts/assigns a driver, driver sees the assigned order, driver marks delivered, and customer sees status/history.

@@ -1,6 +1,6 @@
 # WaterDrop MVP Handover
 
-Last updated: 2026-05-31 (auto-push project instruction)
+Last updated: 2026-05-31 (env-secret audit)
 Agent: Codex
 
 ## Rollback snapshot
@@ -512,10 +512,17 @@ Agent: Codex
   - Core customer dashboard/profile data is now live, registration captures first checkout preferences, profile avatar upload/remove exists, and cart checkout can save an address in place. Several notifications/security/help surfaces still remain mostly placeholder-level UX even though their warning-heavy imports were cleaned up previously.
 - Security risk:
   - `npm audit` previously reported remaining findings in the `firebase-admin` tree. Because Firebase removal is now planned, treat this as temporary migration debt unless a production/security requirement forces earlier remediation.
+  - `.env.local` was audited on 2026-05-31: it is absent from the local checkout, absent from tracked files, absent from Git history, and covered by `.gitignore`; only `.env.example` is tracked.
 - Admin account provisioning risk:
   - Admin sign-in is now separated at [`/auth/admin`](/auth/admin) and public role registration no longer accepts `admin`, but there is still no dedicated internal admin invitation/provisioning workflow beyond creating/administering those accounts outside the public registration flow.
 
 ## Latest Verification
+- Env-secret audit on 2026-05-31:
+  - `Test-Path .env.local` returned `False`; `Test-Path .env.example` returned `True`.
+  - `git ls-files -- .env.local .env .env.*` returned only `.env.example`.
+  - `git log --all --oneline -- .env.local` returned no commits.
+  - `git show --name-only 4c59df6 -- .env .env.local .env.example` confirmed the historical env-related commit contains `.env.example` only.
+  - `git check-ignore -v .env.local .env .env.production.local` confirmed `.gitignore` covers local env files.
 - Phase 2 analytics broad-read observability on 2026-05-31:
   - Added dynamic perf metadata and broad-read warnings for admin analytics and vendor summary Firestore reads.
   - `npm.cmd ci` completed from the lockfile after the fresh clone; it reported existing dependency audit findings (1 low, 12 moderate, 8 high, 1 critical).
