@@ -1,4 +1,5 @@
 type PerfMeta = Record<string, string | number | boolean | null | undefined>;
+type PerfMetaInput<T> = PerfMeta | ((result: T | undefined) => PerfMeta | undefined);
 
 function isPerfLoggingEnabled() {
   return process.env.WATERDROP_PERF_LOGS !== "0";
@@ -25,16 +26,34 @@ export function logPerf(label: string, durationMs: number, meta?: PerfMeta) {
   console.info(`[perf] ${label} duration_ms=${Math.round(durationMs)}${formatMeta(meta)}`);
 }
 
+export function logBroadReadWarning(
+  label: string,
+  documentCount: number,
+  threshold: number,
+  meta?: PerfMeta
+) {
+  if (!isPerfLoggingEnabled() || documentCount <= threshold) {
+    return;
+  }
+
+  console.warn(
+    `[perf] ${label} broad_read_docs=${documentCount} threshold=${threshold}${formatMeta(meta)}`
+  );
+}
+
 export async function measurePerf<T>(
   label: string,
   operation: () => Promise<T>,
-  meta?: PerfMeta
+  meta?: PerfMetaInput<T>
 ): Promise<T> {
   const start = performance.now();
+  let result: T | undefined;
 
   try {
-    return await operation();
+    result = await operation();
+    return result;
   } finally {
-    logPerf(label, performance.now() - start, meta);
+    const resolvedMeta = typeof meta === "function" ? meta(result) : meta;
+    logPerf(label, performance.now() - start, resolvedMeta);
   }
 }

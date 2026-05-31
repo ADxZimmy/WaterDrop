@@ -39,12 +39,14 @@ import type {
   AdminVendorRankingRecord,
   CustomerTier,
 } from "@/lib/admin/ops-types";
-import { measurePerf } from "@/lib/observability/perf";
+import { logBroadReadWarning, measurePerf } from "@/lib/observability/perf";
 import { paginateArray } from "@/lib/pagination";
 
 const DAILY_POINTS = 7;
 const WEEKLY_POINTS = 6;
 const MONTHLY_POINTS = 6;
+const ADMIN_ANALYTICS_COLLECTION_WARNING_DOCS = 500;
+const ADMIN_ANALYTICS_TOTAL_WARNING_DOCS = 2000;
 
 function getDisplayName(
   profile: Partial<UserProfile> | null,
@@ -213,6 +215,56 @@ type AdminAnalyticsData = {
   vendorOwnerProfilesByUid: Map<string, UserProfile | null>;
 };
 
+type AdminAnalyticsReadCounts = {
+  customers: number;
+  vendors: number;
+  drivers: number;
+  orders: number;
+  products: number;
+  total: number;
+};
+
+function createEmptyAdminAnalyticsReadCounts(): AdminAnalyticsReadCounts {
+  return {
+    customers: 0,
+    vendors: 0,
+    drivers: 0,
+    orders: 0,
+    products: 0,
+    total: 0,
+  };
+}
+
+function warnOnAdminAnalyticsBroadReads(readCounts: AdminAnalyticsReadCounts) {
+  const collectionCounts = [
+    ["customers", readCounts.customers],
+    ["vendors", readCounts.vendors],
+    ["drivers", readCounts.drivers],
+    ["orders", readCounts.orders],
+    ["products", readCounts.products],
+  ] as const;
+
+  collectionCounts.forEach(([collection, count]) => {
+    logBroadReadWarning(
+      `admin.analytics.load-data.${collection}`,
+      count,
+      ADMIN_ANALYTICS_COLLECTION_WARNING_DOCS
+    );
+  });
+  logBroadReadWarning(
+    "admin.analytics.load-data.total",
+    readCounts.total,
+    ADMIN_ANALYTICS_TOTAL_WARNING_DOCS,
+    {
+      customers: readCounts.customers,
+      vendors: readCounts.vendors,
+      drivers: readCounts.drivers,
+      orders: readCounts.orders,
+      products: readCounts.products,
+    }
+  );
+}
+
 async function loadUsersByIds(userIds: string[]) {
   const uniqueIds = [...new Set(userIds.filter(Boolean))];
   const db = getFirebaseAdminDb();
@@ -275,6 +327,8 @@ async function loadOrdersByCustomerIds(customerUids: string[]) {
 }
 
 async function loadAdminAnalyticsData(): Promise<AdminAnalyticsData> {
+  let readCounts = createEmptyAdminAnalyticsReadCounts();
+
   return measurePerf("admin.analytics.load-data", async () => {
     const db = getFirebaseAdminDb();
     const [
@@ -290,6 +344,20 @@ async function loadAdminAnalyticsData(): Promise<AdminAnalyticsData> {
       db.collection("orders").get(),
       db.collection("products").get(),
     ]);
+    readCounts = {
+      customers: customerUsersSnapshot.size,
+      vendors: vendorsSnapshot.size,
+      drivers: driversSnapshot.size,
+      orders: ordersSnapshot.size,
+      products: productsSnapshot.size,
+      total:
+        customerUsersSnapshot.size +
+        vendorsSnapshot.size +
+        driversSnapshot.size +
+        ordersSnapshot.size +
+        productsSnapshot.size,
+    };
+    warnOnAdminAnalyticsBroadReads(readCounts);
 
     const vendors = vendorsSnapshot.docs.map((doc) => vendorProfileSchema.parse(doc.data()));
     const ownerProfiles = await loadUsersByIds(vendors.map((vendor) => vendor.ownerUid));
@@ -304,7 +372,14 @@ async function loadAdminAnalyticsData(): Promise<AdminAnalyticsData> {
       products: productsSnapshot.docs.map((doc) => productSchema.parse(doc.data())),
       vendorOwnerProfilesByUid: ownerProfiles,
     };
-  });
+  }, () => ({
+    customers: readCounts.customers,
+    vendors: readCounts.vendors,
+    drivers: readCounts.drivers,
+    orders: readCounts.orders,
+    products: readCounts.products,
+    totalDocuments: readCounts.total,
+  }));
 }
 
 function buildVendorRankings(baseData: {

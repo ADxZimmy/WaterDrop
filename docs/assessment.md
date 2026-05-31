@@ -13,6 +13,7 @@ This assessment is no longer fully current. Since it was written, several items 
 - Customer/vendor order APIs now have bounded pagination, and customer order reads have fallback behavior when Firestore composite indexes are missing.
 - The former driver compensation god module has been split into focused modules behind the existing barrel import.
 - Customer profile/avatar data now uses the live customer profile path, with lightweight avatar upload/remove support.
+- Admin/vendor analytics broad reads now emit duration, document-count metadata, and threshold warnings so the remaining Firestore aggregation risk can be observed before Supabase migration.
 - Root `AGENTS.md` now records the project-level rule to update all progress-like Markdown files before committing or pushing WaterDrop work, even in a fresh conversation.
 - The remaining high-risk areas are broad analytics reads, homepage/component size, missing role-flow E2E tests, error boundaries, security rules/RLS planning, and production image/storage work.
 
@@ -83,7 +84,7 @@ Several list surfaces now have bounded pagination, including customer/vendor ord
 
 The original `listVendorDrivers()` warning has been partially addressed by paginating driver profiles first and limiting related hydration to the current page.
 
-Remaining broad-read risks still exist in analytics/summary paths:
+Remaining broad-read risks still exist in analytics/summary paths, although they are now instrumented with document-count perf logs and threshold warnings:
 
 ```
 1. Admin/vendor analytics still aggregate broad Firestore collections.
@@ -98,6 +99,7 @@ This can still **collapse under load** without materialized stats or a relationa
 
 **Recommendation:** 
 - Finish pagination audits for any remaining list APIs
+- Watch `/api/admin/analytics` and `/api/vendor/summary` logs against production-like data before choosing any temporary Firebase mitigation
 - Denormalize frequently-read counters (order counts, balances) onto driver/vendor documents
 - Use Firestore composite indexes and batch reads where Firebase remains temporary infrastructure
 - Prefer Supabase/Postgres aggregation during the planned backend migration
@@ -217,7 +219,7 @@ graph TB
 | # | Item | Effort | Impact |
 |---|------|--------|--------|
 | 1 | Add role-flow E2E tests for checkout, dispatch, driver completion, and admin review | Medium | 🔴 Critical |
-| 2 | Finish remaining pagination/broad-read audit, especially analytics and summaries | Medium | 🔴 Critical |
+| 2 | Use analytics document-count logs to finish the remaining broad-read audit, especially admin/vendor summaries | Medium | 🔴 Critical |
 | 3 | Verify `.env.local` is not in git history | Low | 🔴 Critical |
 | 4 | Keep driver compensation modules focused after the split | Low | 🟡 High |
 | 5 | Break up homepage into components | Medium | 🟡 High |

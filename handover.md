@@ -10,7 +10,7 @@ Agent: Codex
 
 ## Current Phase and Milestone
 - Phase: **2 - Current data access stabilization**
-- Milestone: Phase 2 is in progress while Firebase remains temporary. Public vendor reads, customer latest order, customer overview summary reads, and customer/vendor order list reads are now bounded or paginated; customer order reads now have bounded unordered fallback behavior when Firestore composite indexes are not deployed. Phase 5 customer checkout/profile UX has partially started from the Water Drop feedback document. Phase 1 authenticated desktop QA is complete in Chrome; protected 390px mobile QA remains open because the Chrome extension session did not expose viewport emulation and resizing the Chrome window did not affect the controlled tab viewport.
+- Milestone: Phase 2 is in progress while Firebase remains temporary. Public vendor reads, customer latest order, customer overview summary reads, and customer/vendor order list reads are now bounded or paginated; customer order reads now have bounded unordered fallback behavior when Firestore composite indexes are not deployed. Admin/vendor analytics broad reads remain temporary Firestore aggregation debt, but they now log document-count metadata and threshold warnings. Phase 5 customer checkout/profile UX has partially started from the Water Drop feedback document. Phase 1 authenticated desktop QA is complete in Chrome; protected 390px mobile QA remains open because the Chrome extension session did not expose viewport emulation and resizing the Chrome window did not affect the controlled tab viewport.
 
 ## Decisions and Constraints
 - Follow the remediation sequence in [`progress.md`](progress.md): **Phase 0 -> Phase 6**.
@@ -75,6 +75,11 @@ Agent: Codex
   - [`src/lib/orders/vendor-order.ts`](src/lib/orders/vendor-order.ts) keeps the legacy array-returning `listVendorOrders()` for existing payout/driver flows and adds a separate paginated helper for the API route.
   - [`src/app/dashboard/customer/orders/page.tsx`](src/app/dashboard/customer/orders/page.tsx) and [`src/app/dashboard/vendor/orders/page.tsx`](src/app/dashboard/vendor/orders/page.tsx) now load the first 20 orders and expose "Load more orders".
   - [`src/app/dashboard/vendor/revenue/page.tsx`](src/app/dashboard/vendor/revenue/page.tsx) now requests a bounded recent 50-order window instead of depending on an unbounded vendor order endpoint.
+- [x] Strengthened Phase 2 analytics broad-read observability without redesigning the temporary Firestore aggregation paths:
+  - [`src/lib/observability/perf.ts`](src/lib/observability/perf.ts) now accepts dynamic measurement metadata and exposes `logBroadReadWarning`.
+  - [`src/lib/admin/ops.ts`](src/lib/admin/ops.ts) logs customer/vendor/driver/order/product/total document counts for admin analytics and warns above 500 documents per collection or 2,000 total documents.
+  - [`src/lib/vendor/summary.ts`](src/lib/vendor/summary.ts) logs per-vendor product/order document counts and warns above 250 products or 500 orders for one vendor summary request.
+  - This keeps `/api/admin/analytics` and `/api/vendor/summary` observable while Supabase remains the planned long-term aggregation backend.
 - [x] Applied Water Drop feedback follow-up for customer order visibility and UX:
   - [`src/lib/orders/customer-order.ts`](src/lib/orders/customer-order.ts) now centralizes customer order pagination and bounded fallback parsing for `/api/orders` and `/api/orders/latest`.
   - [`firestore.indexes.json`](firestore.indexes.json) now includes `orders` composite indexes for `customerUid + createdAt` and `vendorId + createdAt`.
@@ -477,7 +482,7 @@ Agent: Codex
 - [ ] Complete protected 390px Phase 1 visual QA when a real narrow Chrome viewport or equivalent browser viewport control is available and record the result in [`progress.md`](progress.md).
 - [ ] Deploy or verify Firestore composite indexes from [`firestore.indexes.json`](firestore.indexes.json) before relying on ordered `orders` feeds in production.
 - [ ] Complete an authenticated end-to-end order-flow smoke test for the Water Drop feedback blocker.
-- [ ] Continue Phase 2 by checking remaining broad admin/vendor analytics reads with existing perf logs before making any Firestore-specific redesign.
+- [ ] Use the admin/vendor analytics document-count perf logs in production-like data before deciding whether any temporary Firestore mitigation is needed ahead of Phase 3.
 - [ ] Begin Phase 3 Supabase foundation after UX/performance and current data access are stable: add Supabase env/client scaffolding, SQL migrations, DTO mapping, Auth path, and Storage buckets.
 - [ ] When Phase 3 starts, include explicit Supabase `GRANT` statements in every exposed-table migration; do not rely on default public-schema Data API exposure.
 - [ ] Remove Firebase in Phase 4 only after Supabase parity is verified across auth, profiles, catalog/cart/orders, vendor/admin ops, driver compensation, and payout ledger.
@@ -485,7 +490,7 @@ Agent: Codex
 
 ## Known Blockers / Risks
 - Pagination/performance risk:
-  - Vendor/admin list endpoints now page their response payloads and UI rendering, and the current page hydration work has been narrowed substantially. Vendor summary hydration has also been reduced, and admin analytics no longer loads unrelated collections. Lightweight timing logs now exist for `/api/admin/analytics` and `/api/vendor/summary`, but the main remaining hotspot is still the fact that analytics aggregates over broad order/product/vendor/driver sets in one request. Phase 2 should stabilize only the worst bottlenecks before Supabase migration.
+  - Vendor/admin list endpoints now page their response payloads and UI rendering, and the current page hydration work has been narrowed substantially. Vendor summary hydration has also been reduced, and admin analytics no longer loads unrelated collections. Timing logs plus document-count metadata now exist for `/api/admin/analytics` and `/api/vendor/summary`, with broad-read warnings above the current thresholds, but the main remaining hotspot is still the fact that analytics aggregates over broad order/product/vendor/driver sets in one request. Phase 2 should stabilize only the worst bottlenecks before Supabase migration.
 - Firebase migration risk:
   - Firebase is deeply coupled into auth, session verification, Firestore access, admin health checks, tests, docs, package dependencies, and Firebase App Hosting config. Supabase migration should be phased through [`progress.md`](progress.md) and should preserve route/API behavior while replacing infrastructure.
 - Supabase grant risk:
@@ -510,6 +515,15 @@ Agent: Codex
   - Admin sign-in is now separated at [`/auth/admin`](/auth/admin) and public role registration no longer accepts `admin`, but there is still no dedicated internal admin invitation/provisioning workflow beyond creating/administering those accounts outside the public registration flow.
 
 ## Latest Verification
+- Phase 2 analytics broad-read observability on 2026-05-31:
+  - Added dynamic perf metadata and broad-read warnings for admin analytics and vendor summary Firestore reads.
+  - `npm.cmd ci` completed from the lockfile after the fresh clone; it reported existing dependency audit findings (1 low, 12 moderate, 8 high, 1 critical).
+  - Direct `npm` PowerShell invocations failed because `C:\Program Files\nodejs\npm.ps1` is blocked by local execution policy, so verification used `npm.cmd`.
+  - `npm.cmd test` passes with 6 files / 37 tests.
+  - `npm.cmd run lint` passes.
+  - `npm.cmd run typecheck` passes (`next typegen && tsc --noEmit`).
+  - `npm.cmd run build` passes and generated 95 static pages.
+  - `git diff --check` passes; Git reported only CRLF-normalization warnings for edited files.
 - Phase 1 UX/perceived-performance implementation on 2026-05-04:
   - `npm test` passes with 6 files / 37 tests.
   - `npm run lint` passes.

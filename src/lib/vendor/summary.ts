@@ -19,7 +19,7 @@ import {
   type UserProfile,
 } from "@/lib/domain/schemas";
 import { getFirebaseAdminDb } from "@/lib/firebase/admin";
-import { measurePerf } from "@/lib/observability/perf";
+import { logBroadReadWarning, measurePerf } from "@/lib/observability/perf";
 import { ORDER_ACTIVE_STATUSES } from "@/lib/orders/status";
 import type { VendorOrderRecord } from "@/lib/orders/vendor-order";
 import type {
@@ -32,6 +32,8 @@ const DAILY_POINTS = 7;
 const WEEKLY_POINTS = 6;
 const MONTHLY_POINTS = 6;
 const LOW_STOCK_THRESHOLD = 50;
+const VENDOR_PRODUCTS_BROAD_READ_WARNING_DOCS = 250;
+const VENDOR_ORDERS_BROAD_READ_WARNING_DOCS = 500;
 
 type SummaryOrder = {
   status: "pending" | "accepted" | "preparing" | "out_for_delivery" | "delivered" | "cancelled";
@@ -188,27 +190,45 @@ async function loadVendorProfile(vendorId: string) {
 }
 
 async function loadVendorProducts(vendorId: string) {
+  let documentCount = 0;
+
   return measurePerf("vendor.summary.load-products", async () => {
     const snapshot = await getFirebaseAdminDb()
       .collection("products")
       .where("vendorId", "==", vendorId)
       .get();
+    documentCount = snapshot.size;
+    logBroadReadWarning(
+      "vendor.summary.load-products",
+      documentCount,
+      VENDOR_PRODUCTS_BROAD_READ_WARNING_DOCS,
+      { vendorId }
+    );
 
     return snapshot.docs.map((doc) => productSchema.parse(doc.data()));
-  }, { vendorId });
+  }, () => ({ vendorId, documents: documentCount }));
 }
 
 async function loadVendorOrders(vendorId: string) {
+  let documentCount = 0;
+
   return measurePerf("vendor.summary.load-orders", async () => {
     const snapshot = await getFirebaseAdminDb()
       .collection("orders")
       .where("vendorId", "==", vendorId)
       .get();
+    documentCount = snapshot.size;
+    logBroadReadWarning(
+      "vendor.summary.load-orders",
+      documentCount,
+      VENDOR_ORDERS_BROAD_READ_WARNING_DOCS,
+      { vendorId }
+    );
 
     return snapshot.docs
       .map((doc) => orderSchema.parse(doc.data()))
       .sort((left, right) => right.createdAt - left.createdAt);
-  }, { vendorId });
+  }, () => ({ vendorId, documents: documentCount }));
 }
 
 function getCustomerName(profile: Partial<UserProfile> | null, fallbackUid: string) {
